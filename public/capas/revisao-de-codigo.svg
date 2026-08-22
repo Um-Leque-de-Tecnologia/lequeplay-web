@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450" role="presentation">
+  <defs><linearGradient id="grevisaodecodigo" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#4338ca"/><stop offset="100%" stop-color="#7c3aed"/>
+  </linearGradient></defs>
+  <rect width="300" height="450" fill="url(#grevisaodecodigo)"/>
+  <circle cx="235" cy="95" r="130" fill="#fff" opacity=".07"/>
+  <circle cx="70" cy="355" r="105" fill="#fff" opacity=".05"/>
+</svg>

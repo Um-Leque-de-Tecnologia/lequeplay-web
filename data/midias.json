@@ -1,0 +1,155 @@
+[
+  {
+    "id": "1",
+    "slug": "sinais-de-carbono",
+    "tipo": "filme",
+    "titulo": "Sinais de Carbono",
+    "ano": 2024,
+    "genero": "Ficção científica",
+    "sinopse": "Uma geóloga descobre que as camadas de rocha de uma mina abandonada guardam um registro que não deveria existir. Quanto mais fundo ela cava, menos o passado bate com o que ensinaram na escola.",
+    "capaUrl": "/capas/sinais-de-carbono.svg",
+    "notaMedia": 8.4,
+    "totalAvaliacoes": 132,
+    "duracaoMin": 118,
+    "diretor": "Marina Aleixo"
+  },
+  {
+    "id": "2",
+    "slug": "a-ultima-linha",
+    "tipo": "filme",
+    "titulo": "A Última Linha",
+    "ano": 2023,
+    "genero": "Suspense",
+    "sinopse": "Na véspera de desligar um sistema bancário de quarenta anos, a única pessoa que ainda entende aquele código encontra uma transação que se repete há décadas sem nunca ter sido autorizada.",
+    "capaUrl": "/capas/a-ultima-linha.svg",
+    "notaMedia": 7.9,
+    "totalAvaliacoes": 208,
+    "duracaoMin": 104,
+    "diretor": "Caio Bertoni"
+  },
+  {
+    "id": "3",
+    "slug": "quintal-de-inverno",
+    "tipo": "filme",
+    "titulo": "Quintal de Inverno",
+    "ano": 2025,
+    "genero": "Drama",
+    "sinopse": "Três irmãos voltam à casa da infância para decidir o que fazer com ela. Cada um lembra de um verão diferente, e nenhuma das versões explica por que a mãe nunca mais plantou nada ali.",
+    "capaUrl": "/capas/quintal-de-inverno.svg",
+    "notaMedia": null,
+    "totalAvaliacoes": 0,
+    "duracaoMin": 96,
+    "diretor": "Lúcia Ferraz"
+  },
+  {
+    "id": "4",
+    "slug": "protocolo-aberto",
+    "tipo": "serie",
+    "titulo": "Protocolo Aberto",
+    "ano": 2024,
+    "genero": "Tecnologia",
+    "sinopse": "A história contada de dentro de uma equipe que mantém, sem receber por isso, uma biblioteca que metade da internet usa — e o dia em que ela quebra.",
+    "capaUrl": "/capas/protocolo-aberto.svg",
+    "notaMedia": 9.1,
+    "totalAvaliacoes": 341,
+    "temporadas": [
+      {
+        "numero": 1,
+        "ano": 2024,
+        "episodios": [
+          { "numero": 1, "titulo": "Um commit qualquer", "duracaoMin": 48 },
+          { "numero": 2, "titulo": "Quem mantém", "duracaoMin": 45 },
+          { "numero": 3, "titulo": "Issue #4021", "duracaoMin": 51 }
+        ]
+      },
+      {
+        "numero": 2,
+        "ano": 2025,
+        "episodios": [
+          { "numero": 1, "titulo": "Fork", "duracaoMin": 46 },
+          { "numero": 2, "titulo": "A reunião", "duracaoMin": 44 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "slug": "cozinha-de-madrugada",
+    "tipo": "serie",
+    "titulo": "Cozinha de Madrugada",
+    "ano": 2023,
+    "genero": "Comédia",
+    "sinopse": "Um restaurante que só abre entre meia-noite e seis da manhã, e as pessoas que aparecem nesse horário porque não tinham para onde ir.",
+    "capaUrl": "/capas/cozinha-de-madrugada.svg",
+    "notaMedia": 8.0,
+    "totalAvaliacoes": 97,
+    "temporadas": [
+      {
+        "numero": 1,
+        "ano": 2023,
+        "episodios": [
+          { "numero": 1, "titulo": "Mesa quatro", "duracaoMin": 28 },
+          { "numero": 2, "titulo": "O molho", "duracaoMin": 26 },
+          { "numero": 3, "titulo": "Fecha às seis", "duracaoMin": 31 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "slug": "onde-o-rio-vira",
+    "tipo": "serie",
+    "titulo": "Onde o Rio Vira",
+    "ano": 2025,
+    "genero": "Documentário",
+    "sinopse": "Seis comunidades ribeirinhas, seis formas de responder à mesma pergunta: o que acontece quando a água muda de lugar e ninguém avisa.",
+    "capaUrl": "/capas/onde-o-rio-vira.svg",
+    "notaMedia": 8.8,
+    "totalAvaliacoes": 64,
+    "temporadas": [
+      {
+        "numero": 1,
+        "ano": 2025,
+        "episodios": [
+          { "numero": 1, "titulo": "Cheia", "duracaoMin": 52 },
+          { "numero": 2, "titulo": "Seca", "duracaoMin": 49 }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "7",
+    "slug": "revisao-de-codigo",
+    "tipo": "podcast",
+    "titulo": "Revisão de Código",
+    "ano": 2024,
+    "genero": "Tecnologia",
+    "sinopse": "Toda semana, duas pessoas leem em voz alta um trecho de código real e discutem o que fariam diferente — sem julgar quem escreveu.",
+    "capaUrl": "/capas/revisao-de-codigo.svg",
+    "notaMedia": 9.3,
+    "totalAvaliacoes": 512,
+    "apresentador": "Rafa Okumura",
+    "episodios": [
+      { "numero": 1, "titulo": "O if que virou função", "duracaoMin": 63 },
+      { "numero": 2, "titulo": "Quando o nome mente", "duracaoMin": 58 },
+      { "numero": 3, "titulo": "Teste que não testa", "duracaoMin": 71 }
+    ]
+  },
+  {
+    "id": "8",
+    "slug": "primeira-cadeira",
+    "tipo": "podcast",
+    "titulo": "Primeira Cadeira",
+    "ano": 2025,
+    "genero": "Drama",
+    "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
+    "capaUrl": "/capas/primeira-cadeira.svg",
+    "notaMedia": 8.6,
+    "totalAvaliacoes": 189,
+    "apresentador": "Dandara Reis",
+    "episodios": [
+      { "numero": 1, "titulo": "O aviso prévio", "duracaoMin": 44 },
+      { "numero": 2, "titulo": "Seis meses sem resposta", "duracaoMin": 47 }
+    ]
+  }
+]
