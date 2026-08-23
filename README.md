@@ -50,7 +50,7 @@ app/                    rotas (App Router — pasta vira endereço)
     [slug]/page.tsx     a página de um título
 components/             componentes reutilizáveis
 lib/
-  tipos.ts              o domínio: Midia, Filme, Serie, Podcast
+  tipos.ts              o domínio: Midia, Resenha, Lista, Diario…
   api.ts                ⭐ TODO acesso à API passa por aqui
 docs/
   api-contrato.md       ⭐ o contrato com o backend — leia antes de codar
@@ -132,15 +132,43 @@ doc local ganha.
 
 ---
 
-## Coisas que a gente já sabe que estão faltando
+## O que ainda não existe
 
-Não são bugs escondidos — é o backlog. Alguns viram seus tickets.
+Não são bugs escondidos — é o backlog. Cada item vira ticket de alguém.
 
-- A navegação de **temporada e episódio** não existe. A série mostra a lista
-  de temporadas e para por aí.
+O LequePlay hoje é só o catálogo: você navega e olha. Falta tudo o que faz
+uma pessoa voltar — registrar, escrever, organizar, acompanhar quem tem
+gosto parecido.
+
+**Navegar mais fundo**
+
+- **Temporada e episódio** não têm página. A série lista as temporadas e para.
+- **Pessoas** (direção, elenco, apresentação) não têm página.
+- Não dá para navegar por **gênero, década ou ranking**.
+- O catálogo **não tem paginação**.
+
+**Ter uma conta**
+
+- Não há **login** nem perfil, então nada abaixo daqui é possível ainda.
+
+**Registrar e escrever**
+
+- **Diário**: marcar que assistiu, com data, e ver o histórico.
+- **Resenhas**: escrever, editar, curtir a dos outros. Cada resenha tem
+  página própria e link para compartilhar.
+- **Listas**: montar coleções ordenadas, públicas ou privadas.
+
+**Acompanhar gente**
+
+- **Perfil público**, seguir pessoas, **feed** do que elas andaram fazendo.
+- **Estatísticas** do ano: quanto assistiu, de que gênero, em que meses.
+
+**O resto**
+
 - A **busca** só encontra título exato. Quem procura "algo leve para assistir
   cansada" não acha nada.
-- Não há **login** nem perfil, então não dá para avaliar, marcar como
-  assistido ou montar uma lista.
-- O catálogo **não tem paginação**.
 - Não há **testes**.
+
+O contrato em [`docs/api-contrato.md`](docs/api-contrato.md) descreve todos
+esses endpoints, mesmo os que a API ainda não implementou. Leia a parte que
+cobre o seu ticket antes de começar.
