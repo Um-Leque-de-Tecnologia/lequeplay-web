@@ -68,8 +68,6 @@ edita um arquivo — não caça `fetch` espalhado por vinte telas.
 
 ---
 
----
-
 ## A API
 
 O contrato está em [`docs/api-contrato.md`](docs/api-contrato.md): endpoints,
