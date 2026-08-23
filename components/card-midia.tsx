@@ -14,7 +14,8 @@ export function CardMidia({ midia }: { midia: Midia }) {
     <article className="group">
       <Link href={`/midias/${midia.slug}`} className="block">
         <Image
-          src={midia.capaUrl}
+          // capaUrl pode vir null da API — o contrato prevê título sem capa.
+          src={midia.capaUrl ?? "/capas/sem-capa.svg"}
           alt=""
           width={300}
           height={450}

@@ -52,6 +52,8 @@ components/             componentes reutilizáveis
 lib/
   tipos.ts              o domínio: Midia, Filme, Serie, Podcast
   api.ts                ⭐ TODO acesso à API passa por aqui
+docs/
+  api-contrato.md       ⭐ o contrato com o backend — leia antes de codar
 data/midias.json        catálogo de mentira, usado quando USAR_MOCK=true
 public/capas/           imagens
 ```
@@ -63,6 +65,17 @@ public/capas/           imagens
 Não é preciosismo: é o que mantém a URL da API, o tratamento de erro e as
 tags de cache num lugar só. No dia em que a API mudar um endpoint, a gente
 edita um arquivo — não caça `fetch` espalhado por vinte telas.
+
+---
+
+---
+
+## A API
+
+O contrato está em [`docs/api-contrato.md`](docs/api-contrato.md): endpoints,
+formato de erro, paginação e os casos de borda que ela produz de propósito —
+título sem nota, título sem capa, busca sem resultado. **É a primeira leitura
+de quem chega.**
 
 ---
 

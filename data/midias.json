@@ -10,8 +10,8 @@
     "capaUrl": "/capas/sinais-de-carbono.svg",
     "notaMedia": 8.4,
     "totalAvaliacoes": 132,
-    "duracaoMin": 118,
-    "diretor": "Marina Aleixo"
+    "diretor": "Marina Aleixo",
+    "duracaoTotalMin": 118
   },
   {
     "id": "2",
@@ -24,8 +24,8 @@
     "capaUrl": "/capas/a-ultima-linha.svg",
     "notaMedia": 7.9,
     "totalAvaliacoes": 208,
-    "duracaoMin": 104,
-    "diretor": "Caio Bertoni"
+    "diretor": "Caio Bertoni",
+    "duracaoTotalMin": 104
   },
   {
     "id": "3",
@@ -38,8 +38,8 @@
     "capaUrl": "/capas/quintal-de-inverno.svg",
     "notaMedia": null,
     "totalAvaliacoes": 0,
-    "duracaoMin": 96,
-    "diretor": "Lúcia Ferraz"
+    "diretor": "Lúcia Ferraz",
+    "duracaoTotalMin": 96
   },
   {
     "id": "4",
@@ -56,21 +56,15 @@
       {
         "numero": 1,
         "ano": 2024,
-        "episodios": [
-          { "numero": 1, "titulo": "Um commit qualquer", "duracaoMin": 48 },
-          { "numero": 2, "titulo": "Quem mantém", "duracaoMin": 45 },
-          { "numero": 3, "titulo": "Issue #4021", "duracaoMin": 51 }
-        ]
+        "totalEpisodios": 3
       },
       {
         "numero": 2,
         "ano": 2025,
-        "episodios": [
-          { "numero": 1, "titulo": "Fork", "duracaoMin": 46 },
-          { "numero": 2, "titulo": "A reunião", "duracaoMin": 44 }
-        ]
+        "totalEpisodios": 2
       }
-    ]
+    ],
+    "duracaoTotalMin": 234
   },
   {
     "id": "5",
@@ -81,19 +75,16 @@
     "genero": "Comédia",
     "sinopse": "Um restaurante que só abre entre meia-noite e seis da manhã, e as pessoas que aparecem nesse horário porque não tinham para onde ir.",
     "capaUrl": "/capas/cozinha-de-madrugada.svg",
-    "notaMedia": 8.0,
+    "notaMedia": 8,
     "totalAvaliacoes": 97,
     "temporadas": [
       {
         "numero": 1,
         "ano": 2023,
-        "episodios": [
-          { "numero": 1, "titulo": "Mesa quatro", "duracaoMin": 28 },
-          { "numero": 2, "titulo": "O molho", "duracaoMin": 26 },
-          { "numero": 3, "titulo": "Fecha às seis", "duracaoMin": 31 }
-        ]
+        "totalEpisodios": 3
       }
-    ]
+    ],
+    "duracaoTotalMin": 85
   },
   {
     "id": "6",
@@ -110,12 +101,10 @@
       {
         "numero": 1,
         "ano": 2025,
-        "episodios": [
-          { "numero": 1, "titulo": "Cheia", "duracaoMin": 52 },
-          { "numero": 2, "titulo": "Seca", "duracaoMin": 49 }
-        ]
+        "totalEpisodios": 2
       }
-    ]
+    ],
+    "duracaoTotalMin": 101
   },
   {
     "id": "7",
@@ -129,11 +118,8 @@
     "notaMedia": 9.3,
     "totalAvaliacoes": 512,
     "apresentador": "Rafa Okumura",
-    "episodios": [
-      { "numero": 1, "titulo": "O if que virou função", "duracaoMin": 63 },
-      { "numero": 2, "titulo": "Quando o nome mente", "duracaoMin": 58 },
-      { "numero": 3, "titulo": "Teste que não testa", "duracaoMin": 71 }
-    ]
+    "duracaoTotalMin": 192,
+    "totalEpisodios": 3
   },
   {
     "id": "8",
@@ -143,13 +129,11 @@
     "ano": 2025,
     "genero": "Drama",
     "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
-    "capaUrl": "/capas/primeira-cadeira.svg",
+    "capaUrl": null,
     "notaMedia": 8.6,
     "totalAvaliacoes": 189,
     "apresentador": "Dandara Reis",
-    "episodios": [
-      { "numero": 1, "titulo": "O aviso prévio", "duracaoMin": 44 },
-      { "numero": 2, "titulo": "Seis meses sem resposta", "duracaoMin": 47 }
-    ]
+    "duracaoTotalMin": 91,
+    "totalEpisodios": 2
   }
 ]

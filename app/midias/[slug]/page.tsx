@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buscarMidia } from "@/lib/api";
-import { duracaoTotalMin, type Midia } from "@/lib/tipos";
+import type { Midia } from "@/lib/tipos";
 
 export async function generateMetadata({
   params,
@@ -36,7 +36,7 @@ function FichaTecnica({ midia }: { midia: Midia }) {
       <dd>{midia.genero}</dd>
 
       <dt className="text-zinc-500">Duração</dt>
-      <dd>{formatarDuracao(duracaoTotalMin(midia))}</dd>
+      <dd>{formatarDuracao(midia.duracaoTotalMin)}</dd>
 
       {midia.tipo === "filme" && (
         <>
@@ -82,7 +82,7 @@ export default async function PaginaDaMidia({
 
       <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
         <Image
-          src={midia.capaUrl}
+          src={midia.capaUrl ?? "/capas/sem-capa.svg"}
           alt=""
           width={300}
           height={450}
@@ -121,7 +121,7 @@ export default async function PaginaDaMidia({
           <ul className="space-y-2 text-sm text-zinc-400">
             {midia.temporadas.map((t) => (
               <li key={t.numero}>
-                Temporada {t.numero} ({t.ano}) — {t.episodios.length} episódios
+                Temporada {t.numero} ({t.ano}) — {t.totalEpisodios} episódios
               </li>
             ))}
           </ul>

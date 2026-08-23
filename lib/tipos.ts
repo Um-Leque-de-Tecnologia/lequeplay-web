@@ -23,15 +23,16 @@ type MidiaBase = {
   ano: number;
   genero: Genero;
   sinopse: string;
-  capaUrl: string;
+  capaUrl: string | null;
   /** `null` quando ainda ninguém avaliou — diferente de nota zero. */
   notaMedia: number | null;
   totalAvaliacoes: number;
+  /** Somado pelo backend: o front nao tem os episodios para calcular. */
+  duracaoTotalMin: number;
 };
 
 export type Filme = MidiaBase & {
   tipo: "filme";
-  duracaoMin: number;
   diretor: string;
 };
 
@@ -41,44 +42,31 @@ export type Episodio = {
   duracaoMin: number;
 };
 
-export type Temporada = {
+/** O que vem no detalhe da série: só o resumo, sem os episódios. */
+export type ResumoTemporada = {
   numero: number;
   ano: number;
+  totalEpisodios: number;
+};
+
+/** O que vem de GET /midias/{slug}/temporadas/{numero}. */
+export type Temporada = ResumoTemporada & {
   episodios: Episodio[];
 };
 
 export type Serie = MidiaBase & {
   tipo: "serie";
-  temporadas: Temporada[];
+  temporadas: ResumoTemporada[];
 };
 
 export type Podcast = MidiaBase & {
   tipo: "podcast";
   apresentador: string;
-  episodios: Episodio[];
+  totalEpisodios: number;
 };
 
 export type Midia = Filme | Serie | Podcast;
 
-/**
- * Duração total de qualquer mídia.
- *
- * No curso de Orientação a Objetos isto seria polimorfismo. Em TypeScript é
- * narrowing: dentro de cada `case`, o compilador já sabe qual é o tipo.
- */
-export function duracaoTotalMin(midia: Midia): number {
-  switch (midia.tipo) {
-    case "filme":
-      return midia.duracaoMin;
-    case "serie":
-      return midia.temporadas.reduce(
-        (total, t) => total + t.episodios.reduce((s, e) => s + e.duracaoMin, 0),
-        0,
-      );
-    case "podcast":
-      return midia.episodios.reduce((s, e) => s + e.duracaoMin, 0);
-  }
-}
 
 /** Resposta paginada da API. */
 export type Pagina<T> = {
