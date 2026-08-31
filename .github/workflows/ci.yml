@@ -1,0 +1,90 @@
+# Esteira de validação do LequePlay.
+#
+# Roda em todo Pull Request para a main e em todo push que entra nela. Como a
+# main exige PR e só pode ser mergeada por uma pessoa, é aqui que o trabalho
+# de cada ticket é conferido antes de virar produto.
+#
+# São quatro portões independentes de propósito: quando um quebra, o nome do
+# job já diz o que quebrou, sem precisar abrir o log.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Empurrou de novo no mesmo branch? A execução anterior é cancelada — não
+# adianta gastar minuto validando um commit que já foi substituído.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # A esteira não fala com a API: constrói contra o acervo de data/midias.json.
+  # Isso mantém o CI verde mesmo com o backend fora do ar, que é o estado
+  # normal durante boa parte do curso.
+  USAR_MOCK: "true"
+  API_URL: http://localhost:8080
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  tipos:
+    name: Tipos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # `tsc` sozinho não resolve: PageProps e LayoutProps são tipos que o
+      # Next gera a partir das rotas. Sem o typegen antes, a checagem acusa
+      # erro em arquivo que está correto.
+      - run: npm run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  testes:
+    name: Testes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # O job já existe para que, no dia em que o primeiro teste for escrito,
+      # ele passe a barrar merge sem ninguém precisar mexer na esteira.
+      - name: Rodar os testes, se já existirem
+        run: |
+          if node -e "process.exit(require('./package.json').scripts?.test ? 0 : 1)"; then
+            npm test
+          else
+            echo "Ainda não há script de testes neste repositório."
+            echo "Este job fica verde de propósito até os testes entrarem (ticket LP-816)."
+          fi
