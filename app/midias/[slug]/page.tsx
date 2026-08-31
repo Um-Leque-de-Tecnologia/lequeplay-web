@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FichaAbas } from "@/components/ficha-abas";
+import { FichaCompartilhar } from "@/components/ficha-compartilhar";
+import { FichaResenha } from "@/components/ficha-resenha";
+import { FichaSinopse } from "@/components/ficha-sinopse";
+import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { buscarMidia } from "@/lib/api";
-import type { Midia } from "@/lib/tipos";
 
 export async function generateMetadata({
   params,
@@ -17,49 +21,6 @@ export async function generateMetadata({
     title: midia.titulo,
     description: midia.sinopse,
   };
-}
-
-function formatarDuracao(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ""}` : `${m}min`;
-}
-
-/** A ficha muda conforme o tipo — e o narrowing dá o campo certo em cada caso. */
-function FichaTecnica({ midia }: { midia: Midia }) {
-  return (
-    <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-      <dt className="text-zinc-500">Ano</dt>
-      <dd>{midia.ano}</dd>
-
-      <dt className="text-zinc-500">Gênero</dt>
-      <dd>{midia.genero}</dd>
-
-      <dt className="text-zinc-500">Duração</dt>
-      <dd>{formatarDuracao(midia.duracaoTotalMin)}</dd>
-
-      {midia.tipo === "filme" && (
-        <>
-          <dt className="text-zinc-500">Direção</dt>
-          <dd>{midia.diretor}</dd>
-        </>
-      )}
-
-      {midia.tipo === "serie" && (
-        <>
-          <dt className="text-zinc-500">Temporadas</dt>
-          <dd>{midia.temporadas.length}</dd>
-        </>
-      )}
-
-      {midia.tipo === "podcast" && (
-        <>
-          <dt className="text-zinc-500">Apresentação</dt>
-          <dd>{midia.apresentador}</dd>
-        </>
-      )}
-    </dl>
-  );
 }
 
 export default async function PaginaDaMidia({
@@ -82,7 +43,9 @@ export default async function PaginaDaMidia({
 
       <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
         <Image
-          src={midia.capaUrl ?? "/capas/sem-capa.svg"}
+          // Mesma regra do card: `posterUrl` vem ausente, não `null`, e o `??`
+          // cobre os dois. Ver o comentário em components/card-midia.tsx.
+          src={midia.posterUrl ?? "/capas/sem-capa.svg"}
           alt=""
           width={300}
           height={450}
@@ -95,38 +58,36 @@ export default async function PaginaDaMidia({
             {midia.titulo}
           </h1>
 
+          {/*
+            `totalAvaliacoes === 0` e não `notaMedia === null`: a nota agora é
+            sempre número, e sozinha ela não distingue "ninguém avaliou" de
+            "todo mundo detestou". O contador distingue.
+          */}
           <p className="mt-2 text-sm text-zinc-500">
-            {midia.notaMedia !== null
-              ? `★ ${midia.notaMedia.toFixed(1)} · ${midia.totalAvaliacoes} avaliações`
-              : "Ainda sem avaliações"}
+            {midia.totalAvaliacoes === 0
+              ? "Ainda sem avaliações"
+              : `★ ${midia.notaMedia.toFixed(1)} · ${midia.totalAvaliacoes} avaliações`}
           </p>
 
-          <p className="mt-5 max-w-prose text-zinc-300">{midia.sinopse}</p>
-
-          <div className="mt-8">
-            <FichaTecnica midia={midia} />
-          </div>
+          {/*
+            A sinopse aparece duas vezes na página, e é de propósito: aqui em
+            cima cortada, para quem só passou o olho, e inteira na aba
+            "Sinopse", para quem desceu atrás do texto completo. É o mesmo
+            campo vindo da mesma chamada — a duplicação é de apresentação,
+            não de dado.
+          */}
+          <FichaSinopse midia={midia} />
         </div>
       </div>
 
-      {/*
-        TODO (sprint 1): a navegação de temporada e episódio ainda não existe.
-        Ela vira /midias/[slug]/t/[temporada]/ep/[episodio].
-      */}
-      {midia.tipo === "serie" && (
-        <section aria-labelledby="temporadas" className="mt-12">
-          <h2 id="temporadas" className="mb-4 text-xl font-semibold">
-            Temporadas
-          </h2>
-          <ul className="space-y-2 text-sm text-zinc-400">
-            {midia.temporadas.map((t) => (
-              <li key={t.numero}>
-                Temporada {t.numero} ({t.ano}) — {t.totalEpisodios} episódios
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <FichaAbas midia={midia} />
+
+      {/* O narrowing por `tipo` é o que garante que `temporadas` existe. */}
+      {midia.tipo === "serie" && <FichaTemporadas serie={midia} />}
+
+      <FichaResenha titulo={midia.titulo} />
+
+      <FichaCompartilhar slug={midia.slug} titulo={midia.titulo} />
     </article>
   );
 }

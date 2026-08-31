@@ -8,6 +8,43 @@ time de front, é a documentação que você consulta.
 
 ---
 
+## Estado da implementação — leia antes de tudo
+
+Este documento descreve **duas coisas diferentes**, e por muito tempo não
+dizia qual era qual — foi daí que veio o desencontro de nomes que o front
+teve que consertar depois. Agora cada seção vem marcada:
+
+| Marca | Significa |
+| --- | --- |
+| ✅ **Existe** | verificado no código da API; o front pode chamar |
+| 🕓 **Backlog** | é **especificação**, ainda não existe. Não chame |
+| ❓ **A confirmar** | está especificado aqui e ninguém checou se foi feito |
+
+✅ **Existe hoje:**
+
+- `GET /v1/midias` e `GET /v1/midias/{slug}` — o catálogo, com `creditos` no
+  detalhe
+- `GET /v1/busca` — busca textual, vetorial e híbrida
+- Autenticação: `POST /v1/auth/login`, `GET /v1/auth/eu`
+
+🕓 **Backlog — ainda não existe na API:** **pessoas** (`/pessoas/*`),
+**resenhas**, **listas** e **diário**, mais o que se apoia neles (perfil
+social, feed, ranking). Tudo o que está nessas seções é combinado, não
+realidade. Elas **continuam aqui de propósito** — são a especificação de quem
+vai construir. Só não confunda uma coisa com a outra.
+
+❓ O que não recebeu marca nenhuma ainda não foi conferido dos dois lados.
+Antes de consumir, olhe a API — foi confiar na leitura de memória que
+produziu o desencontro anterior.
+
+> **Regra de nome, para não repetir a confusão.** Campo que já existe na API
+> com outro nome: quem muda é o **front**. Campo que não existe em lugar
+> nenhum: a **API ganha o campo**. Nome de endpoint **não se mexe** — nem o
+> `/v1`, nem `/auth/eu`, nem `/midias/{slug}`. URL publicada é contrato com
+> quem já a guardou.
+
+---
+
 ## O que o backend precisa fazer
 
 Guardar e servir três coisas:
@@ -19,14 +56,18 @@ Guardar e servir três coisas:
 
 A terceira é a maior, e é a que sustenta a maior parte das telas.
 
+E mais uma, que mudou de lado depois que este documento foi escrito:
+
+4. **A busca** — textual, vetorial e híbrida, em `GET /v1/busca`. O índice e
+   os *embeddings* vivem no banco da API, não no front.
+
 ## O que o backend **não** precisa fazer
 
 Vale dizer o que está fora do escopo, porque muda bastante o tamanho do
 trabalho:
 
-- **Busca semântica.** Quem embute e compara é o front, num Route Handler. O
-  backend só precisa devolver o texto — sinopses e o texto das resenhas.
-- **Qualquer chamada a LLM.** As features de IA moram no front.
+- **Qualquer chamada a LLM.** As features de IA — resumo de opiniões,
+  recomendação em texto — moram no front.
 - **Renderizar HTML, cuidar de sessão em cookie ou de CORS de navegador.**
   Quem fala com a API é o *servidor* do Next, não o navegador. O front guarda
   o token num cookie `httpOnly` e repassa como `Authorization: Bearer` nas
@@ -39,9 +80,31 @@ trabalho:
 | | |
 | --- | --- |
 | Formato | JSON, `UTF-8` |
+| Prefixo | **`/v1`** — as rotas abaixo aparecem sem ele; `/midias` é `/v1/midias` |
 | Datas | ISO 8601 (`2026-08-22T19:00:00Z`) |
 | Autenticação | `Authorization: Bearer <token>` |
 | Idioma dos campos | português, `camelCase` |
+| Campo vazio | **omitido**, não `null` — veja abaixo |
+
+### Omitido, não `null`
+
+Campo marcado **(opcional)** nas tabelas abaixo, quando não tem valor, **não
+aparece no JSON**. A API não manda `"posterUrl": null`; ela simplesmente não
+manda `posterUrl`.
+
+```json
+{ "slug": "primeira-cadeira", "titulo": "Primeira Cadeira" }
+```
+
+No TypeScript isso é `posterUrl?: string`, e o valor que chega é `undefined`.
+Para quem consome muda pouco — `??` cobre `null` e `undefined` — mas muda
+para quem escreve teste e para quem lê o JSON cru: **ausente e `null` não são
+a mesma coisa**.
+
+Campo declarado como `X | null` é outra história: esse **vem sempre**, com
+`null` quando vazio (`fotoUrl`, `personagem`, `avatarUrl`). E campo sem
+marca nenhuma vem sempre, com valor: `notaMedia` é número em todo título,
+inclusive nos que ninguém avaliou.
 
 ### Erros
 
@@ -112,24 +175,54 @@ saber quais campos existem.
 | `tipo` | `"filme" \| "serie" \| "podcast"` | discriminador |
 | `titulo` | `string` | |
 | `ano` | `number` | |
-| `genero` | `string` | um dos valores de `GET /generos` |
-| `sinopse` | `string` | prosa — é o texto da busca semântica |
-| `capaUrl` | `string \| null` | `null` quando não há capa |
-| `notaMedia` | `number \| null` | **`null` quando ninguém avaliou** — não use `0` |
-| `totalAvaliacoes` | `number` | |
-| `duracaoTotalMin` | `number` | somado pelo backend — o front não tem os episódios |
+| `generos` | `string[]` | **lista** — um título pode ser drama *e* suspense. Ordenada por relevância: `generos[0]` é o principal. Nunca vazia |
+| `sinopse` | `string` | prosa — é o texto que a busca vetorial indexa |
+| `posterUrl` | `string` (opcional) | **omitido** quando não há capa. Nunca `null` |
+| `notaMedia` | `number` | **sempre presente, sempre número.** Nunca `null` |
+| `totalAvaliacoes` | `number` | `0` quando ninguém avaliou — **é este campo que responde "tem nota?"** |
+| `duracaoMin` | `number` (opcional) | somado pelo backend — o front não tem os episódios. **Omitido** quando o backend não tem o número: hoje, na produção, toda série sem runtime na TMDB (17 de 60 títulos) vem sem a chave. O front trata a ausência escondendo a linha da ficha |
 | `atualizadoEm` | `string` | ISO — o front usa para revalidar cache |
+
+> **Por que `notaMedia` deixou de ser anulável.** Antes ela carregava duas
+> informações: a nota e o fato de existir nota, e por isso precisava de
+> `null`. Com `totalAvaliacoes` ao lado, a segunda pergunta tem dono
+> próprio — `totalAvaliacoes === 0` — e a nota volta a ser só um número. A
+> API para de ter que mentir com `null` e o front não perde a distinção:
+> "ninguém avaliou" e "todo mundo deu zero" continuam sendo casos diferentes,
+> só que agora o campo que os separa é o certo.
 
 ### Por tipo
 
-**`filme`** acrescenta `diretor: string`.
+**`filme`** não acrescenta campo nenhum. A direção **sai de `creditos`** —
+veja o quadro logo abaixo.
 
 **`serie`** acrescenta `temporadas: ResumoTemporada[]`, onde cada item é
 `{ numero, ano, totalEpisodios }`. **Sem os episódios** — eles vêm do
 endpoint da temporada.
 
-**`podcast`** acrescenta `apresentador: string` e
-`totalEpisodios: number`.
+**`podcast`** acrescenta `totalEpisodios: number` — e só. A apresentação
+também sai de `creditos`.
+
+### Direção e apresentação: derivados, não campos
+
+O front mostra "Direção" na ficha do filme e "Apresentação" na do podcast.
+Isso **não** quer dizer que a API tenha `diretor` e `apresentador`. Ela tem
+`creditos`, e o front deriva:
+
+| O que a tela mostra | De onde sai |
+| --- | --- |
+| Direção (filme) | o crédito com `papel: "direcao"` |
+| Apresentação (podcast) | o crédito com `papel: "apresentacao"` |
+| Elenco | os créditos com `papel: "elenco"` |
+
+**Não crie `diretor: string` na API.** Seriam duas fontes da verdade para o
+mesmo dado, e um dia elas discordam: alguém corrige o crédito e esquece o
+campo solto, ou o filme ganha um segundo diretor e o campo escalar não cabe.
+Derivar custa três linhas no front; ressincronizar dois campos custa um bug
+por trimestre, para sempre.
+
+`creditos` **só vem no detalhe** (`GET /midias/{slug}`), nunca na listagem, e
+traz no máximo 12 itens ordenados por relevância.
 
 ### Temporada completa
 
@@ -151,14 +244,14 @@ endpoint da temporada.
 
 ## Endpoints públicos
 
-### `GET /midias`
+### `GET /midias` ✅
 
 Lista o catálogo.
 
 | Query | Tipo | |
 | --- | --- | --- |
 | `tipo` | `filme\|serie\|podcast` | opcional |
-| `genero` | `string` | opcional |
+| `genero` | `string` | opcional — **singular**, veja abaixo |
 | `ano` | `number` | opcional |
 | `q` | `string` | busca textual por título e sinopse |
 | `pagina`, `porPagina` | `number` | paginação |
@@ -166,24 +259,70 @@ Lista o catálogo.
 Devolve `Pagina<Midia>`. Sem resultado, `itens: []` e `total: 0` — **não é
 404**.
 
-### `GET /midias/{slug}`
+> **O filtro é `?genero=`, no singular — e continua.** O *campo* da resposta
+> virou `generos`, lista; o *parâmetro* não mudou junto, de propósito.
+> Filtra-se por um gênero de cada vez, e o nome do parâmetro faz parte da
+> URL: mexer nele quebraria todo link já compartilhado e todo favorito já
+> salvo. Campo e parâmetro não precisam ter o mesmo nome — o casamento
+> `?genero=Drama` → `"Drama" ∈ generos` é a leitura correta.
 
-Devolve uma `Midia`. `404` com `codigo: "MIDIA_NAO_ENCONTRADA"` se não
-existir.
+### `GET /midias/{slug}` ✅
 
-### `GET /midias/{slug}/temporadas/{numero}`
+Devolve uma `Midia`, com `creditos`. `404` com
+`codigo: "MIDIA_NAO_ENCONTRADA"` se não existir.
+
+### `GET /midias/{slug}/temporadas/{numero}` ❓
 
 Só para série. Devolve a temporada completa, com os episódios. `404` se a
 série ou a temporada não existir.
 
-### `GET /generos`
+### `GET /busca` ✅
+
+Caminho completo, com o prefixo: **`GET /v1/busca`**.
+
+A busca de verdade — a que entende "algo leve para assistir hoje", e não só
+título exato. Mora na API porque é lá que estão o índice textual e os
+*embeddings*.
+
+| Query | Tipo | |
+| --- | --- | --- |
+| `q` | `string` | **obrigatório** — o texto procurado |
+| `modo` | `auto\|hybrid\|vector\|fts` | opcional, padrão `auto` |
+| `tipo`, `genero`, `ano` | | os mesmos filtros de `GET /midias` |
+| `pagina`, `porPagina` | `number` | paginação |
+
+Os modos:
+
+| `modo` | O que faz | Quando serve |
+| --- | --- | --- |
+| `fts` | busca textual (*full-text search*) sobre título e sinopse | a pessoa sabe o nome e digitou quase certo |
+| `vector` | similaridade de *embedding* sobre a sinopse | a pessoa descreve o que quer, sem saber o nome |
+| `hybrid` | roda as duas e funde os resultados numa lista só | o caso do meio, que é a maioria |
+| `auto` | a API escolhe pela cara da consulta — texto curto tende a `fts`, frase tende a `hybrid` | **o padrão**; use este se não tiver motivo para não usar |
+
+Devolve `Pagina<Midia>`, com dois campos a mais em cada item:
+
+| Campo | Tipo | Observação |
+| --- | --- | --- |
+| `score` | `number` | relevância, `0`–`1`. **Só comparável dentro da mesma resposta** — a escala muda entre os modos, então não guarde nem compare entre buscas |
+| `rank` | `number` | posição na resposta, começando em `1`. Continua contando entre páginas: o primeiro item da página 2 com `porPagina=24` tem `rank: 25` |
+
+> **Por que `rank` existe, se dá para contar o índice do array.** Porque o
+> índice reinicia a cada página e o `rank` não. Ele é o número que a tela
+> mostra ("3º resultado") e o que o log de busca guarda para medir se a busca
+> está boa.
+
+Sem resultado: `200` com `itens: []`. Consulta vazia: `400` com
+`codigo: "VALIDACAO"` apontando `q`.
+
+### `GET /generos` ❓
 
 `{ "itens": ["Ação", "Comédia", "Documentário", …] }`
 
 O front usa para montar o filtro — não deixe essa lista chumbada no
 front-end.
 
-### `GET /catalogo/versao`
+### `GET /catalogo/versao` ❓
 
 ```json
 { "versao": "2026-08-22T19:04:11Z", "totalMidias": 137 }
@@ -195,7 +334,7 @@ cega.
 
 ---
 
-## Autenticação
+## Autenticação ✅
 
 ### `POST /auth/login`
 
@@ -227,7 +366,9 @@ respondem `401` com token ausente, inválido ou expirado.
 
 ---
 
-## Perfil — exige autenticação
+## Perfil — exige autenticação 🕓
+
+> **Ainda não existe na API.** Esta seção é especificação.
 
 Tudo aqui é **do usuário do token**. Não aceite id de usuário por parâmetro:
 seria possível ler a lista dos outros.
@@ -241,7 +382,7 @@ seria possível ler a lista dos outros.
 | `PUT` | `/perfil/assistidas/{midiaId}` | marca como assistida · `204` |
 | `DELETE` | `/perfil/assistidas/{midiaId}` | desmarca · `204` |
 | `GET` | `/perfil/avaliacoes` | `{ itens: [{ midiaId, nota, avaliadoEm }] }` |
-| `PUT` | `/midias/{midiaId}/avaliacao` | `{ "nota": 8.5 }` · devolve a `Midia` com `notaMedia` recalculada |
+| `PUT` | `/midias/{midiaId}/avaliacao` | `{ "nota": 8.5 }` · devolve a `Midia` com `notaMedia` **e** `totalAvaliacoes` recalculados |
 | `DELETE` | `/midias/{midiaId}/avaliacao` | remove a avaliação · `204` |
 
 > **`quero-ver` e não `lista`.** *Lista* virou nome de entidade na camada
@@ -268,14 +409,24 @@ por mídia — reenviar substitui.
 
 ---
 
-# Camada social
+# Camada social 🕓
+
+> **Nada daqui existe na API ainda** — nem `Pessoa`, nem `Resenha`, nem
+> `Lista`, nem `RegistroDiario`, nem os endpoints que os servem. Daqui até o
+> fim do documento é **especificação**, escrita para quem vai construir.
+>
+> A exceção é `Credito`, que o detalhe da mídia já devolve hoje. Ele está
+> descrito aqui embaixo por ficar perto de `Pessoa`, mas é ✅.
+>
+> Isto **não é backlog morto**: é a fatia que sustenta metade das telas do
+> curso. Só não vale programar contra ela achando que já está no ar.
 
 O catálogo é o substrato. O que gera tela — e o que faz as pessoas voltarem —
 é o que elas registram, escrevem e organizam em cima dele.
 
 ## Entidades novas
 
-### Pessoa
+### Pessoa 🕓
 
 Quem dirige, atua ou apresenta. Tem página própria.
 
@@ -293,10 +444,11 @@ Quem dirige, atua ou apresenta. Tem página própria.
 `papeis` é um subconjunto de `direcao`, `elenco`, `apresentacao`. Uma pessoa
 pode ter mais de um.
 
-### Credito
+### Credito ✅
 
-Liga uma pessoa a um título. Aparece no detalhe da mídia e na página da
-pessoa.
+Liga uma pessoa a um título. **Já existe**: vem em `creditos` no detalhe da
+mídia. É daqui que o front tira direção e apresentação — não há campo escalar
+para isso.
 
 ```json
 {
@@ -308,7 +460,7 @@ pessoa.
 
 `personagem` só é preenchido quando `papel` é `elenco`.
 
-### Resenha
+### Resenha 🕓
 
 Texto de uma pessoa sobre um título. **Tem página própria e URL
 compartilhável** — é o que alimenta a OG image gerada.
@@ -316,7 +468,7 @@ compartilhável** — é o que alimenta a OG image gerada.
 ```json
 {
   "id": "r1",
-  "midia": { "slug": "sinais-de-carbono", "titulo": "Sinais de Carbono", "capaUrl": "…" },
+  "midia": { "slug": "sinais-de-carbono", "titulo": "Sinais de Carbono", "posterUrl": "…" },
   "autor": { "usuario": "ana", "nome": "Ana", "avatarUrl": null },
   "nota": 9,
   "texto": "…",
@@ -333,7 +485,7 @@ públicas, sempre `false`.
 
 Uma resenha por pessoa por título — reenviar substitui.
 
-### Lista
+### Lista 🕓
 
 Coleção curada, com ordem. Pública ou privada.
 
@@ -355,14 +507,14 @@ Coleção curada, com ordem. Pública ou privada.
 `capas` traz as **4 primeiras** capas da lista, para montar o mosaico sem
 carregar os 12 itens. Os itens vêm no detalhe da lista.
 
-### RegistroDiario
+### RegistroDiario 🕓
 
 "Assisti tal dia." É o histórico, e é a base da recomendação personalizada.
 
 ```json
 {
   "id": "d1",
-  "midia": { "slug": "…", "titulo": "…", "capaUrl": "…" },
+  "midia": { "slug": "…", "titulo": "…", "posterUrl": "…" },
   "assistidoEm": "2026-08-20",
   "nota": 8,
   "resenhaId": "r1",
@@ -373,7 +525,7 @@ carregar os 12 itens. Os itens vêm no detalhe da lista.
 `assistidoEm` é **data**, não timestamp. `revisita: true` quando a pessoa já
 tinha assistido antes — a mesma mídia pode ter vários registros.
 
-### UsuarioPublico
+### UsuarioPublico 🕓
 
 O perfil que qualquer pessoa vê.
 
@@ -398,7 +550,7 @@ O perfil que qualquer pessoa vê.
 
 ---
 
-## Endpoints — pessoas
+## Endpoints — pessoas 🕓
 
 | Método | Rota | O que faz |
 | --- | --- | --- |
@@ -409,7 +561,7 @@ O detalhe da mídia (`GET /midias/{slug}`) passa a incluir
 `creditos: Credito[]` — no máximo 12, ordenados por relevância. A lista
 completa vem do endpoint da pessoa.
 
-## Endpoints — resenhas
+## Endpoints — resenhas 🕓
 
 | Método | Rota | Auth | O que faz |
 | --- | --- | --- | --- |
@@ -433,7 +585,7 @@ dar nota.
 > avaliação daquela pessoa para aquele título. Não são dois registros
 > separados — senão o front precisa manter duas coisas em sincronia.
 
-## Endpoints — listas
+## Endpoints — listas 🕓
 
 | Método | Rota | Auth | O que faz |
 | --- | --- | --- | --- |
@@ -450,7 +602,7 @@ dar nota.
 Lista privada devolve **`404`**, não `403`, para quem não é dona — `403`
 confirmaria que ela existe.
 
-## Endpoints — diário
+## Endpoints — diário 🕓
 
 | Método | Rota | Auth | O que faz |
 | --- | --- | --- | --- |
@@ -469,7 +621,7 @@ Corpo do `POST`:
 Registrar no diário **marca como assistida** automaticamente. São a mesma
 informação vista de dois jeitos.
 
-## Endpoints — pessoas que usam
+## Endpoints — pessoas que usam 🕓
 
 | Método | Rota | Auth | O que faz |
 | --- | --- | --- | --- |
@@ -482,7 +634,7 @@ informação vista de dois jeitos.
 | `GET` | `/perfil/seguidores` | ✓ | `Pagina<UsuarioPublico>` |
 | `PUT` | `/perfil` | ✓ | edita nome, bio, avatar |
 
-## Endpoints — feed, estatísticas e ranking
+## Endpoints — feed, estatísticas e ranking 🕓
 
 | Método | Rota | Auth | O que faz |
 | --- | --- | --- | --- |
@@ -497,7 +649,7 @@ Item do feed:
   "id": "a1",
   "tipo": "resenha",
   "usuario": { "usuario": "ana", "nome": "Ana", "avatarUrl": null },
-  "midia": { "slug": "…", "titulo": "…", "capaUrl": "…" },
+  "midia": { "slug": "…", "titulo": "…", "posterUrl": "…" },
   "resenhaId": "r1",
   "ocorridoEm": "2026-08-21T18:30:00Z"
 }
@@ -512,19 +664,20 @@ Item do feed:
 
 ## Dados de exemplo
 
-O catálogo de mentira precisa ser bom o suficiente para a busca semântica
+O catálogo de mentira precisa ser bom o suficiente para a busca vetorial
 fazer sentido. Sem variedade, tudo parece funcionar.
 
 ### Catálogo
 
 - **Mínimo 60 títulos**, idealmente 100+
 - Os três tipos, com pelo menos **15 séries** (algumas com 2+ temporadas)
-- Pelo menos **6 gêneros**
+- Pelo menos **6 gêneros**, e **títulos com 2 ou 3 gêneros** — `generos` é
+  lista, e lista que na prática só tem um item não exercita nada
 - **Sinopses de verdade**, com 2 a 4 frases descritivas. É sobre esse texto
-  que a busca semântica trabalha. Sinopse genérica faz a feature parecer
+  que a busca vetorial trabalha. Sinopse genérica faz a feature parecer
   quebrada quando ela está certa.
-- Alguns títulos **sem avaliação** (`notaMedia: null`)
-- Algum título **sem capa** (`capaUrl: null`)
+- Alguns títulos **sem avaliação** (`totalAvaliacoes: 0`)
+- Algum título **sem capa** (sem a chave `posterUrl`)
 
 ### Pessoas
 
@@ -541,7 +694,7 @@ Esta parte é a que costuma ser semeada mal, e é a que mais aparece na tela.
 - **Mínimo 300 resenhas**, distribuídas de forma desigual: alguns títulos com
   20+, muitos com 2 ou 3, e **alguns com nenhuma**
 - **Texto de resenha de verdade**, de 3 a 15 linhas, com opinião. Este é o
-  requisito mais caro e o mais importante: é o corpus da busca semântica e do
+  requisito mais caro e o mais importante: é o corpus da busca vetorial e do
   resumo de opiniões. Lorem ipsum inviabiliza duas features de uma vez.
 - Resenhas de tamanhos bem diferentes — o layout precisa aguentar a de duas
   linhas e a de quinze
@@ -560,9 +713,13 @@ Vários viram ticket de aula, então **não os esconda**:
 
 | Situação | Resposta esperada |
 | --- | --- |
-| Título sem nenhuma avaliação | `notaMedia: null` (nunca `0`) |
-| Título sem capa | `capaUrl: null` |
+| Título sem nenhuma avaliação | `totalAvaliacoes: 0` — e `notaMedia` **vem mesmo assim**, como `0` |
+| Título com nota real `0` | `notaMedia: 0` com `totalAvaliacoes > 0` — é outro caso, e a diferença tem que aparecer |
+| Título sem capa | **sem a chave** `posterUrl` (nunca `"posterUrl": null`) |
+| Série sem duração conhecida | **sem a chave** `duracaoMin` — não `0`, que significaria "dura zero" |
+| Título de um gênero só | `generos` com um item — array, nunca string solta |
 | Busca sem resultado | `200` com `itens: []` |
+| Busca com `q` vazio | `400` com `codigo: "VALIDACAO"` apontando `q` |
 | Slug inexistente | `404` com `codigo` |
 | Última página | menos itens que `porPagina` |
 | Série com temporada anunciada e ainda sem episódios | temporada com `episodios: []` |
@@ -612,7 +769,7 @@ Esta ordem destrava o curso na sequência das sprints:
 5. **Grafo** — seguir, feed, perfil público, ranking
 6. **Pessoas** — `GET /pessoas/{slug}` e créditos no detalhe da mídia
 7. **Catálogo grande, com resenhas de verdade** — precisa estar pronto antes
-   da busca semântica, senão ela não tem sobre o que trabalhar
+   da busca (`GET /v1/busca`), senão ela não tem sobre o que trabalhar
 
 As fatias 4 e 5 são o que mudou de tamanho. Se o tempo apertar, **corte
 pessoas (6) antes de cortar social (4)** — pessoa é uma tela bonita, social é

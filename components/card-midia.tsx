@@ -14,8 +14,13 @@ export function CardMidia({ midia }: { midia: Midia }) {
     <article className="group">
       <Link href={`/midias/${midia.slug}`} className="block">
         <Image
-          // capaUrl pode vir null da API — o contrato prevê título sem capa.
-          src={midia.capaUrl ?? "/capas/sem-capa.svg"}
+          // `??` e não `||`: o `??` só troca `null`/`undefined`, o `||` troca
+          // qualquer valor falso — e `""` vindo da API é dado sujo, não "sem
+          // capa"; com `||` o bug viraria uma capa bonitinha e ninguém veria.
+          // O campo mudou de `capaUrl: string | null` para `posterUrl?: string`
+          // (a API OMITE quando não há capa, em vez de mandar `null`), e o `??`
+          // sobreviveu à troca justamente porque ele já pegava `undefined`.
+          src={midia.posterUrl ?? "/capas/sem-capa.svg"}
           alt=""
           width={300}
           height={450}
@@ -31,10 +36,12 @@ export function CardMidia({ midia }: { midia: Midia }) {
       <p className="mt-1 text-sm text-zinc-500">
         {ROTULO_TIPO[midia.tipo]} · {midia.ano}
         {/*
-          `??` e não `||`: nota 0 é um valor válido, e `||` a trocaria pelo
-          texto de "sem avaliação". Aqui `null` significa "ninguém avaliou".
+          Quem responde "ninguém avaliou" é o CONTADOR, não a nota: a API
+          manda `notaMedia` sempre como número, então o `0` de um título sem
+          voto nenhum é o mesmo `0` de um título detestado. Só
+          `totalAvaliacoes` separa os dois.
         */}
-        {midia.notaMedia !== null && ` · ★ ${midia.notaMedia.toFixed(1)}`}
+        {midia.totalAvaliacoes > 0 && ` · ★ ${midia.notaMedia.toFixed(1)}`}
       </p>
     </article>
   );

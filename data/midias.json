@@ -5,13 +5,13 @@
     "tipo": "filme",
     "titulo": "Sinais de Carbono",
     "ano": 2024,
-    "genero": "Ficção científica",
+    "generos": ["Ficção científica", "Suspense"],
     "sinopse": "Uma geóloga descobre que as camadas de rocha de uma mina abandonada guardam um registro que não deveria existir. Quanto mais fundo ela cava, menos o passado bate com o que ensinaram na escola.",
-    "capaUrl": "/capas/sinais-de-carbono.svg",
+    "posterUrl": "/capas/sinais-de-carbono.svg",
     "notaMedia": 8.4,
     "totalAvaliacoes": 132,
     "diretor": "Marina Aleixo",
-    "duracaoTotalMin": 118
+    "duracaoMin": 118
   },
   {
     "id": "2",
@@ -19,13 +19,13 @@
     "tipo": "filme",
     "titulo": "A Última Linha",
     "ano": 2023,
-    "genero": "Suspense",
+    "generos": ["Suspense", "Drama"],
     "sinopse": "Na véspera de desligar um sistema bancário de quarenta anos, a única pessoa que ainda entende aquele código encontra uma transação que se repete há décadas sem nunca ter sido autorizada.",
-    "capaUrl": "/capas/a-ultima-linha.svg",
+    "posterUrl": "/capas/a-ultima-linha.svg",
     "notaMedia": 7.9,
     "totalAvaliacoes": 208,
     "diretor": "Caio Bertoni",
-    "duracaoTotalMin": 104
+    "duracaoMin": 104
   },
   {
     "id": "3",
@@ -33,13 +33,13 @@
     "tipo": "filme",
     "titulo": "Quintal de Inverno",
     "ano": 2025,
-    "genero": "Drama",
+    "generos": ["Drama"],
     "sinopse": "Três irmãos voltam à casa da infância para decidir o que fazer com ela. Cada um lembra de um verão diferente, e nenhuma das versões explica por que a mãe nunca mais plantou nada ali.",
-    "capaUrl": "/capas/quintal-de-inverno.svg",
-    "notaMedia": null,
+    "posterUrl": "/capas/quintal-de-inverno.svg",
+    "notaMedia": 0,
     "totalAvaliacoes": 0,
     "diretor": "Lúcia Ferraz",
-    "duracaoTotalMin": 96
+    "duracaoMin": 96
   },
   {
     "id": "4",
@@ -47,24 +47,85 @@
     "tipo": "serie",
     "titulo": "Protocolo Aberto",
     "ano": 2024,
-    "genero": "Tecnologia",
+    "generos": ["Documentário", "Tecnologia"],
     "sinopse": "A história contada de dentro de uma equipe que mantém, sem receber por isso, uma biblioteca que metade da internet usa — e o dia em que ela quebra.",
-    "capaUrl": "/capas/protocolo-aberto.svg",
+    "posterUrl": "/capas/protocolo-aberto.svg",
     "notaMedia": 9.1,
     "totalAvaliacoes": 341,
     "temporadas": [
       {
+        "numero": 0,
+        "ano": 2023,
+        "totalEpisodios": 3,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "Antes do primeiro commit",
+            "duracaoMin": 22
+          },
+          {
+            "numero": 2,
+            "titulo": "Quem paga a manutenção",
+            "duracaoMin": 19
+          },
+          {
+            "numero": 3,
+            "titulo": "Perguntas da plateia",
+            "duracaoMin": 26
+          }
+        ]
+      },
+      {
         "numero": 1,
         "ano": 2024,
-        "totalEpisodios": 3
+        "totalEpisodios": 4,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "Um commit qualquer",
+            "duracaoMin": 48
+          },
+          {
+            "numero": 2,
+            "titulo": "Três mantenedores e um fim de semana",
+            "duracaoMin": 44
+          },
+          {
+            "numero": 3,
+            "titulo": "A issue que ninguém fecha",
+            "duracaoMin": 51
+          },
+          {
+            "numero": 4,
+            "titulo": "Quebrou em produção",
+            "duracaoMin": 46
+          }
+        ]
       },
       {
         "numero": 2,
         "ano": 2025,
-        "totalEpisodios": 2
+        "totalEpisodios": 3,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "O fork",
+            "duracaoMin": 43
+          },
+          {
+            "numero": 2,
+            "titulo": "Dinheiro entra, confiança sai",
+            "duracaoMin": 47
+          },
+          {
+            "numero": 3,
+            "titulo": "Quem assina o release",
+            "duracaoMin": 52
+          }
+        ]
       }
     ],
-    "duracaoTotalMin": 234
+    "duracaoMin": 398
   },
   {
     "id": "5",
@@ -72,19 +133,63 @@
     "tipo": "serie",
     "titulo": "Cozinha de Madrugada",
     "ano": 2023,
-    "genero": "Comédia",
+    "generos": ["Comédia", "Drama"],
     "sinopse": "Um restaurante que só abre entre meia-noite e seis da manhã, e as pessoas que aparecem nesse horário porque não tinham para onde ir.",
-    "capaUrl": "/capas/cozinha-de-madrugada.svg",
+    "posterUrl": "/capas/cozinha-de-madrugada.svg",
     "notaMedia": 8,
     "totalAvaliacoes": 97,
     "temporadas": [
       {
         "numero": 1,
         "ano": 2023,
-        "totalEpisodios": 3
+        "totalEpisodios": 4,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "Meia-noite e um",
+            "duracaoMin": 31
+          },
+          {
+            "numero": 2,
+            "titulo": "A comanda errada",
+            "duracaoMin": 28
+          },
+          {
+            "numero": 3,
+            "titulo": "Quem chega às quatro",
+            "duracaoMin": 33
+          },
+          {
+            "numero": 4,
+            "titulo": "Fecha às seis",
+            "duracaoMin": 30
+          }
+        ]
+      },
+      {
+        "numero": 2,
+        "ano": 2024,
+        "totalEpisodios": 3,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "Reabrir",
+            "duracaoMin": 29
+          },
+          {
+            "numero": 2,
+            "titulo": "O fornecedor sumiu",
+            "duracaoMin": 32
+          },
+          {
+            "numero": 3,
+            "titulo": "A última mesa",
+            "duracaoMin": 35
+          }
+        ]
       }
     ],
-    "duracaoTotalMin": 85
+    "duracaoMin": 218
   },
   {
     "id": "6",
@@ -92,19 +197,57 @@
     "tipo": "serie",
     "titulo": "Onde o Rio Vira",
     "ano": 2025,
-    "genero": "Documentário",
+    "generos": ["Documentário"],
     "sinopse": "Seis comunidades ribeirinhas, seis formas de responder à mesma pergunta: o que acontece quando a água muda de lugar e ninguém avisa.",
-    "capaUrl": "/capas/onde-o-rio-vira.svg",
+    "posterUrl": "/capas/onde-o-rio-vira.svg",
     "notaMedia": 8.8,
     "totalAvaliacoes": 64,
     "temporadas": [
       {
-        "numero": 1,
+        "numero": 2,
         "ano": 2025,
-        "totalEpisodios": 2
+        "totalEpisodios": 3,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "A cheia de março",
+            "duracaoMin": 39
+          },
+          {
+            "numero": 2,
+            "titulo": "Quem mede a água",
+            "duracaoMin": 41
+          },
+          {
+            "numero": 3,
+            "titulo": "O mapa velho",
+            "duracaoMin": 37
+          }
+        ]
+      },
+      {
+        "numero": 3,
+        "ano": 2026,
+        "totalEpisodios": 3,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "A ponte nova",
+            "duracaoMin": 44
+          },
+          {
+            "numero": 2,
+            "titulo": "Ninguém avisou",
+            "duracaoMin": 40
+          },
+          {
+            "numero": 3,
+            "titulo": "Onde o rio vira",
+            "duracaoMin": 46
+          }
+        ]
       }
-    ],
-    "duracaoTotalMin": 101
+    ]
   },
   {
     "id": "7",
@@ -112,13 +255,13 @@
     "tipo": "podcast",
     "titulo": "Revisão de Código",
     "ano": 2024,
-    "genero": "Tecnologia",
+    "generos": ["Tecnologia"],
     "sinopse": "Toda semana, duas pessoas leem em voz alta um trecho de código real e discutem o que fariam diferente — sem julgar quem escreveu.",
-    "capaUrl": "/capas/revisao-de-codigo.svg",
+    "posterUrl": "/capas/revisao-de-codigo.svg",
     "notaMedia": 9.3,
     "totalAvaliacoes": 512,
     "apresentador": "Rafa Okumura",
-    "duracaoTotalMin": 192,
+    "duracaoMin": 192,
     "totalEpisodios": 3
   },
   {
@@ -127,13 +270,12 @@
     "tipo": "podcast",
     "titulo": "Primeira Cadeira",
     "ano": 2025,
-    "genero": "Drama",
+    "generos": ["Drama"],
     "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
-    "capaUrl": null,
     "notaMedia": 8.6,
     "totalAvaliacoes": 189,
     "apresentador": "Dandara Reis",
-    "duracaoTotalMin": 91,
+    "duracaoMin": 91,
     "totalEpisodios": 2
   }
 ]

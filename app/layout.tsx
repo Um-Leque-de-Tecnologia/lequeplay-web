@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
+import { CabecalhoSite } from "@/components/cabecalho-site";
+import { RodapeSite } from "@/components/rodape-site";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -29,31 +30,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
 
         <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-          <header className="border-b border-white/10">
-            <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-6 px-6 py-4">
-              <Link href="/" className="font-semibold">
-                🎬 LequePlay
-              </Link>
-              <nav aria-label="Principal" className="flex gap-5 text-sm">
-                <Link
-                  href="/midias"
-                  className="text-zinc-400 transition hover:text-zinc-100"
-                >
-                  Catálogo
-                </Link>
-              </nav>
-            </div>
-          </header>
+          <CabecalhoSite />
 
           <main id="conteudo" className="mx-auto w-full max-w-6xl px-6 py-10">
             {children}
           </main>
 
-          <footer className="border-t border-white/10">
-            <p className="mx-auto max-w-6xl px-6 py-6 text-sm text-zinc-500">
-              LequePlay — projeto do curso Next.js + IA
-            </p>
-          </footer>
+          <RodapeSite />
         </div>
       </body>
     </html>
