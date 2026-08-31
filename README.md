@@ -82,13 +82,18 @@ de quem chega.**
 Você pega um card do backlog, resolve numa branch e abre um Pull Request.
 
 ```bash
-git switch -c feat/nome-curto     # ou fix/nome-curto
+git switch -c fix/lp-101-contador-e-filtro   # tipo/lp-NNN-descricao-curta
 # … código …
-npm run build                     # tem que passar antes do push
-git push -u origin feat/nome-curto
+npm run lint && npm run typecheck && npm run build   # antes de todo push
+git push -u origin fix/lp-101-contador-e-filtro
 ```
 
 Abra o PR. O template já traz as perguntas que a revisão vai fazer.
+
+O combinado completo — nome de branch, formato de commit, a lista do que
+rodar antes de abrir o PR e como revisar o PR de outra pessoa — está em
+[`CONTRIBUTING.md`](CONTRIBUTING.md). **Leia uma vez antes do primeiro
+ticket.**
 
 **A descrição do PR importa tanto quanto o código.** A parte que a gente lê
 primeiro é *"a decisão que eu tomei"* — por que este componente é server e
@@ -129,6 +134,10 @@ doc local ganha.
 | `npm run build` | build de produção — **rode antes de todo push** |
 | `npm start` | serve o build |
 | `npm run lint` | ESLint |
+| `npm run typecheck` | gera os tipos de rota e checa TypeScript |
+
+`lint`, `typecheck` e `build` são o que a esteira roda em todo Pull Request.
+Rodar aqui antes economiza uma viagem ao GitHub Actions.
 
 ---
 
