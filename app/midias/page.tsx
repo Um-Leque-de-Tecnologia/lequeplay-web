@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
+import { CatalogoOrdenacao } from "@/components/catalogo-ordenacao";
+import { CatalogoVazio } from "@/components/catalogo-vazio";
 import { CardMidia } from "@/components/card-midia";
-import { listarMidias } from "@/lib/api";
+import { listarGeneros, listarMidias } from "@/lib/api";
 import type { Midia } from "@/lib/tipos";
 
 export const metadata: Metadata = { title: "Catálogo" };
@@ -9,10 +12,15 @@ export const metadata: Metadata = { title: "Catálogo" };
 export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
   const { tipo, q } = await searchParams;
 
-  const { itens } = await listarMidias({
-    tipo: typeof tipo === "string" ? (tipo as Midia["tipo"]) : undefined,
-    q: typeof q === "string" ? q : undefined,
-  });
+  // `Promise.all` porque uma busca não depende da outra: em série, a página
+  // esperaria a soma dos dois tempos em vez do maior deles.
+  const [{ itens }, generos] = await Promise.all([
+    listarMidias({
+      tipo: typeof tipo === "string" ? (tipo as Midia["tipo"]) : undefined,
+      q: typeof q === "string" ? q : undefined,
+    }),
+    listarGeneros(),
+  ]);
 
   return (
     <>
@@ -45,14 +53,19 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         </button>
       </form>
 
-      <p className="mt-6 text-sm text-zinc-500" aria-live="polite">
-        {itens.length} título(s)
-      </p>
+      <CatalogoChipsGenero generos={generos} />
+
+      {/* Contagem e ordenação na mesma linha: as duas falam do mesmo
+          conjunto de resultados. */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-zinc-500" aria-live="polite">
+          {itens.length} título(s)
+        </p>
+        <CatalogoOrdenacao />
+      </div>
 
       {itens.length === 0 ? (
-        <p className="mt-10 rounded-lg border border-dashed border-white/15 p-10 text-center text-zinc-400">
-          Nenhum título encontrado. Tente outra busca.
-        </p>
+        <CatalogoVazio />
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
           {itens.map((midia) => (

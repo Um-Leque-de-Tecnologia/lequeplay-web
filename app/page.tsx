@@ -1,11 +1,20 @@
 import Link from "next/link";
-import { CardMidia } from "@/components/card-midia";
-import { listarMidias } from "@/lib/api";
+import { HomeAcervo } from "@/components/home-acervo";
+import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
+import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
+import { listarHistorico, listarMidias } from "@/lib/api";
 
-// Server Component: este `await` roda no servidor, e o navegador recebe o
-// HTML já pronto. Nenhuma credencial da API chega ao cliente.
+// Server Component: estes `await` rodam no servidor, e o navegador recebe o
+// HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
+// abaixo recebem os dados por props, e nenhuma delas busca nada por conta.
 export default async function Home() {
-  const { itens } = await listarMidias();
+  // As duas buscas não dependem uma da outra: em série, a home esperaria a
+  // soma das duas; em paralelo, espera a mais lenta.
+  const [{ itens }, historico] = await Promise.all([
+    listarMidias(),
+    listarHistorico(),
+  ]);
+
   const destaques = itens.slice(0, 4);
 
   return (
@@ -26,20 +35,11 @@ export default async function Home() {
         </Link>
       </section>
 
-      <section aria-labelledby="destaques">
-        <h2 id="destaques" className="mb-5 text-xl font-semibold">
-          Em destaque
-        </h2>
+      <HomeContinuarAssistindo historico={historico} itens={itens} />
 
-        {/* É uma lista, então é <ul> — o leitor de tela anuncia quantos itens. */}
-        <ul className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-          {destaques.map((midia) => (
-            <li key={midia.id}>
-              <CardMidia midia={midia} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <HomeCarrosselDestaques destaques={destaques} />
+
+      <HomeAcervo itens={itens} historico={historico} />
     </>
   );
 }
