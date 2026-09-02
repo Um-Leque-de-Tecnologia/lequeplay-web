@@ -1,3 +1,5 @@
+"use client";
+
 type Pergunta = {
   /** Entra no `id` do painel, então precisa servir de sufixo de atributo. */
   id: string;
