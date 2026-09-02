@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 type Pergunta = {
   /** Entra no `id` do painel, então precisa servir de sufixo de atributo. */
   id: string;
@@ -46,34 +48,45 @@ const PERGUNTAS: Pergunta[] = [
  * sem os dois, o acordeão é uma pilha de botões sem relação nenhuma.
  */
 export function SobrePerguntasFrequentes() {
+const [abertoId, setAbertoId] = useState<string | null>(null);
+
+  function alternarPergunta(id: string) {
+    setAbertoId((atual) => (atual === id ? null : id));
+  }
+
   return (
     <ul className="mt-4 divide-y divide-white/10 border-y border-white/10">
-      {PERGUNTAS.map((item) => (
+      {PERGUNTAS.map((item) =>  {
+        const estaAberto = abertoId === item.id;
+
+        return (   
         <li key={item.id}>
           {/* O <h3> mantém a hierarquia da página; o botão é só o gatilho. */}
           <h3>
             <button
               type="button"
-              aria-expanded={false}
+              onClick={() => alternarPergunta(item.id)}
+              aria-expanded={estaAberto}
               aria-controls={`resposta-${item.id}`}
               className="flex w-full items-center justify-between gap-4 py-4 text-left font-medium transition hover:text-violet-300"
             >
               {item.pergunta}
               <span aria-hidden="true" className="text-zinc-500">
-                +
+               {estaAberto ? "−" : "+"}
               </span>
             </button>
           </h3>
 
           <div
             id={`resposta-${item.id}`}
-            hidden
+           hidden={!estaAberto}
             className="max-w-prose pb-4 text-sm text-zinc-400"
           >
             {item.resposta}
           </div>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }
