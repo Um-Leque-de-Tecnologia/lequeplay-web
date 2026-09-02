@@ -30,7 +30,7 @@ export function FichaTemporadas({ serie }: { serie: Serie }) {
         >
           {serie.temporadas.map((t, indice) => (
             <option key={t.numero} value={indice}>
-              Temporada {indice} ({t.ano})
+              Temporada {t.numero} ({t.ano}) 
             </option>
           ))}
         </select>
