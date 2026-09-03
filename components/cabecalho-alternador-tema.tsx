@@ -43,9 +43,9 @@ export function CabecalhoAlternadorTema() {
   const rotuloExibido = ROTULO_PROXIMO_TEMA[tema];
 
   return (
-    
     <button
       type="button"
+      onClick={alternarTema}
       aria-label={rotuloExibido}
       title={rotuloExibido}
       className="rounded-md p-2 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100"
