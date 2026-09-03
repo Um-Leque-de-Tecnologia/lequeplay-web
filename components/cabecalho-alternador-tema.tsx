@@ -24,6 +24,7 @@ const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
 
 /** O botão que troca entre claro e escuro. */
 export function CabecalhoAlternadorTema() {
+  const [tema, setTema] = useState<Tema>("escuro");
   return (
     <button
       type="button"
