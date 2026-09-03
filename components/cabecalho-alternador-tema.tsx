@@ -25,14 +25,19 @@ const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
 /** O botão que troca entre claro e escuro. */
 export function CabecalhoAlternadorTema() {
   const [tema, setTema] = useState<Tema>("escuro");
+
+  const iconeExibido = ICONE_PROXIMO_TEMA[tema];
+  const rotuloExibido = ROTULO_PROXIMO_TEMA[tema];
+  
   return (
+
     <button
       type="button"
-      aria-label={ROTULO[TEMA_ATUAL]}
-      title={ROTULO[TEMA_ATUAL]}
+      aria-label={rotuloExibido}
+      title={rotuloExibido}
       className="rounded-md p-2 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100"
     >
-      <span aria-hidden="true">{ICONE[TEMA_ATUAL]}</span>
+      <span aria-hidden="true">{iconeExibido}</span>
     </button>
   );
 }
