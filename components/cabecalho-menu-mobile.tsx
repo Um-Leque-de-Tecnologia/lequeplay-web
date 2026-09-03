@@ -1,27 +1,26 @@
-import Link from "next/link";
+"use client";
 
-/**
- * Os mesmos destinos da navegação principal, empilhados. A lista mora aqui
- * porque o menu do celular é o único que a usa hoje; no dia em que o
- * cabeçalho de desktop também precisar dela, ela sobe um nível — não antes.
- */
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+
 const ITENS = [
   { href: "/", rotulo: "Início" },
   { href: "/midias", rotulo: "Catálogo" },
-  { href: "/", rotulo: "Início" },
 ];
 
-/**
- * A navegação de largura de celular.
- *
- * `<details>` e não uma div com classe: o abrir e fechar é do navegador,
- * chega com teclado e com leitor de tela de graça, e continua funcionando
- * antes do JavaScript carregar. O `sm:hidden` some com tudo no desktop,
- * onde a navegação principal já aparece inteira.
- */
 export function CabecalhoMenuMobile() {
+  const pathname = usePathname();
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    if (detailsRef.current) {
+      detailsRef.current.open = false;
+    }
+  }, [pathname]);
+
   return (
-    <details className="relative sm:hidden">
+    <details ref={detailsRef} className="relative sm:hidden">
       <summary
         aria-label="Abrir o menu"
         className="cursor-pointer list-none rounded-md p-2 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
@@ -37,6 +36,9 @@ export function CabecalhoMenuMobile() {
           <button
             type="button"
             aria-label="Fechar o menu"
+            onClick={() => {
+              if (detailsRef.current) detailsRef.current.open = false;
+            }}
             className="rounded-md p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-zinc-100"
           >
             <span aria-hidden="true">✕</span>
@@ -45,8 +47,6 @@ export function CabecalhoMenuMobile() {
 
         <ul className="flex flex-col">
           {ITENS.map((item, indice) => (
-            // Índice como chave porque a lista é fixa: ela não reordena,
-            // não cresce e não some no meio da vida da tela.
             <li key={indice}>
               <Link
                 href={item.href}
