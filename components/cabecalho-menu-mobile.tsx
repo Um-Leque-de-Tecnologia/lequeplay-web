@@ -13,11 +13,24 @@ export function CabecalhoMenuMobile() {
   const pathname = usePathname();
   const detailsRef = useRef<HTMLDetailsElement>(null);
 
+  // Fecha o menu ao mudar de rota (Critério 2)
   useEffect(() => {
     if (detailsRef.current) {
       detailsRef.current.open = false;
     }
   }, [pathname]);
+
+  // Fecha o menu ao pressionar a tecla ESC (Critério 3)
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && detailsRef.current) {
+        detailsRef.current.open = false;
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <details ref={detailsRef} className="relative sm:hidden">
@@ -50,6 +63,9 @@ export function CabecalhoMenuMobile() {
             <li key={indice}>
               <Link
                 href={item.href}
+                onClick={() => {
+                  if (detailsRef.current) detailsRef.current.open = false;
+                }}
                 className="block rounded-md px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-zinc-100"
               >
                 {item.rotulo}
