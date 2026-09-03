@@ -1,16 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type Tema = "claro" | "escuro";
-
-/**
- * Hoje o site nasce escuro — o `globals.css` já responde a
- * `prefers-color-scheme`, e o `body` fixa o fundo em zinc-950. Enquanto a
- * escolha da pessoa não é guardada em lugar nenhum, o tema de partida é uma
- * constante, não um estado.
- */
-const TEMA_ATUAL: Tema = "escuro";
 
 const ICONE_PROXIMO_TEMA: Record<Tema, string> = {
   escuro: "☀️",
@@ -26,15 +18,17 @@ const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
 export function CabecalhoAlternadorTema() {
   const [tema, setTema] = useState<Tema>("escuro");
 
+  useEffect(() => {
+  const temaNoDom = document.documentElement.getAttribute("data-tema") as Tema;
+  if (temaNoDom) {
+    setTema(temaNoDom);
+  }
+}, []);
+
   const alternarTema = () => {
     const novoTema: Tema = tema === "escuro" ? "claro" : "escuro";
     setTema(novoTema);
-
-    if (novoTema === "claro") {
-      document.documentElement.setAttribute("data-tema", "claro");
-    } else {
-      document.documentElement.removeAttribute("data-tema");
-    }
+    document.documentElement.setAttribute("data-tema", novoTema);
   };
 
   const iconeExibido = ICONE_PROXIMO_TEMA[tema];
