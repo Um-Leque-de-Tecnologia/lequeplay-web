@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 type Pergunta = {
-    /** Entra no id do painel, então precisa servir de sufixo de atributo. */
+  /** Entra no `id` do painel, então precisa servir de sufixo de atributo. */
   id: string;
   pergunta: string;
   resposta: string;
@@ -43,8 +43,8 @@ const PERGUNTAS: Pergunta[] = [
  * dúvida específica, e quatro blocos de texto abertos ao mesmo tempo fazem
  * a pessoa procurar a dela no meio do resto.
  *
- * O aria-controls liga cada botão ao painel que ele comanda, e o
- * aria-expanded conta ao leitor de tela se aquele painel está aberto —
+ * O `aria-controls` liga cada botão ao painel que ele comanda, e o
+ * `aria-expanded` conta ao leitor de tela se aquele painel está aberto —
  * sem os dois, o acordeão é uma pilha de botões sem relação nenhuma.
  */
 
@@ -76,10 +76,8 @@ export function SobrePerguntasFrequentes() {
                 <span
                   aria-hidden="true"
                   className={`inline-block text-zinc-500 transition-transform duration-300 ${
-                    estaAberto ? "rotate-45 text-violet-400" : ""
-                  }`}
-                >
-                  +
+                    estaAberto ? "rotate-45 text-violet-400" : ""}`}>
+                      +
                 </span>
               </button>
             </h3>
