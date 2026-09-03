@@ -1,16 +1,14 @@
+"use client"; // 1. Precisamos disso para usar estados no Next.js
+
+import { useState } from "react"; // 2. Importar o hook de estado
 import type { Serie } from "@/lib/tipos";
 
-/**
- * Qual temporada a lista mostra, pela posição dentro de `serie.temporadas`.
- *
- * As temporadas já vêm completas do servidor — episódios inclusive —, então
- * trocar de temporada é escolher outro item do array que já está aqui, e não
- * uma ida nova à API. É por isso que o seletor não precisa de rota própria.
- */
-const TEMPORADA_SELECIONADA = 0;
-
 export function FichaTemporadas({ serie }: { serie: Serie }) {
-  const temporada = serie.temporadas[TEMPORADA_SELECIONADA];
+  // 3. Criar o estado. Começamos com o índice 0 (primeira temporada)
+  const [indiceSelecionado, setIndiceSelecionado] = useState(0);
+
+  // 4. A temporada exibida agora depende do estado 'indiceSelecionado'
+  const temporada = serie.temporadas[indiceSelecionado];
 
   return (
     <section aria-labelledby="temporadas" className="mt-12">
@@ -25,7 +23,8 @@ export function FichaTemporadas({ serie }: { serie: Serie }) {
         <select
           id="temporada"
           name="temporada"
-          defaultValue={TEMPORADA_SELECIONADA}
+          value={indiceSelecionado} // Vincula o valor ao estado
+          onChange={(e) => setIndiceSelecionado(Number(e.target.value))} // 5. Atualiza o estado ao mudar
           className="rounded-md border border-white/15 bg-zinc-900 px-3 py-1.5 text-sm"
         >
           {serie.temporadas.map((t, indice) => (
@@ -36,11 +35,7 @@ export function FichaTemporadas({ serie }: { serie: Serie }) {
         </select>
       </div>
 
-      {/*
-        Temporada anunciada e ainda sem episódios é caso previsto no contrato
-        (`episodios: []`) — não é erro, e a lista vazia precisa dizer isso em
-        vez de aparecer como um bloco em branco.
-      */}
+      {/* O resto do código permanece igual, usando a variável 'temporada' que agora é dinâmica */}
       {temporada.episodios.length === 0 ? (
         <p className="text-sm text-zinc-500">
           Os episódios desta temporada ainda não foram anunciados.
@@ -54,10 +49,6 @@ export function FichaTemporadas({ serie }: { serie: Serie }) {
             >
               <span className="w-6 shrink-0 text-zinc-500">{ep.numero}</span>
               <span className="text-zinc-200">{ep.titulo}</span>
-              {/*
-                TODO (sprint 2): o título do episódio vira link para
-                /midias/[slug]/t/[temporada]/ep/[episodio], que ainda não existe.
-              */}
               <span className="ml-auto text-zinc-500">{ep.duracaoMin} min</span>
             </li>
           ))}
