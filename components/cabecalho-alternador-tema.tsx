@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 type Tema = "claro" | "escuro";
 
@@ -17,13 +17,6 @@ const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
 /** O botão que troca entre claro e escuro. */
 export function CabecalhoAlternadorTema() {
   const [tema, setTema] = useState<Tema>("escuro");
-
-  useEffect(() => {
-  const temaNoDom = document.documentElement.getAttribute("data-tema") as Tema;
-  if (temaNoDom) {
-    setTema(temaNoDom);
-  }
-}, []);
 
   const alternarTema = () => {
     const novoTema: Tema = tema === "escuro" ? "claro" : "escuro";
