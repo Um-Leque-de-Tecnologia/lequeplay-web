@@ -31,11 +31,9 @@ export function CabecalhoAlternadorTema() {
     setTema(novoTema);
 
     if (novoTema === "claro") {
-      document.documentElement.classList.add("light");
-      document.documentElement.classList.remove("dark");
+      document.documentElement.setAttribute("data-tema", "claro");
     } else {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("light");
+      document.documentElement.removeAttribute("data-tema");
     }
   };
 
