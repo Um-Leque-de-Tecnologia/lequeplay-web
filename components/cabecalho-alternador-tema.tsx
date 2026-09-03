@@ -12,14 +12,14 @@ type Tema = "claro" | "escuro";
  */
 const TEMA_ATUAL: Tema = "escuro";
 
-const ICONE: Record<Tema, string> = {
-  claro: "☀️",
-  escuro: "🌙",
+const ICONE_PROXIMO_TEMA: Record<Tema, string> = {
+  escuro: "☀️",
+  claro: "🌙",
 };
 
-const ROTULO: Record<Tema, string> = {
-  claro: "Usar o tema claro",
-  escuro: "Usar o tema escuro",
+const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
+  claro: "Usar o tema escuro",
+  escuro: "Usar o tema claro",
 };
 
 /** O botão que troca entre claro e escuro. */
