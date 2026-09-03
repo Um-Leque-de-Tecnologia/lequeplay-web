@@ -1,68 +1,145 @@
 import Image from "next/image";
+import Link from "next/link";
 import type { ItemHistorico, Midia } from "@/lib/tipos";
 
 type Props = {
   /** As linhas do player: onde a pessoa parou em cada título que começou. */
   historico: ItemHistorico[];
+
   /** O catálogo, para casar cada linha com capa, título e duração. */
   itens: Midia[];
 };
 
 /**
- * Quanto do título já rodou, em porcentagem.
+ * Calcula quanto do título já foi assistido, em porcentagem.
  *
- * O histórico guarda só a posição; a duração mora na mídia. Cruzar os dois é
- * trabalho da tela — por isso a função recebe os dois lados.
+ * O histórico guarda segundos.
+ * A mídia guarda minutos.
+ *
+ * Portanto, precisamos converter a duração para segundos
+ * antes de fazer a divisão.
  */
-function percentualAssistido(item: ItemHistorico, midia: Midia): number {
-  const duracao = Number(midia.duracaoMin);
+function percentualAssistido(
+  item: ItemHistorico,
+  midia: Midia,
+): number {
+  /*
+   * `duracaoMin` é opcional na API.
+   *
+   * Se estiver ausente ou for 0, não existe uma duração
+   * válida para calcular a porcentagem.
+   */
+  if (!midia.duracaoMin || midia.duracaoMin <= 0) {
+    return 0;
+  }
 
-  // A barra não passa de 100% nem quando o player grava uma posição além do
-  // fim (acontece: o player salva a posição depois dos créditos).
-  return Math.min(100, Math.round((item.segundosAssistidos / duracao) * 100));
+  /*
+   * A duração da mídia vem em minutos.
+   * O histórico vem em segundos.
+   *
+   * Exemplo:
+   * 60 minutos = 3600 segundos.
+   */
+  const duracaoEmSegundos = midia.duracaoMin * 60;
+
+  /*
+   * Calcula a porcentagem e impede que a barra passe de 100%.
+   */
+  return Math.min(
+    100,
+    Math.round(
+      (item.segundosAssistidos / duracaoEmSegundos) * 100,
+    ),
+  );
 }
 
-/** "T2 · E2" — só quando o player soube dizer qual episódio estava tocando. */
-function rotuloDoEpisodio(item: ItemHistorico): string | null {
-  if (item.temporadaNumero === undefined || item.episodioNumero === undefined) {
+/**
+ * Retorna "T2 · E2" quando o histórico possui
+ * temporada e episódio.
+ */
+function rotuloDoEpisodio(
+  item: ItemHistorico,
+): string | null {
+  if (
+    item.temporadaNumero === undefined ||
+    item.episodioNumero === undefined
+  ) {
     return null;
   }
 
   return `T${item.temporadaNumero} · E${item.episodioNumero}`;
 }
 
-export function HomeContinuarAssistindo({ historico, itens }: Props) {
-  // `flatMap` e não `map` + `filter`: a linha do histórico pode apontar para
-  // um slug que saiu do acervo, e aí ela some da lista em vez de virar um
-  // card sem capa nem nome.
+export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
+  /*
+   * Junta cada item do histórico com a mídia correspondente
+   * no catálogo.
+   *
+   * Se a mídia não existir mais no catálogo, ela é ignorada.
+   */
   const emAndamento = historico.flatMap((item) => {
-    const midia = itens.find((m) => m.slug === item.midiaSlug);
+    const midia = itens.find(
+      (m) => m.slug === item.midiaSlug,
+    );
+
     return midia ? [{ item, midia }] : [];
   });
 
-  // Quem nunca começou nada não precisa ver uma faixa vazia.
-  if (emAndamento.length === 0) return null;
+  /*
+   * Se a conta não possui histórico válido,
+   * não mostra a faixa "Continuar assistindo".
+   */
+  if (emAndamento.length === 0) {
+    return null;
+  }
 
   return (
-    <section aria-labelledby="continuar" className="mb-14">
-      <h2 id="continuar" className="mb-5 text-xl font-semibold">
+    <section
+      aria-labelledby="continuar"
+      className="mb-14"
+    >
+      <h2
+        id="continuar"
+        className="mb-5 text-xl font-semibold"
+      >
         Continuar assistindo
       </h2>
 
       <ul className="grid gap-4 sm:grid-cols-2">
         {emAndamento.map(({ item, midia }) => {
-          const percentual = percentualAssistido(item, midia);
+          const percentual = percentualAssistido(
+            item,
+            midia,
+          );
+
           const episodio = rotuloDoEpisodio(item);
+
+          /*
+           * Quando o histórico possui temporada e episódio,
+           * colocamos essas informações na URL.
+           *
+           * Exemplo:
+           *
+           * /midias/protocolo-aberto?temporada=2&episodio=2
+           */
+          const parametros =
+            item.temporadaNumero !== undefined &&
+            item.episodioNumero !== undefined
+              ? `?temporada=${item.temporadaNumero}&episodio=${item.episodioNumero}`
+              : "";
+
+          const href = `/midias/${midia.slug}${parametros}`;
 
           return (
             <li
-              key={item.midiaSlug}
+              key={`${item.midiaSlug}-${item.temporadaNumero ?? ""}-${item.episodioNumero ?? ""}`}
               className="flex gap-4 rounded-lg border border-white/10 bg-zinc-900/40 p-3"
             >
               <Image
-                // Mesma regra do card: a API OMITE `posterUrl` quando não há
-                // capa. Ver o comentário em components/card-midia.tsx.
-                src={midia.posterUrl ?? "/capas/sem-capa.svg"}
+                src={
+                  midia.posterUrl ??
+                  "/capas/sem-capa.svg"
+                }
                 alt=""
                 width={300}
                 height={450}
@@ -70,19 +147,19 @@ export function HomeContinuarAssistindo({ historico, itens }: Props) {
               />
 
               <div className="min-w-0 flex-1">
-                <h3 className="truncate font-medium">{midia.titulo}</h3>
+                <h3 className="truncate font-medium">
+                  {midia.titulo}
+                </h3>
+
                 {episodio && (
-                  <p className="mt-0.5 text-sm text-zinc-500">{episodio}</p>
+                  <p className="mt-0.5 text-sm text-zinc-500">
+                    {episodio}
+                  </p>
                 )}
 
-                {/*
-                  `role="progressbar"` numa <div>: não é <progress> porque a
-                  estilização do elemento nativo muda de navegador para
-                  navegador, e a barra precisa combinar com o resto da faixa.
-                */}
                 <div
                   role="progressbar"
-                  aria-label={`Progresso de ${midia.titulo}`}
+                  aria-label={`Progresso de ${midia.titulo}: ${percentual}%`}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={percentual}
@@ -90,7 +167,9 @@ export function HomeContinuarAssistindo({ historico, itens }: Props) {
                 >
                   <div
                     className="h-full rounded-full bg-violet-500"
-                    style={{ width: `${percentual}%` }}
+                    style={{
+                      width: `${percentual}%`,
+                    }}
                   />
                 </div>
 
@@ -98,12 +177,12 @@ export function HomeContinuarAssistindo({ historico, itens }: Props) {
                   {percentual}% assistido
                 </p>
 
-                <button
-                  type="button"
-                  className="mt-3 rounded-full border border-white/15 px-3 py-1 text-sm font-medium transition hover:border-violet-500 hover:text-violet-300"
+                <Link
+                  href={href}
+                  className="mt-3 inline-block rounded-full border border-white/15 px-3 py-1 text-sm font-medium transition hover:border-violet-500 hover:text-violet-300"
                 >
                   Retomar
-                </button>
+                </Link>
               </div>
             </li>
           );
