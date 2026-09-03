@@ -1,3 +1,11 @@
+"use client";
+
+/**
+ * `"use client"` porque o "ver mais" é estado + evento de usuário: abrir e
+ * fechar o resumo acontece no navegador, sem nova ida ao servidor.
+ */
+
+import { useState } from "react";
 import type { Midia } from "@/lib/tipos";
 
 /**
@@ -12,20 +20,39 @@ import type { Midia } from "@/lib/tipos";
  */
 const CARACTERES_NO_RESUMO = 180;
 
-export function FichaSinopse({ midia }: { midia: Midia }) {
-  const inicio = midia.sinopse.slice(0, CARACTERES_NO_RESUMO);
-  const resto = midia.sinopse.slice(CARACTERES_NO_RESUMO);
+/**
+ * Onde cortar sem partir palavra: o último espaço até o limite. Se não
+ * houver espaço nenhum (palavra gigante, improvável numa sinopse), cai no
+ * limite cru — melhor cortar do que não cortar.
+ */
+function corte(sinopse: string): number {
+  if (sinopse.length <= CARACTERES_NO_RESUMO) return sinopse.length;
 
-  /** O resumo está aberto ou ainda cortado. */
-  const expandida = false;
+  const ultimoEspaco = sinopse.lastIndexOf(" ", CARACTERES_NO_RESUMO);
+  return ultimoEspaco === -1 ? CARACTERES_NO_RESUMO : ultimoEspaco;
+}
+
+export function FichaSinopse({ midia }: { midia: Midia }) {
+  const [expandida, setExpandida] = useState(false);
+
+  const ponto = corte(midia.sinopse);
+  const inicio = midia.sinopse.slice(0, ponto);
+  // `trimStart` tira o espaço do corte, que senão abriria o resto com um
+  // espaço solto quando a sinopse expande.
+  const resto = midia.sinopse.slice(ponto).trimStart();
 
   return (
     <div className="mt-5 max-w-prose">
       <p className="text-zinc-300">
         {inicio}
-        <span hidden={!expandida}>{resto}</span>
-        {/* As reticências são do corte, não da sinopse: somem quando abre. */}
-        {resto !== "" && <span hidden={expandida}>…</span>}
+        {resto !== "" && (
+          <>
+            {/* Espaço entre o resumo e o resto: ele sumiu no `trimStart`. */}
+            <span hidden={!expandida}> {resto}</span>
+            {/* As reticências são do corte, não da sinopse: somem quando abre. */}
+            <span hidden={expandida}>…</span>
+          </>
+        )}
       </p>
 
       {/* Sinopse que coube inteira não ganha botão: não há o que abrir. */}
@@ -33,6 +60,7 @@ export function FichaSinopse({ midia }: { midia: Midia }) {
         <button
           type="button"
           aria-expanded={expandida}
+          onClick={() => setExpandida((v) => !v)}
           className="mt-2 text-sm font-medium text-violet-400 transition hover:text-violet-300"
         >
           {expandida ? "ver menos" : "ver mais"}

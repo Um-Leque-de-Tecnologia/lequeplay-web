@@ -5,6 +5,8 @@
  * colado numa conversa, num e-mail, num post — e `/midias/slug` sozinho não
  * leva a lugar nenhum fora do navegador de quem copiou.
  */
+import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+
 const SITE = "http://localhost:3000";
 
 export function FichaCompartilhar({
@@ -38,12 +40,7 @@ export function FichaCompartilhar({
           value={url}
           className="min-w-72 flex-1 rounded-md border border-white/15 bg-zinc-900 px-3 py-2 text-sm text-zinc-400"
         />
-        <button
-          type="button"
-          className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
-        >
-          Copiar link
-        </button>
+        <BotaoCopiarLink />
       </div>
     </section>
   );
