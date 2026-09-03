@@ -26,11 +26,24 @@ const ROTULO_PROXIMO_TEMA: Record<Tema, string> = {
 export function CabecalhoAlternadorTema() {
   const [tema, setTema] = useState<Tema>("escuro");
 
+  const alternarTema = () => {
+    const novoTema: Tema = tema === "escuro" ? "claro" : "escuro";
+    setTema(novoTema);
+
+    if (novoTema === "claro") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+  };
+
   const iconeExibido = ICONE_PROXIMO_TEMA[tema];
   const rotuloExibido = ROTULO_PROXIMO_TEMA[tema];
-  
-  return (
 
+  return (
+    
     <button
       type="button"
       aria-label={rotuloExibido}
