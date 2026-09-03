@@ -65,7 +65,10 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
       </div>
 
       {itens.length === 0 ? (
-        <CatalogoVazio />
+        <CatalogoVazio
+          q={typeof q === "string" ? q : undefined}
+          tipo={typeof tipo === "string" ? tipo : undefined}
+        />
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
           {itens.map((midia) => (

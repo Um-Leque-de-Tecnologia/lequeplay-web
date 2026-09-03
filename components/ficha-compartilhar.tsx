@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 /**
  * O endereço público do site.
  *
@@ -15,6 +19,33 @@ export function FichaCompartilhar({
   titulo: string;
 }) {
   const url = `${SITE}/midias/${slug}`;
+  const [copiado, setCopiado] = useState(false);
+
+  async function copiarLink() {
+    const valor = window.location.href || url;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(valor);
+      } else {
+        const input = document.createElement("input");
+        input.value = valor;
+        input.setAttribute("readonly", "true");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.focus();
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 1500);
+    } catch {
+      setCopiado(false);
+    }
+  }
 
   return (
     <section aria-labelledby="compartilhar" className="mt-12">
@@ -40,9 +71,11 @@ export function FichaCompartilhar({
         />
         <button
           type="button"
+          onClick={copiarLink}
           className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
+          aria-live="polite"
         >
-          Copiar link
+          {copiado ? "Copiado!" : "Copiar link"}
         </button>
       </div>
     </section>
