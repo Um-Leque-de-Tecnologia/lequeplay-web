@@ -2,13 +2,24 @@
  * O domínio do LequePlay.
  *
  * `Midia` é uma união discriminada pelo campo `tipo`. Isso não é enfeite:
- * é o que faz o TypeScript saber que `diretor` só existe em filme e
- * `temporadas` só existe em série — sem cast, sem `any`, sem `!`.
+ * é o que faz o TypeScript saber que `temporadas` só existe em série e
+ * `totalEpisodios` só existe em podcast — sem cast, sem `any`, sem `!`.
  *
  * Os nomes daqui são os nomes que a API manda. Quando os dois lados
  * discordavam, quem mudou foi o front: renomear um campo no TypeScript custa
  * um `Ctrl+R`; renomear na API quebra todo mundo que já consome.
  */
+
+/**
+ * A faixa etária, como a classificação indicativa brasileira nomeia: `"L"`
+ * de livre e depois a idade mínima.
+ *
+ * União fechada de **strings**, não `number`: `"L"` não é idade nenhuma, e um
+ * `0` no lugar dele seria lido como "zero anos" por quem não conhece a regra.
+ * Com string, o valor ausente (`undefined`) e o "livre" continuam sendo
+ * coisas diferentes — que é justamente o que a ficha precisa distinguir.
+ */
+export type Classificacao = "L" | "10" | "12" | "14" | "16" | "18";
 
 export type Genero =
   | "Ação"
@@ -57,6 +68,13 @@ type MidiaBase = {
    * "NaNmin" na ficha. Faltando, a linha da duracao nao e exibida.
    */
   duracaoMin?: number;
+  /**
+   * Opcional pela mesma razão que `duracaoMin`: a API **omite** o campo
+   * enquanto o título não foi classificado. Faltando, a linha some da ficha —
+   * inventar "Livre" para o que ninguém classificou seria mentir sobre o
+   * dado, e num campo em que a mentira tem consequência.
+   */
+  classificacao?: Classificacao;
   /** Só vem no detalhe, nunca na listagem. No máximo 12. */
   creditos?: Credito[];
 };
@@ -64,12 +82,15 @@ type MidiaBase = {
 export type Filme = MidiaBase & {
   tipo: "filme";
   /**
-   * A API **não** manda este campo solto: ela manda `creditos`, e a direção é
-   * o crédito com `papel: "direcao"`. Aqui ele já vem derivado — o mock de
-   * `data/midias.json` grava direto, e quando a tela passar a ler a API de
-   * verdade é do `creditos` que ele sai. Um dado, uma fonte da verdade.
+   * Filme não acrescenta campo nenhum — e **não** ganha um `diretor: string`.
+   * A direção sai de `creditos`, no crédito com `papel: "direcao"`, e quem a
+   * lê é `direcaoDe` em `lib/creditos.ts`.
+   *
+   * O campo escalar existiu aqui e foi removido: eram duas fontes da verdade
+   * para o mesmo dado (veja "Direção e apresentação: derivados, não campos"
+   * em `docs/api-contrato.md`), a API nunca mandou ele, e um `string` sozinho
+   * também não comporta filme com dois diretores.
    */
-  diretor: string;
 };
 
 export type Episodio = {
@@ -122,8 +143,10 @@ export type Serie = MidiaBase & {
 
 export type Podcast = MidiaBase & {
   tipo: "podcast";
-  /** Como `diretor`: derivado do crédito com `papel: "apresentacao"`. */
-  apresentador: string;
+  /**
+   * Como a direção do filme, a apresentação **não** é campo: sai do crédito
+   * com `papel: "apresentacao"`, por `apresentacaoDe` em `lib/creditos.ts`.
+   */
   totalEpisodios: number;
 };
 

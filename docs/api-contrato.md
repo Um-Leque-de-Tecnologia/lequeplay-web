@@ -181,6 +181,7 @@ saber quais campos existem.
 | `notaMedia` | `number` | **sempre presente, sempre número.** Nunca `null` |
 | `totalAvaliacoes` | `number` | `0` quando ninguém avaliou — **é este campo que responde "tem nota?"** |
 | `duracaoMin` | `number` (opcional) | somado pelo backend — o front não tem os episódios. **Omitido** quando o backend não tem o número: hoje, na produção, toda série sem runtime na TMDB (17 de 60 títulos) vem sem a chave. O front trata a ausência escondendo a linha da ficha |
+| `classificacao` | `"L" \| "10" \| "12" \| "14" \| "16" \| "18"` (opcional) | faixa etária. **String, nunca número**: `"L"` (livre) não é idade, e um `0` no lugar dele seria lido como "zero anos". **Omitida** enquanto o título não foi classificado — o front esconde a linha da ficha, e não escreve "Livre" por conta própria |
 | `atualizadoEm` | `string` | ISO — o front usa para revalidar cache |
 
 > **Por que `notaMedia` deixou de ser anulável.** Antes ela carregava duas

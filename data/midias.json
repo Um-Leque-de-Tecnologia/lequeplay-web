@@ -10,8 +10,55 @@
     "posterUrl": "/capas/sinais-de-carbono.svg",
     "notaMedia": 8.4,
     "totalAvaliacoes": 132,
-    "diretor": "Marina Aleixo",
-    "duracaoMin": 118
+    "duracaoMin": 118,
+    "classificacao": "14",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "marina-aleixo",
+          "nome": "Marina Aleixo",
+          "fotoUrl": null
+        },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": {
+          "slug": "bruna-sayao",
+          "nome": "Bruna Sayão",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Helena Sarmento"
+      },
+      {
+        "pessoa": {
+          "slug": "ivo-pacheco",
+          "nome": "Ivo Pacheco",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Téo"
+      },
+      {
+        "pessoa": {
+          "slug": "ana-lucia-damasceno",
+          "nome": "Ana Lúcia Damasceno",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Prefeita Nadir"
+      },
+      {
+        "pessoa": {
+          "slug": "wilson-kamei",
+          "nome": "Wilson Kamei",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Otávio"
+      }
+    ]
   },
   {
     "id": "2",
@@ -24,8 +71,46 @@
     "posterUrl": "/capas/a-ultima-linha.svg",
     "notaMedia": 7.9,
     "totalAvaliacoes": 208,
-    "diretor": "Caio Bertoni",
-    "duracaoMin": 104
+    "duracaoMin": 104,
+    "classificacao": "12",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "caio-bertoni",
+          "nome": "Caio Bertoni",
+          "fotoUrl": null
+        },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": {
+          "slug": "ester-vilanova",
+          "nome": "Ester Vilanova",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Regina"
+      },
+      {
+        "pessoa": {
+          "slug": "fabricio-nantes",
+          "nome": "Fabrício Nantes",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Gil"
+      },
+      {
+        "pessoa": {
+          "slug": "yara-mendonca",
+          "nome": "Yara Mendonça",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Bete"
+      }
+    ]
   },
   {
     "id": "3",
@@ -37,9 +122,7 @@
     "sinopse": "Três irmãos voltam à casa da infância para decidir o que fazer com ela. Cada um lembra de um verão diferente, e nenhuma das versões explica por que a mãe nunca mais plantou nada ali.",
     "posterUrl": "/capas/quintal-de-inverno.svg",
     "notaMedia": 0,
-    "totalAvaliacoes": 0,
-    "diretor": "Lúcia Ferraz",
-    "duracaoMin": 96
+    "totalAvaliacoes": 0
   },
   {
     "id": "4",
@@ -125,7 +208,8 @@
         ]
       }
     ],
-    "duracaoMin": 398
+    "duracaoMin": 398,
+    "classificacao": "L"
   },
   {
     "id": "5",
@@ -189,7 +273,37 @@
         ]
       }
     ],
-    "duracaoMin": 218
+    "duracaoMin": 218,
+    "classificacao": "14",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "noemia-brandt",
+          "nome": "Noêmia Brandt",
+          "fotoUrl": null
+        },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": {
+          "slug": "sergio-tanaka",
+          "nome": "Sérgio Tanaka",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Chef Vicente"
+      },
+      {
+        "pessoa": {
+          "slug": "leia-figueiro",
+          "nome": "Léia Figueiró",
+          "fotoUrl": null
+        },
+        "papel": "elenco",
+        "personagem": "Dora"
+      }
+    ]
   },
   {
     "id": "6",
@@ -247,7 +361,8 @@
           }
         ]
       }
-    ]
+    ],
+    "classificacao": "L"
   },
   {
     "id": "7",
@@ -260,9 +375,29 @@
     "posterUrl": "/capas/revisao-de-codigo.svg",
     "notaMedia": 9.3,
     "totalAvaliacoes": 512,
-    "apresentador": "Rafa Okumura",
     "duracaoMin": 192,
-    "totalEpisodios": 3
+    "totalEpisodios": 3,
+    "classificacao": "L",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "rafa-okumura",
+          "nome": "Rafa Okumura",
+          "fotoUrl": null
+        },
+        "papel": "apresentacao",
+        "personagem": null
+      },
+      {
+        "pessoa": {
+          "slug": "teca-vilar",
+          "nome": "Teca Vilar",
+          "fotoUrl": null
+        },
+        "papel": "apresentacao",
+        "personagem": null
+      }
+    ]
   },
   {
     "id": "8",
@@ -274,8 +409,18 @@
     "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
     "notaMedia": 8.6,
     "totalAvaliacoes": 189,
-    "apresentador": "Dandara Reis",
     "duracaoMin": 91,
-    "totalEpisodios": 2
+    "totalEpisodios": 2,
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "dandara-reis",
+          "nome": "Dandara Reis",
+          "fotoUrl": null
+        },
+        "papel": "apresentacao",
+        "personagem": null
+      }
+    ]
   }
 ]
