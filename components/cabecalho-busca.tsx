@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * A busca do cabeçalho: o mesmo campo do catálogo, alcançável de qualquer
@@ -16,10 +16,45 @@ import { useState } from "react";
  */
 export function CabecalhoBusca() {
   const [buscaAberta, setBuscaAberta] = useState(false);
+  const buscaRef = useRef<HTMLDivElement>(null);
+  const botaoBuscaRef = useRef<HTMLButtonElement>(null);
+  const campoBuscaRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!buscaAberta) {
+      return;
+    }
+
+    const fecharAoClicarFora = (evento: PointerEvent) => {
+      if (
+        evento.target instanceof Node &&
+        !buscaRef.current?.contains(evento.target)
+      ) {
+        setBuscaAberta(false);
+      }
+    };
+
+    const fecharComEscape = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") {
+        setBuscaAberta(false);
+        botaoBuscaRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", fecharAoClicarFora);
+    document.addEventListener("keydown", fecharComEscape);
+    campoBuscaRef.current?.focus();
+
+    return () => {
+      document.removeEventListener("pointerdown", fecharAoClicarFora);
+      document.removeEventListener("keydown", fecharComEscape);
+    };
+  }, [buscaAberta]);
 
   return (
-    <div className="flex items-center gap-2">
+    <div ref={buscaRef} className="flex items-center gap-2">
       <button
+        ref={botaoBuscaRef}
         type="button"
         aria-label={buscaAberta ? "Fechar a busca" : "Abrir a busca"}
         aria-expanded={buscaAberta}
@@ -42,6 +77,7 @@ export function CabecalhoBusca() {
           Buscar no acervo
         </label>
         <input
+          ref={campoBuscaRef}
           id="q-cabecalho"
           name="q"
           type="search"
