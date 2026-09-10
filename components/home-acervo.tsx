@@ -10,6 +10,7 @@ type Props = {
 export function HomeAcervo({ itens, historico }: Props) {
   // `Set` e não `array`: a pergunta é "esse slug está aqui?", e ela é feita
   // uma vez por título do acervo.
+  const total = itens.length;
   const jaComecados = new Set(historico.map((h) => h.midiaSlug));
 
   // O recorte do filtro: o que sobra depois de tirar o que já foi aberto.
@@ -21,7 +22,7 @@ export function HomeAcervo({ itens, historico }: Props) {
         <h2 id="acervo" className="text-xl font-semibold">
           O acervo
         </h2>
-        <p className="text-sm text-zinc-500">0 títulos no acervo</p>
+        <p className="text-sm text-zinc-500">{total} títulos no acervo</p>
       </div>
 
       {/*
