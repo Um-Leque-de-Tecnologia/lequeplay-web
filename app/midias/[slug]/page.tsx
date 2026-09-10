@@ -27,12 +27,39 @@ export async function generateMetadata({
     };
   }
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lequeplay-web.vercel.app";
+  
+  // Declaração da variável com fallback para a imagem oficial do LequePlay
+  const caminhoCapa = midia.posterUrl ?? "/capas/sem-capa.svg";
+  const imagemCapa = caminhoCapa.startsWith("http") ? caminhoCapa : `${baseUrl}${caminhoCapa}`;
+
   return {
     title: midia.titulo,
     description: midia.sinopse,
+    openGraph: {
+      title: midia.titulo,
+      description: midia.sinopse,
+      url: `${baseUrl}/midias/${midia.slug}`,
+      siteName: "LequePlay",
+      images: [
+        {
+          url: imagemCapa,
+          width: 1200,
+          height: 630,
+          alt: `Pôster do título ${midia.titulo}`,
+        },
+      ],
+      locale: "pt_BR",
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: midia.titulo,
+      description: midia.sinopse,
+      images: [imagemCapa],
+    },
   };
 }
-
 export default async function PaginaDaMidia({
   params,
   searchParams,

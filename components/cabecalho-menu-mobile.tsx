@@ -8,7 +8,7 @@ import Link from "next/link";
 const ITENS = [
   { href: "/", rotulo: "Início" },
   { href: "/midias", rotulo: "Catálogo" },
-  { href: "/", rotulo: "Início" },
+  { href: "/sobre", rotulo: "Sobre" },
 ];
 
 /**
