@@ -24,12 +24,18 @@ const CARACTERES_NO_RESUMO = 180;
  * Onde cortar sem partir palavra: o último espaço até o limite. Se não
  * houver espaço nenhum (palavra gigante, improvável numa sinopse), cai no
  * limite cru — melhor cortar do que não cortar.
+ *
+ * Pontuação colada no fim do resumo passa para o lado do resto: fechada, a
+ * sinopse não termina em `superação,…`; aberta, a vírgula volta ao lugar.
  */
 function corte(sinopse: string): number {
   if (sinopse.length <= CARACTERES_NO_RESUMO) return sinopse.length;
 
   const ultimoEspaco = sinopse.lastIndexOf(" ", CARACTERES_NO_RESUMO);
-  return ultimoEspaco === -1 ? CARACTERES_NO_RESUMO : ultimoEspaco;
+  if (ultimoEspaco === -1) return CARACTERES_NO_RESUMO;
+
+  const antes = sinopse.charAt(ultimoEspaco - 1);
+  return /[,;:]/.test(antes) ? ultimoEspaco - 1 : ultimoEspaco;
 }
 
 export function FichaSinopse({ midia }: { midia: Midia }) {
@@ -37,9 +43,10 @@ export function FichaSinopse({ midia }: { midia: Midia }) {
 
   const ponto = corte(midia.sinopse);
   const inicio = midia.sinopse.slice(0, ponto);
-  // `trimStart` tira o espaço do corte, que senão abriria o resto com um
-  // espaço solto quando a sinopse expande.
-  const resto = midia.sinopse.slice(ponto).trimStart();
+  // O resto começa no próprio espaço (ou na pontuação) do corte: é ele que
+  // separa as duas metades quando a sinopse abre. Nenhum espaço é inventado,
+  // então o corte no limite cru não parte a palavra em duas ao abrir.
+  const resto = midia.sinopse.slice(ponto).trimEnd();
 
   return (
     <div className="mt-5 max-w-prose">
@@ -47,8 +54,7 @@ export function FichaSinopse({ midia }: { midia: Midia }) {
         {inicio}
         {resto !== "" && (
           <>
-            {/* Espaço entre o resumo e o resto: ele sumiu no `trimStart`. */}
-            <span id="resto-sinopse" hidden={!expandida}> {resto}</span>
+            <span id="resto-sinopse" hidden={!expandida}>{resto}</span>
             {/* As reticências são do corte, não da sinopse: somem quando abre. */}
             <span hidden={expandida}>…</span>
           </>
