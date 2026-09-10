@@ -8,11 +8,37 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://lequeplay-web.vercel.app"
+  ),
   // `template` faz cada página virar "Título · LequePlay" sem repetir isto.
   title: { default: "LequePlay", template: "%s · LequePlay" },
   description:
     "Catálogo de filmes, séries e podcasts. Ache pelo que você está a fim de ver, não pelo título exato.",
+  openGraph: {
+    title: "LequePlay",
+    description:
+      "Catálogo de filmes, séries e podcasts. Ache pelo que você está a fim de ver, não pelo título exato.",
+    url: "/",
+    siteName: "LequePlay",
+    locale: "pt_BR",
+    type: "website",
+    images: [
+      {
+        url: "/capas/sem-capa.svg",
+        width: 1200,
+        height: 630,
+        alt: "LequePlay - Catálogo de filmes, séries e podcasts",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LequePlay",
+    description:
+      "Catálogo de filmes, séries e podcasts. Ache pelo que você está a fim de ver, não pelo título exato.",
+    images: ["/capas/sem-capa.svg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
