@@ -49,6 +49,28 @@ export function FichaTemporadas({
     setTemporadaSelecionada,
   ] = useState(indiceInicial);
 
+  /*
+   * `useState` lê o valor inicial UMA vez, na montagem. Se a página for
+   * aberta de novo na mesma rota com outra query — navegação suave, sem
+   * remontar —, o seletor continuaria na temporada antiga enquanto o episódio
+   * destacado já seria de outra: dois pedaços da mesma tela dizendo coisas
+   * diferentes.
+   *
+   * O ajuste é feito durante a renderização, comparando a prop com o valor
+   * anterior. É o que o React recomenda no lugar de um `useEffect` de
+   * sincronia: não há segunda renderização pintada na tela, e não há efeito
+   * para esquecer de limpar.
+   */
+  const [
+    temporadaDaUrl,
+    setTemporadaDaUrl,
+  ] = useState(temporadaNumero);
+
+  if (temporadaDaUrl !== temporadaNumero) {
+    setTemporadaDaUrl(temporadaNumero);
+    setTemporadaSelecionada(indiceInicial);
+  }
+
   const temporada =
     serie.temporadas[temporadaSelecionada];
 

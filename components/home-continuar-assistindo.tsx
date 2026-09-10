@@ -122,13 +122,25 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
    *
    * Se a mídia não existir mais no catálogo, ela é ignorada.
    */
-  const emAndamento = historico.flatMap((item) => {
-    const midia = itens.find(
-      (m) => m.slug === item.midiaSlug,
-    );
+  const emAndamento = historico
+    .flatMap((item) => {
+      const midia = itens.find(
+        (m) => m.slug === item.midiaSlug,
+      );
 
-    return midia ? [{ item, midia }] : [];
-  });
+      return midia ? [{ item, midia }] : [];
+    })
+    /*
+     * Do mais recente para o mais antigo, como `lib/tipos.ts` documenta —
+     * "a API devolve na ordem em que gravou, que não é a mesma coisa".
+     * Por `Date`, e não comparando as strings: `atualizadoEm` é ISO com fuso,
+     * e dois fusos diferentes ordenam errado no compare de texto.
+     */
+    .toSorted(
+      (a, b) =>
+        new Date(b.item.atualizadoEm).getTime() -
+        new Date(a.item.atualizadoEm).getTime(),
+    );
 
   /*
    * Se a conta não possui histórico válido,
@@ -161,16 +173,18 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
 
           /*
            * Quando o histórico possui temporada e episódio,
-           * colocamos essas informações na URL.
+           * colocamos essas informações na URL — mais o
+           * fragmento, que rola a página até a linha
+           * destacada em vez de deixá-la fora da tela.
            *
            * Exemplo:
            *
-           * /midias/protocolo-aberto?temporada=2&episodio=2
+           * /midias/protocolo-aberto?temporada=2&episodio=2#episodio-2
            */
           const parametros =
             item.temporadaNumero !== undefined &&
             item.episodioNumero !== undefined
-              ? `?temporada=${item.temporadaNumero}&episodio=${item.episodioNumero}`
+              ? `?temporada=${item.temporadaNumero}&episodio=${item.episodioNumero}#episodio-${item.episodioNumero}`
               : "";
 
           const href = `/midias/${midia.slug}${parametros}`;
