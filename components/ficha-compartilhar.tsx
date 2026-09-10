@@ -5,8 +5,6 @@
  * colado numa conversa, num e-mail, num post — e `/midias/slug` sozinho não
  * leva a lugar nenhum fora do navegador de quem copiou.
  */
-const SITE = "http://localhost:3000";
-
 export function FichaCompartilhar({
   slug,
   titulo,
@@ -14,7 +12,9 @@ export function FichaCompartilhar({
   slug: string;
   titulo: string;
 }) {
-  const url = `${SITE}/midias/${slug}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://lequeplay-web.vercel.app";
+  const url = `${baseUrl}/midias/${slug}`;
 
   return (
     <section aria-labelledby="compartilhar" className="mt-12">

@@ -8,6 +8,7 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  
   // `template` faz cada página virar "Título · LequePlay" sem repetir isto.
   title: { default: "LequePlay", template: "%s · LequePlay" },
   description:
