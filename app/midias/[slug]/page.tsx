@@ -15,11 +15,40 @@ export async function generateMetadata({
   const { slug } = await params;
   const midia = await buscarMidia(slug);
 
-  if (!midia) return { title: "Título não encontrado" };
+  if (!midia) {
+    return { 
+      title: "Mídia não encontrada · LequePlay",
+      description: "A mídia solicitada não existe no catálogo.",
+    };
+  }
 
+  const tituloFormatado = midia.titulo;
+
+  const descricaoCurta =
+    midia.sinopse.length > 150
+      ? `${midia.sinopse.slice(0, 147)}...`
+      : midia.sinopse;
+  
   return {
-    title: midia.titulo,
-    description: midia.sinopse,
+    title: tituloFormatado,
+    description: descricaoCurta,
+    openGraph: {
+      title: tituloFormatado,
+      description: descricaoCurta,
+      url: `/midias/${slug}`, // Link da própria página no Open Graph
+      siteName: 'LequePlay',
+      images: midia.posterUrl
+        ? [
+            {
+              url: midia.posterUrl,
+              width: 1200,
+              height: 630,
+              alt: `Capa de ${midia.titulo}`,
+            },
+          ]
+        : [],
+      type: 'article',
+    },
   };
 }
 
