@@ -111,7 +111,7 @@ export function FichaAbas({ midia }: { midia: Midia }) {
             ref={(botao) => {
               referenciasAbas.current[aba.id] = botao;
             }}
-            onClick={() => setAbaAberta(aba.id)}
+            onClick={() => selecionarAba(aba.id)}
             onKeyDown={(event) => {
               const indiceAtual = ABAS.findIndex(
                 (item) => item.id === aba.id,
@@ -155,14 +155,18 @@ export function FichaAbas({ midia }: { midia: Midia }) {
       </div>
 
       <div className="pt-6">
-        <div
-          role="tabpanel"
-          id={`painel-${abaAberta}`}
-          aria-labelledby={`aba-${abaAberta}`}
-          tabIndex={0}
-        >
-          <PainelDaAba id={abaAberta} midia={midia} />
-        </div>
+        {ABAS.map((aba) => (
+          <div
+            key={aba.id}
+            role="tabpanel"
+            id={`painel-${aba.id}`}
+            aria-labelledby={`aba-${aba.id}`}
+            tabIndex={0}
+            hidden={aba.id !== abaAberta}
+          >
+            <PainelDaAba id={aba.id} midia={midia} />
+          </div>
+        ))}
       </div>
     </section>
   );
