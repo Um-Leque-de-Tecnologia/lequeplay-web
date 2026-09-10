@@ -1,8 +1,7 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
-import type { CSSProperties } from "react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { CardMidia } from "@/components/card-midia";
 import type { Midia } from "@/lib/tipos";
 
@@ -15,8 +14,6 @@ import type { Midia } from "@/lib/tipos";
  */
 export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
   const [indiceAtual, setIndiceAtual] = useState(0);
-  const botaoAnteriorRef = useRef<HTMLButtonElement>(null);
-  const botaoProximoRef = useRef<HTMLButtonElement>(null);
   const ultimoIndice = destaques.length - 1;
 
   function irParaAnterior() {
@@ -29,25 +26,22 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
 
   if (destaques.length === 0) return null;
 
+  // O foco fica na section: ela tem anel visível e o `aria-live` anuncia o
+  // destaque novo. Mandar o foco para um botão faria a próxima seta cair no
+  // `return` abaixo — o alvo passaria a ser o botão, não a section.
   function aoPressionarTecla(event: KeyboardEvent<HTMLElement>) {
     if (event.target !== event.currentTarget) return;
 
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       irParaAnterior();
-      botaoAnteriorRef.current?.focus();
     }
 
     if (event.key === "ArrowRight") {
       event.preventDefault();
       irParaProximo();
-      botaoProximoRef.current?.focus();
     }
   }
-
-  const estiloTrilho = {
-    "--indice-atual": indiceAtual,
-  } as CSSProperties;
 
   return (
     <section
@@ -64,7 +58,6 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
 
         <div className="flex gap-2">
           <button
-            ref={botaoAnteriorRef}
             type="button"
             aria-label="Destaque anterior"
             onClick={irParaAnterior}
@@ -73,7 +66,6 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
             ←
           </button>
           <button
-            ref={botaoProximoRef}
             type="button"
             aria-label="Próximo destaque"
             onClick={irParaProximo}
@@ -88,19 +80,20 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
         {/*
           Continua sendo <ul> porque continua sendo uma lista — o leitor de
           tela anuncia quantos itens existem, mesmo com a faixa se movendo.
+
+          A largura do slide mora só em `--largura-slide`: o <li> usa ela, e
+          cada índice anda um slide mais o `gap-6` (1.5rem).
         */}
         <ul
-          className="flex gap-6 pb-2 transition-transform duration-300 ease-out [--largura-slide:11rem] sm:[--largura-slide:13rem]"
+          className="flex gap-6 pb-2 transition-transform duration-300 ease-out motion-reduce:transition-none [--largura-slide:11rem] sm:[--largura-slide:13rem]"
           style={{
-            ...estiloTrilho,
-            transform:
-              "translateX(calc(var(--indice-atual) * (var(--largura-slide) + 1.5rem) * -1))",
+            transform: `translateX(calc(${indiceAtual} * (var(--largura-slide) + 1.5rem) * -1))`,
           }}
         >
           {destaques.map((midia, indice) => (
             <li
               key={midia.id}
-              className="w-44 shrink-0 sm:w-52"
+              className="w-[var(--largura-slide)] shrink-0"
               aria-current={indice === indiceAtual ? "true" : undefined}
             >
               <CardMidia midia={midia} />
