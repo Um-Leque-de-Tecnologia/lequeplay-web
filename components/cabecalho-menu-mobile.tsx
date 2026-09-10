@@ -1,39 +1,35 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { CabecalhoMenuMobileCasca } from "@/components/cabecalho-menu-mobile-casca";
 
+/**
+ * Os mesmos destinos da navegação principal, empilhados. A lista mora aqui
+ * porque o menu do celular é o único que a usa hoje; no dia em que o
+ * cabeçalho de desktop também precisar dela, ela sobe um nível — não antes.
+ */
 const ITENS = [
   { href: "/", rotulo: "Início" },
   { href: "/midias", rotulo: "Catálogo" },
 ];
 
+/**
+ * A navegação de largura de celular.
+ *
+ * `<details>` e não uma div com classe: o abrir e fechar é do navegador,
+ * chega com teclado e com leitor de tela de graça, e continua funcionando
+ * antes do JavaScript carregar. O `sm:hidden` da casca some com tudo no
+ * desktop, onde a navegação principal já aparece inteira.
+ *
+ * O JavaScript da casca é acréscimo em cima desse comportamento, não
+ * substituto: ele só fecha o menu nos casos em que o navegador sozinho não
+ * fecharia, mexendo no `open` do próprio `<details>`. Trocar por uma div com
+ * `useState` jogaria fora o que o `<details>` dá de graça.
+ *
+ * Este arquivo continua de servidor de propósito: a lista e os links saem
+ * prontos daqui, e só a casca vai para o navegador.
+ */
 export function CabecalhoMenuMobile() {
-  const pathname = usePathname();
-  const detailsRef = useRef<HTMLDetailsElement>(null);
-
-  // Fecha o menu ao mudar de rota (Critério 2)
-  useEffect(() => {
-    if (detailsRef.current) {
-      detailsRef.current.open = false;
-    }
-  }, [pathname]);
-
-  // Fecha o menu ao pressionar a tecla ESC (Critério 3)
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape" && detailsRef.current) {
-        detailsRef.current.open = false;
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
   return (
-    <details ref={detailsRef} className="relative sm:hidden">
+    <CabecalhoMenuMobileCasca>
       <summary
         aria-label="Abrir o menu"
         className="cursor-pointer list-none rounded-md p-2 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
@@ -49,9 +45,7 @@ export function CabecalhoMenuMobile() {
           <button
             type="button"
             aria-label="Fechar o menu"
-            onClick={() => {
-              if (detailsRef.current) detailsRef.current.open = false;
-            }}
+            data-fecha-menu
             className="rounded-md p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-zinc-100"
           >
             <span aria-hidden="true">✕</span>
@@ -59,13 +53,12 @@ export function CabecalhoMenuMobile() {
         </div>
 
         <ul className="flex flex-col">
-          {ITENS.map((item, indice) => (
-            <li key={indice}>
+          {ITENS.map((item) => (
+            // `href` como chave porque cada destino aparece uma vez só: a
+            // chave fica presa ao dado, e não à posição dele na lista.
+            <li key={item.href}>
               <Link
                 href={item.href}
-                onClick={() => {
-                  if (detailsRef.current) detailsRef.current.open = false;
-                }}
                 className="block rounded-md px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-zinc-100"
               >
                 {item.rotulo}
@@ -74,6 +67,6 @@ export function CabecalhoMenuMobile() {
           ))}
         </ul>
       </nav>
-    </details>
+    </CabecalhoMenuMobileCasca>
   );
 }
