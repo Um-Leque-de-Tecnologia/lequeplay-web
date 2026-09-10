@@ -48,7 +48,7 @@ export function FichaSinopse({ midia }: { midia: Midia }) {
         {resto !== "" && (
           <>
             {/* Espaço entre o resumo e o resto: ele sumiu no `trimStart`. */}
-            <span hidden={!expandida}> {resto}</span>
+            <span id="resto-sinopse" hidden={!expandida}> {resto}</span>
             {/* As reticências são do corte, não da sinopse: somem quando abre. */}
             <span hidden={expandida}>…</span>
           </>
@@ -60,6 +60,8 @@ export function FichaSinopse({ midia }: { midia: Midia }) {
         <button
           type="button"
           aria-expanded={expandida}
+          // Diz ao leitor de tela *o que* está expandido, não só que algo está.
+          aria-controls="resto-sinopse"
           onClick={() => setExpandida((v) => !v)}
           className="mt-2 text-sm font-medium text-violet-400 transition hover:text-violet-300"
         >
