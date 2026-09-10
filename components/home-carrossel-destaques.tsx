@@ -1,10 +1,18 @@
 "use client";
 
 import type { KeyboardEvent } from "react";
+import type { CSSProperties } from "react";
 import { useRef, useState } from "react";
 import { CardMidia } from "@/components/card-midia";
 import type { Midia } from "@/lib/tipos";
 
+/**
+ * O carrossel de destaques da home.
+ *
+ * Ele recebe os destaques prontos, por props: quem busca é a página, no
+ * servidor. Um carrossel é enfeite de apresentação — não é motivo para
+ * arrastar a chamada da API para o navegador.
+ */
 export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
   const [indiceAtual, setIndiceAtual] = useState(0);
   const botaoAnteriorRef = useRef<HTMLButtonElement>(null);
@@ -21,13 +29,9 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
 
   if (destaques.length === 0) return null;
 
-  const slidesEmOrdem = Array.from(
-    { length: destaques.length + 2 },
-    (_, deslocamento) =>
-      destaques[(indiceAtual + deslocamento) % destaques.length],
-  );
-
   function aoPressionarTecla(event: KeyboardEvent<HTMLElement>) {
+    if (event.target !== event.currentTarget) return;
+
     if (event.key === "ArrowLeft") {
       event.preventDefault();
       irParaAnterior();
@@ -41,14 +45,17 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
     }
   }
 
+  const estiloTrilho = {
+    "--indice-atual": indiceAtual,
+  } as CSSProperties;
+
   return (
     <section
       aria-labelledby="destaques"
       aria-roledescription="carrossel"
-      aria-label="Carrossel de destaques"
       tabIndex={0}
       onKeyDown={aoPressionarTecla}
-      className="mb-14"
+      className="mb-14 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-violet-400"
     >
       <div className="mb-5 flex items-center justify-between gap-4">
         <h2 id="destaques" className="text-xl font-semibold">
@@ -78,26 +85,33 @@ export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
       </div>
 
       <div className="overflow-hidden">
-        <ul className="flex gap-6 pb-2">
-          {slidesEmOrdem.map((midia, indice) => (
+        {/*
+          Continua sendo <ul> porque continua sendo uma lista — o leitor de
+          tela anuncia quantos itens existem, mesmo com a faixa se movendo.
+        */}
+        <ul
+          className="flex gap-6 pb-2 transition-transform duration-300 ease-out [--largura-slide:11rem] sm:[--largura-slide:13rem]"
+          style={{
+            ...estiloTrilho,
+            transform:
+              "translateX(calc(var(--indice-atual) * (var(--largura-slide) + 1.5rem) * -1))",
+          }}
+        >
+          {destaques.map((midia, indice) => (
             <li
-              key={`${midia.id}-${indice}`}
+              key={midia.id}
               className="w-44 shrink-0 sm:w-52"
-              aria-current={indice === 0 ? "true" : undefined}
+              aria-current={indice === indiceAtual ? "true" : undefined}
             >
-              <figure>
-                <CardMidia midia={midia} />
-                <figcaption className="mt-2 text-xs uppercase tracking-wide text-violet-300">
-                  {midia.titulo}
-                </figcaption>
-              </figure>
+              <CardMidia midia={midia} />
             </li>
           ))}
         </ul>
       </div>
 
       <p className="mt-3 text-sm text-zinc-500" aria-live="polite">
-        {indiceAtual + 1} de {destaques.length}
+        {indiceAtual + 1} de {destaques.length}:{" "}
+        {destaques[indiceAtual].titulo}
       </p>
     </section>
   );
