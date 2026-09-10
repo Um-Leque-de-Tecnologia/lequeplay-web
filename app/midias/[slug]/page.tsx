@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
+import { FichaPodcast } from "@/components/ficha-podcast";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
@@ -112,14 +113,20 @@ export default async function PaginaDaMidia({
         </div>
       </div>
 
-      <FichaAbas midia={midia} />
+      {midia.tipo === "podcast" ? (
+        <FichaPodcast podcast={midia} />
+      ) : (
+        <>
+          <FichaAbas midia={midia} />
 
-      {midia.tipo === "serie" && (
-        <FichaTemporadas
-          serie={midia}
-          temporadaNumero={temporadaNumero}
-          episodioNumero={episodioNumero}
-        />
+          {midia.tipo === "serie" && (
+            <FichaTemporadas
+              serie={midia}
+              temporadaNumero={temporadaNumero}
+              episodioNumero={episodioNumero}
+            />
+          )}
+        </>
       )}
 
       <FichaResenha titulo={midia.titulo} />

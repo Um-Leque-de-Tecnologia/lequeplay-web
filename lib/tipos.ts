@@ -120,12 +120,32 @@ export type Serie = MidiaBase & {
   temporadas: Temporada[];
 };
 
+export type EpisodioPodcast = {
+  numero: number;
+  titulo: string;
+  duracaoMin: number;
+  /** Data em formato ISO (ex: "2025-03-12"). */
+  publicadoEm: string;
+};
+
 export type Podcast = MidiaBase & {
   tipo: "podcast";
   /** Como `diretor`: derivado do crédito com `papel: "apresentacao"`. */
   apresentador: string;
   totalEpisodios: number;
+  frequencia?: string;
+  episodios?: EpisodioPodcast[];
 };
+
+/**
+ * Deriva o nome de quem apresenta a partir de `creditos`.
+ * No LequePlay, a apresentação não é um campo escalar: vem do crédito
+ * onde `papel === "apresentacao"`.
+ */
+export function obterApresentador(midia: Podcast): string {
+  const credito = midia.creditos?.find((c) => c.papel === "apresentacao");
+  return credito?.pessoa.nome ?? midia.apresentador ?? "";
+}
 
 export type Midia = Filme | Serie | Podcast;
 
