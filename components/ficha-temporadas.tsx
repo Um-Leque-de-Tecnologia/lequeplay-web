@@ -60,15 +60,19 @@ export function FichaTemporadas({
   }
 
   /*
-   * Procura o episódio que veio pelo "Retomar".
+   * O episódio que veio pelo "Retomar" só é ESTE episódio se a temporada
+   * também for a dele. Comparando só o número, `?temporada=2&episodio=2`
+   * destacava o episódio 2 de qualquer temporada que o seletor abrisse —
+   * inclusive a 0 de protocolo-aberto, que é a de especiais.
+   *
+   * A comparação é com `temporada.numero`, e não com o índice do array: nessa
+   * mesma série os dois não coincidem.
    */
-  const episodioSelecionado =
-    episodioNumero !== undefined
-      ? temporada.episodios.find(
-          (episodio) =>
-            episodio.numero === episodioNumero,
-        )
-      : undefined;
+  const ehOEpisodioDoRetomar = (numeroDoEpisodio: number) =>
+    temporadaNumero !== undefined &&
+    episodioNumero !== undefined &&
+    temporada.numero === temporadaNumero &&
+    numeroDoEpisodio === episodioNumero;
 
   return (
     <section
@@ -121,9 +125,9 @@ export function FichaTemporadas({
       ) : (
         <ol className="divide-y divide-white/10 border-y border-white/10">
           {temporada.episodios.map((episodio) => {
-            const selecionado =
-              episodioSelecionado?.numero ===
-              episodio.numero;
+            const selecionado = ehOEpisodioDoRetomar(
+              episodio.numero,
+            );
 
             return (
               <li

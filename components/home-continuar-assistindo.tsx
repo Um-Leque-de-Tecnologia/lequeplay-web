@@ -11,44 +11,89 @@ type Props = {
 };
 
 /**
- * Calcula quanto do título já foi assistido, em porcentagem.
+ * O total contra o qual o progresso é medido, em segundos.
  *
- * O histórico guarda segundos.
- * A mídia guarda minutos.
+ * Quem manda é o EPISÓDIO, quando o histórico diz qual está tocando:
+ * `segundosAssistidos` é uma posição dentro de um episódio, enquanto
+ * `Midia.duracaoMin` é o runtime da série inteira, somado pelo backend
+ * (lib/tipos.ts). Dividir um pelo outro dá sempre um número pequeno demais, e
+ * quanto mais temporadas a série tem, mais errado fica.
  *
- * Portanto, precisamos converter a duração para segundos
- * antes de fazer a divisão.
+ * Devolve `null` quando não há denominador confiável — e aí quem chama não
+ * desenha a barra. Dado ausente não é zero: afirmar "0% assistido" para uma
+ * duração que a API omitiu é dizer um número que não se tem, e o
+ * `aria-valuenow` faz o leitor de tela repetir a mesma mentira.
+ */
+function duracaoEmSegundos(
+  item: ItemHistorico,
+  midia: Midia,
+): number | null {
+  if (
+    midia.tipo === "serie" &&
+    item.temporadaNumero !== undefined &&
+    item.episodioNumero !== undefined
+  ) {
+    /*
+     * Pelo `numero`, nunca pelo índice do array:
+     * protocolo-aberto tem temporada 0 (especiais),
+     * e ali os dois não coincidem.
+     */
+    const temporada = midia.temporadas.find(
+      (t) => t.numero === item.temporadaNumero,
+    );
+
+    const episodio = temporada?.episodios.find(
+      (e) => e.numero === item.episodioNumero,
+    );
+
+    /*
+     * Episódio que saiu do catálogo: o histórico
+     * continua apontando para ele. Cair na duração
+     * da série aqui seria repetir o erro que esta
+     * função existe para não cometer.
+     */
+    return episodio
+      ? episodio.duracaoMin * 60
+      : null;
+  }
+
+  /*
+   * Filme, podcast, ou linha antiga do player — as que
+   * guardaram só o título. Para elas a única duração
+   * disponível é a da mídia inteira, e ela é opcional
+   * na API (`omitempty`).
+   */
+  if (
+    midia.duracaoMin === undefined ||
+    midia.duracaoMin <= 0
+  ) {
+    return null;
+  }
+
+  return midia.duracaoMin * 60;
+}
+
+/**
+ * Quanto do que está tocando já foi assistido, em porcentagem — ou `null`
+ * quando não dá para saber.
  */
 function percentualAssistido(
   item: ItemHistorico,
   midia: Midia,
-): number {
-  /*
-   * `duracaoMin` é opcional na API.
-   *
-   * Se estiver ausente ou for 0, não existe uma duração
-   * válida para calcular a porcentagem.
-   */
-  if (!midia.duracaoMin || midia.duracaoMin <= 0) {
-    return 0;
+): number | null {
+  const duracao = duracaoEmSegundos(item, midia);
+
+  if (duracao === null) {
+    return null;
   }
 
   /*
-   * A duração da mídia vem em minutos.
-   * O histórico vem em segundos.
-   *
-   * Exemplo:
-   * 60 minutos = 3600 segundos.
-   */
-  const duracaoEmSegundos = midia.duracaoMin * 60;
-
-  /*
-   * Calcula a porcentagem e impede que a barra passe de 100%.
+   * Impede que a barra passe de 100%.
    */
   return Math.min(
     100,
     Math.round(
-      (item.segundosAssistidos / duracaoEmSegundos) * 100,
+      (item.segundosAssistidos / duracao) * 100,
     ),
   );
 }
@@ -157,25 +202,40 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
                   </p>
                 )}
 
-                <div
-                  role="progressbar"
-                  aria-label={`Progresso de ${midia.titulo}: ${percentual}%`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={percentual}
-                  className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
-                >
-                  <div
-                    className="h-full rounded-full bg-violet-500"
-                    style={{
-                      width: `${percentual}%`,
-                    }}
-                  />
-                </div>
+                {/*
+                  Sem duração confiável não há barra: o título continua na
+                  faixa, com o "Retomar", e nada é afirmado sobre o quanto
+                  falta. É o caso de onde-o-rio-vira, cuja série veio sem
+                  `duracaoMin` e cujo histórico não diz o episódio.
+                */}
+                {percentual !== null ? (
+                  <>
+                    <div
+                      role="progressbar"
+                      aria-label={`Progresso de ${midia.titulo}: ${percentual}%`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={percentual}
+                      className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
+                    >
+                      <div
+                        className="h-full rounded-full bg-violet-500"
+                        style={{
+                          width: `${percentual}%`,
+                        }}
+                      />
+                    </div>
 
-                <p className="mt-1.5 text-xs text-zinc-500">
-                  {percentual}% assistido
-                </p>
+                    <p className="mt-1.5 text-xs text-zinc-500">
+                      {percentual}% assistido
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-3 text-xs text-zinc-500">
+                    Você parou no meio — a duração deste
+                    título ainda não está no catálogo.
+                  </p>
+                )}
 
                 <Link
                   href={href}
