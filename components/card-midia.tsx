@@ -9,22 +9,27 @@ const ROTULO_TIPO: Record<Midia["tipo"], string> = {
 };
 
 export function CardMidia({ midia }: { midia: Midia }) {
+  const temAvaliacao =
+    typeof midia.totalAvaliacoes === "number" &&
+    midia.totalAvaliacoes > 0 &&
+    typeof midia.notaMedia === "number" &&
+    !Number.isNaN(midia.notaMedia);
+
+  const notaFormatada = temAvaliacao
+    ? midia.notaMedia.toLocaleString("pt-BR", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      })
+    : null;
+
   return (
-    // <article> porque o card faz sentido sozinho, fora da lista.
     <article className="group">
       <Link href={`/midias/${midia.slug}`} className="block">
         <Image
-          // `??` e não `||`: o `??` só troca `null`/`undefined`, o `||` troca
-          // qualquer valor falso — e `""` vindo da API é dado sujo, não "sem
-          // capa"; com `||` o bug viraria uma capa bonitinha e ninguém veria.
-          // O campo mudou de `capaUrl: string | null` para `posterUrl?: string`
-          // (a API OMITE quando não há capa, em vez de mandar `null`), e o `??`
-          // sobreviveu à troca justamente porque ele já pegava `undefined`.
           src={midia.posterUrl ?? "/capas/sem-capa.svg"}
           alt=""
           width={300}
           height={450}
-          // width/height evitam a página "pular" quando a imagem carrega.
           className="w-full rounded-lg border border-white/10 transition group-hover:border-violet-500"
         />
 
@@ -34,14 +39,12 @@ export function CardMidia({ midia }: { midia: Midia }) {
       </Link>
 
       <p className="mt-1 text-sm text-zinc-500">
-        {ROTULO_TIPO[midia.tipo]} · {midia.ano}
-        {/*
-          Quem responde "ninguém avaliou" é o CONTADOR, não a nota: a API
-          manda `notaMedia` sempre como número, então o `0` de um título sem
-          voto nenhum é o mesmo `0` de um título detestado. Só
-          `totalAvaliacoes` separa os dois.
-        */}
-        {midia.totalAvaliacoes > 0 && ` · ★ ${midia.notaMedia.toFixed(1)}`}
+        {ROTULO_TIPO[midia.tipo]} · {midia.ano} ·{" "}
+        {temAvaliacao ? (
+          <span className="text-amber-400">★ {notaFormatada}</span>
+        ) : (
+          <span className="text-zinc-500 italic">ainda não avaliado</span>
+        )}
       </p>
     </article>
   );
