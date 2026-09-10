@@ -17,12 +17,30 @@ export async function generateMetadata({
 
   if (!midia) return { title: "Título não encontrado" };
 
+  // Define a imagem: usa o pôster se houver, senão usa a alternativa do LequePlay
+  const imagemCapa = midia.posterUrl ?? "/capas/sem-capa.svg";
+
   return {
     title: midia.titulo,
     description: midia.sinopse,
+    openGraph: {
+      title: midia.titulo,
+      description: midia.sinopse,
+      url: `/midias/${midia.slug}`,
+      siteName: "LequePlay",
+      images: [
+        {
+          url: imagemCapa,
+          width: 300,
+          height: 450,
+          alt: `Pôster do título ${midia.titulo}`,
+        },
+      ],
+      locale: "pt_BR",
+      type: "article",
+    },
   };
 }
-
 export default async function PaginaDaMidia({
   params,
 }: PageProps<"/midias/[slug]">) {
