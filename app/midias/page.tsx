@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
-import { CatalogoOrdenacao } from "@/components/catalogo-ordenacao";
-import { CatalogoVazio } from "@/components/catalogo-vazio";
-import { CardMidia } from "@/components/card-midia";
+import { CatalogoGrade } from "@/components/catalogo-grade";
 import { listarGeneros, listarMidias } from "@/lib/api";
 import type { Midia } from "@/lib/tipos";
 
@@ -55,26 +53,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
 
       <CatalogoChipsGenero generos={generos} />
 
-      {/* Contagem e ordenação na mesma linha: as duas falam do mesmo
-          conjunto de resultados. */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-zinc-500" aria-live="polite">
-          {itens.length} título(s)
-        </p>
-        <CatalogoOrdenacao />
-      </div>
-
-      {itens.length === 0 ? (
-        <CatalogoVazio />
-      ) : (
-        <ul className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-          {itens.map((midia) => (
-            <li key={midia.id}>
-              <CardMidia midia={midia} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <CatalogoGrade itens={itens} />
     </>
   );
 }
