@@ -1,8 +1,8 @@
 import { CardMidia } from "@/components/card-midia";
-import type { ItemHistorico, Midia } from "@/lib/tipos";
+import type { ItemHistorico, Midia, MidiaCard } from "@/lib/tipos";
 
 type Props = {
-  itens: Midia[];
+  itens: (Midia | MidiaCard)[];
   /** Serve ao filtro: quem já apareceu aqui a pessoa já começou a ver. */
   historico: ItemHistorico[];
 };

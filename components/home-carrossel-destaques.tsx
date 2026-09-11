@@ -3,7 +3,7 @@
 import type { KeyboardEvent } from "react";
 import { useState } from "react";
 import { CardMidia } from "@/components/card-midia";
-import type { Midia } from "@/lib/tipos";
+import type { Midia, MidiaCard } from "@/lib/tipos";
 
 /**
  * O carrossel de destaques da home.
@@ -12,7 +12,11 @@ import type { Midia } from "@/lib/tipos";
  * servidor. Um carrossel é enfeite de apresentação — não é motivo para
  * arrastar a chamada da API para o navegador.
  */
-export function HomeCarrosselDestaques({ destaques }: { destaques: Midia[] }) {
+export function HomeCarrosselDestaques({
+  destaques,
+}: {
+  destaques: (Midia | MidiaCard)[];
+}) {
   const [indiceAtual, setIndiceAtual] = useState(0);
   const ultimoIndice = destaques.length - 1;
 
