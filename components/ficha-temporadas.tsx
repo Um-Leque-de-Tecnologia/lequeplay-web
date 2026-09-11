@@ -20,29 +20,18 @@ export function FichaTemporadas({
   episodioNumero,
 }: Props) {
   /*
-   * A API identifica uma temporada pelo campo `numero`.
-   *
-   * O array, entretanto, é acessado pelo índice.
-   *
-   * Por isso encontramos o índice correspondente
-   * ao número recebido na URL.
+   * A API usa o número da temporada, mas o array usa o índice.
+   * Por isso encontramos o índice correspondente ao número recebido.
    */
   const indiceEncontrado =
     temporadaNumero !== undefined
       ? serie.temporadas.findIndex(
-          (temporada) =>
-            temporada.numero === temporadaNumero,
+          (temporada) => temporada.numero === temporadaNumero,
         )
       : -1;
 
-  /*
-   * Se a temporada recebida não existir,
-   * começamos pela primeira.
-   */
   const indiceInicial =
-    indiceEncontrado >= 0
-      ? indiceEncontrado
-      : 0;
+    indiceEncontrado >= 0 ? indiceEncontrado : 0;
 
   const [
     temporadaSelecionada,
@@ -50,21 +39,11 @@ export function FichaTemporadas({
   ] = useState(indiceInicial);
 
   /*
-   * `useState` lê o valor inicial UMA vez, na montagem. Se a página for
-   * aberta de novo na mesma rota com outra query — navegação suave, sem
-   * remontar —, o seletor continuaria na temporada antiga enquanto o episódio
-   * destacado já seria de outra: dois pedaços da mesma tela dizendo coisas
-   * diferentes.
-   *
-   * O ajuste é feito durante a renderização, comparando a prop com o valor
-   * anterior. É o que o React recomenda no lugar de um `useEffect` de
-   * sincronia: não há segunda renderização pintada na tela, e não há efeito
-   * para esquecer de limpar.
+   * Atualiza a temporada selecionada quando a URL muda
+   * sem que o componente seja remontado.
    */
-  const [
-    temporadaDaUrl,
-    setTemporadaDaUrl,
-  ] = useState(temporadaNumero);
+  const [temporadaDaUrl, setTemporadaDaUrl] =
+    useState(temporadaNumero);
 
   if (temporadaDaUrl !== temporadaNumero) {
     setTemporadaDaUrl(temporadaNumero);
@@ -74,21 +53,13 @@ export function FichaTemporadas({
   const temporada =
     serie.temporadas[temporadaSelecionada];
 
-  /*
-   * Proteção caso a série não tenha nenhuma temporada.
-   */
   if (!temporada) {
     return null;
   }
 
   /*
-   * O episódio que veio pelo "Retomar" só é ESTE episódio se a temporada
-   * também for a dele. Comparando só o número, `?temporada=2&episodio=2`
-   * destacava o episódio 2 de qualquer temporada que o seletor abrisse —
-   * inclusive a 0 de protocolo-aberto, que é a de especiais.
-   *
-   * A comparação é com `temporada.numero`, e não com o índice do array: nessa
-   * mesma série os dois não coincidem.
+   * O episódio só é considerado o episódio de retomada
+   * quando a temporada e o episódio forem os mesmos.
    */
   const ehOEpisodioDoRetomar = (numeroDoEpisodio: number) =>
     temporadaNumero !== undefined &&
