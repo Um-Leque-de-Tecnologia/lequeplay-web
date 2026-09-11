@@ -45,22 +45,13 @@ export default async function PaginaDaMidia({
 
   const midia = await buscarMidia(slug);
 
-  /*
-   * `buscarMidia` devolve `Midia | null`.
-   *
-   * Se a mídia não existir, mostramos a página 404.
-   */
   if (!midia) {
     notFound();
   }
 
   /*
-   * O botão "Retomar" envia temporada e episódio
+   * O botão "Retomar" envia a temporada e o episódio
    * pela query string.
-   *
-   * Exemplo:
-   *
-   * ?temporada=2&episodio=2
    */
   const temporadaNumero = parametros?.temporada
     ? Number(parametros.temporada)

@@ -1,28 +1,21 @@
+
 import Image from "next/image";
 import Link from "next/link";
 import type { ItemHistorico, Midia } from "@/lib/tipos";
 
 type Props = {
-  /** As linhas do player: onde a pessoa parou em cada título que começou. */
+  /** Histórico de onde a pessoa parou de assistir. */
   historico: ItemHistorico[];
 
-  /** O catálogo, para casar cada linha com capa, título e duração. */
+  /** Catálogo de mídias. */
   itens: Midia[];
 };
 
 /**
- * O total contra o qual o progresso é medido, em segundos.
+ * Retorna a duração da mídia em segundos.
  *
- * Quem manda é o EPISÓDIO, quando o histórico diz qual está tocando:
- * `segundosAssistidos` é uma posição dentro de um episódio, enquanto
- * `Midia.duracaoMin` é o runtime da série inteira, somado pelo backend
- * (lib/tipos.ts). Dividir um pelo outro dá sempre um número pequeno demais, e
- * quanto mais temporadas a série tem, mais errado fica.
- *
- * Devolve `null` quando não há denominador confiável — e aí quem chama não
- * desenha a barra. Dado ausente não é zero: afirmar "0% assistido" para uma
- * duração que a API omitiu é dizer um número que não se tem, e o
- * `aria-valuenow` faz o leitor de tela repetir a mesma mentira.
+ * Para séries com temporada e episódio no histórico,
+ * usamos a duração do episódio.
  */
 function duracaoEmSegundos(
   item: ItemHistorico,
@@ -33,36 +26,23 @@ function duracaoEmSegundos(
     item.temporadaNumero !== undefined &&
     item.episodioNumero !== undefined
   ) {
-    /*
-     * Pelo `numero`, nunca pelo índice do array:
-     * protocolo-aberto tem temporada 0 (especiais),
-     * e ali os dois não coincidem.
-     */
     const temporada = midia.temporadas.find(
-      (t) => t.numero === item.temporadaNumero,
+      (temporada) =>
+        temporada.numero === item.temporadaNumero,
     );
 
     const episodio = temporada?.episodios.find(
-      (e) => e.numero === item.episodioNumero,
+      (episodio) =>
+        episodio.numero === item.episodioNumero,
     );
 
-    /*
-     * Episódio que saiu do catálogo: o histórico
-     * continua apontando para ele. Cair na duração
-     * da série aqui seria repetir o erro que esta
-     * função existe para não cometer.
-     */
-    return episodio
-      ? episodio.duracaoMin * 60
-      : null;
+    if (!episodio) {
+      return null;
+    }
+
+    return episodio.duracaoMin * 60;
   }
 
-  /*
-   * Filme, podcast, ou linha antiga do player — as que
-   * guardaram só o título. Para elas a única duração
-   * disponível é a da mídia inteira, e ela é opcional
-   * na API (`omitempty`).
-   */
   if (
     midia.duracaoMin === undefined ||
     midia.duracaoMin <= 0
@@ -74,8 +54,7 @@ function duracaoEmSegundos(
 }
 
 /**
- * Quanto do que está tocando já foi assistido, em porcentagem — ou `null`
- * quando não dá para saber.
+ * Calcula a porcentagem assistida.
  */
 function percentualAssistido(
   item: ItemHistorico,
@@ -87,20 +66,14 @@ function percentualAssistido(
     return null;
   }
 
-  /*
-   * Impede que a barra passe de 100%.
-   */
-  return Math.min(
-    100,
-    Math.round(
-      (item.segundosAssistidos / duracao) * 100,
-    ),
-  );
+  const percentual =
+    (item.segundosAssistidos / duracao) * 100;
+
+  return Math.min(100, Math.round(percentual));
 }
 
 /**
- * Retorna "T2 · E2" quando o histórico possui
- * temporada e episódio.
+ * Retorna o rótulo da temporada e episódio.
  */
 function rotuloDoEpisodio(
   item: ItemHistorico,
@@ -115,27 +88,22 @@ function rotuloDoEpisodio(
   return `T${item.temporadaNumero} · E${item.episodioNumero}`;
 }
 
-export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
+export function HomeContinuarAssistindo({
+  historico,
+  itens,
+}: Props) {
   /*
-   * Junta cada item do histórico com a mídia correspondente
-   * no catálogo.
-   *
-   * Se a mídia não existir mais no catálogo, ela é ignorada.
+   * Relaciona o histórico com a mídia correspondente.
+   * Históricos sem uma mídia existente no catálogo são ignorados.
    */
   const emAndamento = historico
     .flatMap((item) => {
       const midia = itens.find(
-        (m) => m.slug === item.midiaSlug,
+        (midia) => midia.slug === item.midiaSlug,
       );
 
       return midia ? [{ item, midia }] : [];
     })
-    /*
-     * Do mais recente para o mais antigo, como `lib/tipos.ts` documenta —
-     * "a API devolve na ordem em que gravou, que não é a mesma coisa".
-     * Por `Date`, e não comparando as strings: `atualizadoEm` é ISO com fuso,
-     * e dois fusos diferentes ordenam errado no compare de texto.
-     */
     .toSorted(
       (a, b) =>
         new Date(b.item.atualizadoEm).getTime() -
@@ -143,8 +111,7 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
     );
 
   /*
-   * Se a conta não possui histórico válido,
-   * não mostra a faixa "Continuar assistindo".
+   * Sem histórico válido, não exibe a seção.
    */
   if (emAndamento.length === 0) {
     return null;
@@ -172,14 +139,8 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
           const episodio = rotuloDoEpisodio(item);
 
           /*
-           * Quando o histórico possui temporada e episódio,
-           * colocamos essas informações na URL — mais o
-           * fragmento, que rola a página até a linha
-           * destacada em vez de deixá-la fora da tela.
-           *
-           * Exemplo:
-           *
-           * /midias/protocolo-aberto?temporada=2&episodio=2#episodio-2
+           * Se houver temporada e episódio no histórico,
+           * eles são enviados na URL para o Retomar.
            */
           const parametros =
             item.temporadaNumero !== undefined &&
@@ -216,12 +177,6 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
                   </p>
                 )}
 
-                {/*
-                  Sem duração confiável não há barra: o título continua na
-                  faixa, com o "Retomar", e nada é afirmado sobre o quanto
-                  falta. É o caso de onde-o-rio-vira, cuja série veio sem
-                  `duracaoMin` e cujo histórico não diz o episódio.
-                */}
                 {percentual !== null ? (
                   <>
                     <div
@@ -265,3 +220,4 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
     </section>
   );
 }
+
