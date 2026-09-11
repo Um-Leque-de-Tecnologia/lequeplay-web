@@ -4,16 +4,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
+import { FichaErro } from "@/components/ficha-erro";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
-import { buscarMidia } from "@/lib/api";
+import { buscarMidia, ErroDaApi } from "@/lib/api";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/midias/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const midia = await buscarMidia(slug);
+  let midia;
+
+  try {
+    midia = await buscarMidia(slug);
+  } catch (erro) {
+    if (erro instanceof ErroDaApi) {
+      return { title: "Erro ao carregar ficha" };
+    }
+
+    throw erro;
+  }
 
   if (!midia) return { title: "Título não encontrado" };
 
@@ -27,7 +38,25 @@ export default async function PaginaDaMidia({
   params,
 }: PageProps<"/midias/[slug]">) {
   const { slug } = await params;
-  const midia = await buscarMidia(slug);
+  let midia;
+
+  try {
+    midia = await buscarMidia(slug);
+  } catch (erro) {
+    if (erro instanceof ErroDaApi) {
+      if (erro.status === 401 || erro.status === 403) {
+        return <FichaErro tipo="credencial" />;
+      }
+
+      if (erro.status === 408) {
+        return <FichaErro tipo="tempo-esgotado" />;
+      }
+
+      return <FichaErro tipo="api" />;
+    }
+
+    throw erro;
+  }
 
   // `buscarMidia` devolve `Midia | null`, então o TypeScript obriga a tratar
   // o caso "não achei" — que na tela vira o 404.

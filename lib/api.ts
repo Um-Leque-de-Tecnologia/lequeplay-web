@@ -14,6 +14,7 @@ import type { Genero, ItemHistorico, Midia, Pagina } from "@/lib/tipos";
 
 const BASE = process.env.API_URL;
 const USAR_MOCK = process.env.USAR_MOCK !== "false";
+const TEMPO_LIMITE_API_MS = 10_000;
 
 /** Erro com o status HTTP preservado, para a tela decidir o que mostrar. */
 export class ErroDaApi extends Error {
@@ -38,15 +39,41 @@ async function buscar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
   }
 
-  const resposta = await fetch(`${BASE}${caminho}`, {
-    next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
-  });
+  const controlador = new AbortController();
+  const temporizador = setTimeout(
+    () => controlador.abort(),
+    TEMPO_LIMITE_API_MS,
+  );
+
+  let resposta: Response;
+
+  try {
+    resposta = await fetch(`${BASE}${caminho}`, {
+      next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
+      signal: controlador.signal,
+    });
+  } catch {
+    if (controlador.signal.aborted) {
+      throw new ErroDaApi("A API demorou mais que o tempo esperado", 408);
+    }
+
+    throw new ErroDaApi("Não foi possível alcançar a API", 503);
+  } finally {
+    clearTimeout(temporizador);
+  }
 
   // `fetch` só rejeita quando a REDE falha. 404 e 500 chegam aqui como
   // resposta normal — sem esta checagem, o `.json()` abaixo tentaria
   // interpretar uma página de erro e falharia com uma mensagem
   // incompreensível sobre token inesperado.
   if (!resposta.ok) {
+    if (resposta.status === 401 || resposta.status === 403) {
+      console.error("A API recusou a credencial", {
+        caminho,
+        status: resposta.status,
+      });
+    }
+
     throw new ErroDaApi(
       `A API respondeu ${resposta.status} em ${caminho}`,
       resposta.status,
