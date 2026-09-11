@@ -10,7 +10,7 @@
  * das telas.
  */
 
-import type { Genero, ItemHistorico, Midia, Pagina } from "@/lib/tipos";
+import type { Genero, ItemHistorico, Midia, MidiaCard, Pagina } from "@/lib/tipos";
 
 const BASE = process.env.API_URL;
 const USAR_MOCK = process.env.USAR_MOCK !== "false";
@@ -89,12 +89,12 @@ export type FiltrosCatalogo = {
 
 export async function listarMidias(
   filtros: FiltrosCatalogo = {},
-): Promise<Pagina<Midia>> {
+): Promise<Pagina<MidiaCard>> {
   if (USAR_MOCK) {
     const todas = await doMock();
     const q = filtros.q?.trim().toLowerCase();
 
-    const itens = todas.filter(
+    const filtradas = todas.filter(
       (m) =>
         (!filtros.tipo || m.tipo === filtros.tipo) &&
         // Um gênero pedido, vários no título: agora é "está na lista?",
@@ -103,18 +103,51 @@ export async function listarMidias(
         (!q || m.titulo.toLowerCase().includes(q)),
     );
 
+    const itens: MidiaCard[] = filtradas.map((m) => {
+      const card: MidiaCard = {
+        id: m.id,
+        slug: m.slug,
+        titulo: m.titulo,
+        tipo: m.tipo,
+        ano: m.ano,
+        notaMedia: m.notaMedia,
+        totalAvaliacoes: m.totalAvaliacoes,
+      };
+      if (m.posterUrl !== undefined) {
+        card.posterUrl = m.posterUrl;
+      }
+      return card;
+    });
+
     return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
   }
 
   const params = new URLSearchParams(
     Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
   );
+  const query = params.toString() ? `?${params.toString()}` : "";
 
-  return buscar<Pagina<Midia>>(`/midias?${params}`, {
-    tags: ["midias"],
-    revalidar: 300,
+  // Chama a rota interna do BFF (/api/catalogo) sem expor cabeçalhos de autenticação
+  const baseUrl =
+    typeof window !== "undefined"
+      ? ""
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+
+  const resposta = await fetch(`${baseUrl}/api/catalogo${query}`, {
+    next: { tags: ["midias"], revalidate: 300 },
   });
+
+  if (!resposta.ok) {
+    throw new ErroDaApi(
+      `O BFF do catálogo respondeu com status ${resposta.status}`,
+      resposta.status,
+    );
+  }
+
+  return resposta.json() as Promise<Pagina<MidiaCard>>;
 }
+
+export const listarCatalogo = listarMidias;
 
 export async function buscarMidia(slug: string): Promise<Midia | null> {
   if (USAR_MOCK) {
