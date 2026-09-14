@@ -66,7 +66,7 @@ export default async function PaginaDaMidia({
           <p className="mt-2 text-sm text-zinc-500">
             {midia.totalAvaliacoes === 0
               ? "Título ainda não avaliado. Seja a primeira pessoa a avaliar."
-              : `★ ${midia.notaMedia.toFixed(1)} · ${midia.totalAvaliacoes} avaliações`}
+              : `★ ${midia.notaMedia.toLocaleString("pt-BR")} · ${midia.totalAvaliacoes} avaliações`}
           </p>
 
           {/*
