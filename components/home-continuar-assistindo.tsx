@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { ItemHistorico, Midia, MidiaCard } from "@/lib/tipos";
+import type { ItemHistorico, Midia } from "@/lib/tipos";
 
 type Props = {
   /** As linhas do player: onde a pessoa parou em cada título que começou. */
   historico: ItemHistorico[];
 
   /** O catálogo, para casar cada linha com capa, título e duração. */
-  itens: (Midia | MidiaCard)[];
+  itens: Midia[];
 };
 
 /**
@@ -26,11 +26,10 @@ type Props = {
  */
 function duracaoEmSegundos(
   item: ItemHistorico,
-  midia: Midia | MidiaCard,
+  midia: Midia,
 ): number | null {
   if (
     midia.tipo === "serie" &&
-    "temporadas" in midia &&
     item.temporadaNumero !== undefined &&
     item.episodioNumero !== undefined
   ) {
@@ -65,7 +64,6 @@ function duracaoEmSegundos(
    * na API (`omitempty`).
    */
   if (
-    !("duracaoMin" in midia) ||
     midia.duracaoMin === undefined ||
     midia.duracaoMin <= 0
   ) {
@@ -81,7 +79,7 @@ function duracaoEmSegundos(
  */
 function percentualAssistido(
   item: ItemHistorico,
-  midia: Midia | MidiaCard,
+  midia: Midia,
 ): number | null {
   const duracao = duracaoEmSegundos(item, midia);
 

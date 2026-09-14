@@ -37,16 +37,20 @@ export async function GET(request: Request): Promise<Response> {
   );
 
   const requestUrl = new URL(request.url);
-  requestUrl.searchParams.forEach((valor, chave) => {
-    urlDestino.searchParams.set(chave, valor);
-  });
+  const parametrosPermitidos = ["tipo", "genero", "q", "pagina"] as const;
+
+  for (const chave of parametrosPermitidos) {
+    const valor = requestUrl.searchParams.get(chave);
+    if (valor !== null && valor.trim() !== "") {
+      urlDestino.searchParams.set(chave, valor);
+    }
+  }
 
   const headers: Record<string, string> = {
     Accept: "application/json",
   };
 
   if (apiKey) {
-    headers["Authorization"] = `Bearer ${apiKey}`;
     headers["x-api-key"] = apiKey;
   }
 
