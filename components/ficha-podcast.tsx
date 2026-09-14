@@ -1,10 +1,14 @@
 import { FichaPodcastEpisodios } from "@/components/ficha-podcast-episodios";
-import { formatarDuracao } from "@/lib/formatadores";
-import { obterApresentador, type Podcast } from "@/lib/tipos";
+import { obterApresentador } from "@/lib/creditos";
+import { formatarDataPorExtenso, formatarDuracao } from "@/lib/formatadores";
+import type { Podcast } from "@/lib/tipos";
 
 type Props = {
   podcast: Podcast;
+  mostrarTodosEpisodios?: boolean;
 };
+
+const LIMITE_INICIAL = 5;
 
 /**
  * Ficha dedicada para Podcast (Server Component).
@@ -12,10 +16,35 @@ type Props = {
  * Evita o reaproveitamento cego de layout de filme e série:
  * não exibe aba de elenco (inexistente em podcast), não tenta
  * ler diretor, e apresenta os metadados nativos de áudio:
- * Apresentação (derivada de `creditos`), Frequência e Total de episódios.
+ * Apresentação (derivada de `creditos`), Frequência, Total de episódios,
+ * Data do último episódio, Ano e Duração total.
+ *
+ * Realiza o corte inicial dos episódios no próprio servidor,
+ * evitando inflar o payload RSC da página em podcasts longos.
  */
-export function FichaPodcast({ podcast }: Props) {
+export function FichaPodcast({
+  podcast,
+  mostrarTodosEpisodios = false,
+}: Props) {
   const apresentador = obterApresentador(podcast);
+
+  const episodios = podcast.episodios ?? [];
+  // Ordena do mais recente para o mais antigo sem mutar o array original.
+  const episodiosOrdenados = [...episodios].sort((a, b) => {
+    const dataA = new Date(a.publicadoEm).getTime();
+    const dataB = new Date(b.publicadoEm).getTime();
+    return dataB - dataA;
+  });
+
+  const ultimoEpisodio = episodiosOrdenados[0];
+  const totalEpisodios = podcast.totalEpisodios;
+  const precisaDeCorte = episodiosOrdenados.length > LIMITE_INICIAL;
+
+  // Corte no servidor: se não estiver expandido, envia apenas os 5 mais recentes
+  const episodiosExibidos =
+    precisaDeCorte && !mostrarTodosEpisodios
+      ? episodiosOrdenados.slice(0, LIMITE_INICIAL)
+      : episodiosOrdenados;
 
   return (
     <div className="mt-10 border-t border-white/10 pt-8">
@@ -39,7 +68,16 @@ export function FichaPodcast({ podcast }: Props) {
         )}
 
         <dt className="text-zinc-500">Total de episódios</dt>
-        <dd className="text-zinc-200">{podcast.totalEpisodios}</dd>
+        <dd className="text-zinc-200">{totalEpisodios}</dd>
+
+        {ultimoEpisodio && (
+          <>
+            <dt className="text-zinc-500">Último episódio</dt>
+            <dd className="text-zinc-200">
+              {formatarDataPorExtenso(ultimoEpisodio.publicadoEm)}
+            </dd>
+          </>
+        )}
 
         <dt className="text-zinc-500">Ano</dt>
         <dd className="text-zinc-200">{podcast.ano}</dd>
@@ -60,8 +98,11 @@ export function FichaPodcast({ podcast }: Props) {
       </dl>
 
       <FichaPodcastEpisodios
-        episodios={podcast.episodios ?? []}
-        totalEpisodios={podcast.totalEpisodios}
+        slug={podcast.slug}
+        episodios={episodiosExibidos}
+        totalEpisodios={totalEpisodios}
+        temMaisEpisodios={precisaDeCorte}
+        expandido={mostrarTodosEpisodios}
       />
     </div>
   );

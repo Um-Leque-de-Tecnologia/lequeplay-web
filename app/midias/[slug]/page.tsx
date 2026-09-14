@@ -13,6 +13,7 @@ import { buscarMidia } from "@/lib/api";
 type SearchParams = {
   temporada?: string;
   episodio?: string;
+  episodios?: string;
 };
 
 export async function generateMetadata({
@@ -71,6 +72,8 @@ export default async function PaginaDaMidia({
     ? Number(parametros.episodio)
     : undefined;
 
+  const mostrarTodosEpisodios = parametros?.episodios === "todos";
+
   return (
     <article>
       <nav
@@ -114,7 +117,10 @@ export default async function PaginaDaMidia({
       </div>
 
       {midia.tipo === "podcast" ? (
-        <FichaPodcast podcast={midia} />
+        <FichaPodcast
+          podcast={midia}
+          mostrarTodosEpisodios={mostrarTodosEpisodios}
+        />
       ) : (
         <>
           <FichaAbas midia={midia} />

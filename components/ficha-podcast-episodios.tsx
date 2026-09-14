@@ -1,48 +1,35 @@
-"use client";
-
-import { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatarDataPorExtenso } from "@/lib/formatadores";
 import type { EpisodioPodcast } from "@/lib/tipos";
 
 type Props = {
+  slug: string;
   episodios: EpisodioPodcast[];
   totalEpisodios: number;
+  temMaisEpisodios: boolean;
+  expandido: boolean;
 };
 
 /**
- * Quantos episódios mostrar antes do botão de expandir.
+ * Exibe a lista de episódios do podcast (Server Component).
  *
- * Em podcasts com dezenas ou centenas de episódios, renderizar a lista
- * inteira infla o DOM desnecessariamente e empurra a área de resenhas
- * e compartilhamento para fora do alcance de leitura. O corte em 5
- * apresenta os mais recentes com rapidez e dá controle a quem quiser ver mais.
+ * O corte de volume é resolvido no servidor: se não estiver expandido,
+ * apenas os episódios mais recentes são transferidos no HTML / payload RSC.
+ * O controle de "Ver todos" / "Ver menos" é feito via Link semântico
+ * com `?episodios=todos`, garantindo Progressive Enhancement (funciona sem JS)
+ * e URL compartilhável sem sobrecarregar o cliente.
  */
-const LIMITE_INICIAL = 5;
-
 export function FichaPodcastEpisodios({
+  slug,
   episodios,
   totalEpisodios,
+  temMaisEpisodios,
+  expandido,
 }: Props) {
-  const [expandido, setExpandido] = useState(false);
-
-  // Ordena do mais recente para o mais antigo sem mutar o array original.
-  const episodiosOrdenados = useMemo(() => {
-    return episodios.toSorted((a, b) => {
-      const dataA = new Date(a.publicadoEm).getTime();
-      const dataB = new Date(b.publicadoEm).getTime();
-      return dataB - dataA;
-    });
-  }, [episodios]);
-
-  const precisaDeCorte = episodiosOrdenados.length > LIMITE_INICIAL;
-  const listaVisivel =
-    precisaDeCorte && !expandido
-      ? episodiosOrdenados.slice(0, LIMITE_INICIAL)
-      : episodiosOrdenados;
-
   if (episodios.length === 0) {
     return (
       <section
+        id="episodios"
         aria-labelledby="titulo-episodios"
         className="mt-8 border-t border-white/10 pt-8"
       >
@@ -61,6 +48,7 @@ export function FichaPodcastEpisodios({
 
   return (
     <section
+      id="episodios"
       aria-labelledby="titulo-episodios"
       className="mt-8 border-t border-white/10 pt-8"
     >
@@ -77,7 +65,7 @@ export function FichaPodcastEpisodios({
       </div>
 
       <ol className="mt-4 divide-y divide-white/10 border-y border-white/10">
-        {listaVisivel.map((episodio) => (
+        {episodios.map((episodio) => (
           <li
             key={episodio.numero}
             className="py-3 transition hover:bg-white/[0.02]"
@@ -101,17 +89,26 @@ export function FichaPodcastEpisodios({
         ))}
       </ol>
 
-      {precisaDeCorte && (
-        <button
-          type="button"
-          aria-expanded={expandido}
-          onClick={() => setExpandido((prev) => !prev)}
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-violet-400 transition hover:text-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500"
-        >
-          {expandido
-            ? "Ver menos"
-            : `Ver todos os ${episodios.length} episódios`}
-        </button>
+      {temMaisEpisodios && (
+        <div className="mt-4">
+          {expandido ? (
+            <Link
+              href={`/midias/${slug}#episodios`}
+              scroll={false}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-400 transition hover:text-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500"
+            >
+              Ver menos
+            </Link>
+          ) : (
+            <Link
+              href={`/midias/${slug}?episodios=todos#episodios`}
+              scroll={false}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-400 transition hover:text-violet-300 focus-visible:outline-2 focus-visible:outline-violet-500"
+            >
+              Ver todos os {totalEpisodios} episódios
+            </Link>
+          )}
+        </div>
       )}
     </section>
   );

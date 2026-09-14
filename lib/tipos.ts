@@ -137,16 +137,6 @@ export type Podcast = MidiaBase & {
   episodios?: EpisodioPodcast[];
 };
 
-/**
- * Deriva o nome de quem apresenta a partir de `creditos`.
- * No LequePlay, a apresentação não é um campo escalar: vem do crédito
- * onde `papel === "apresentacao"`.
- */
-export function obterApresentador(midia: Podcast): string {
-  const credito = midia.creditos?.find((c) => c.papel === "apresentacao");
-  return credito?.pessoa.nome ?? midia.apresentador ?? "";
-}
-
 export type Midia = Filme | Serie | Podcast;
 
 
