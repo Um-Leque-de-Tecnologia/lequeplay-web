@@ -129,6 +129,24 @@ export type Podcast = MidiaBase & {
 
 export type Midia = Filme | Serie | Podcast;
 
+/**
+ * O formato reduzido de mídia devolvido pelo BFF (/api/catalogo).
+ * Contém apenas os campos necessários para renderizar os cartões de mídia,
+ * sem trafegar dados desnecessários (sinopse, temporadas/episódios, créditos).
+ */
+export type MidiaCard = Pick<
+  MidiaBase,
+  | "id"
+  | "slug"
+  | "titulo"
+  | "ano"
+  | "posterUrl"
+  | "notaMedia"
+  | "totalAvaliacoes"
+> & {
+  tipo: Midia["tipo"];
+};
+
 
 /* ------------------------------------------------------------------ *
  * Pessoas — quem dirige, atua ou apresenta

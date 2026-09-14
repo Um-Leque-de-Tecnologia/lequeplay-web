@@ -38,7 +38,13 @@ async function buscar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
   }
 
+  const headers: Record<string, string> = {};
+  if (process.env.API_KEY) {
+    headers["x-api-key"] = process.env.API_KEY;
+  }
+
   const resposta = await fetch(`${BASE}${caminho}`, {
+    headers,
     next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
   });
 
@@ -106,11 +112,13 @@ export async function listarMidias(
     return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
   }
 
-  const params = new URLSearchParams(
-    Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
-  );
+  const params = new URLSearchParams();
+  if (filtros.tipo) params.set("tipo", filtros.tipo);
+  if (filtros.genero) params.set("genero", filtros.genero);
+  if (filtros.q) params.set("q", filtros.q);
+  const query = params.size > 0 ? `?${params.toString()}` : "";
 
-  return buscar<Pagina<Midia>>(`/midias?${params}`, {
+  return buscar<Pagina<Midia>>(`/midias${query}`, {
     tags: ["midias"],
     revalidar: 300,
   });

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { CardMidia } from "@/components/card-midia";
-import type { ItemHistorico, Midia } from "@/lib/tipos";
+import type { ItemHistorico, Midia, MidiaCard } from "@/lib/tipos";
 
 type Props = {
-  itens: Midia[];
+  itens: (Midia | MidiaCard)[];
   historico: ItemHistorico[];
 };
 

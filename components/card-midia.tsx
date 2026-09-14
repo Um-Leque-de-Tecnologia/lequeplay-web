@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { Midia } from "@/lib/tipos";
+import type { Midia, MidiaCard } from "@/lib/tipos";
 
 const ROTULO_TIPO: Record<Midia["tipo"], string> = {
   filme: "Filme",
@@ -8,7 +8,7 @@ const ROTULO_TIPO: Record<Midia["tipo"], string> = {
   podcast: "Podcast",
 };
 
-export function CardMidia({ midia }: { midia: Midia }) {
+export function CardMidia({ midia }: { midia: MidiaCard }) {
   return (
     // <article> porque o card faz sentido sozinho, fora da lista.
     <article className="group">
