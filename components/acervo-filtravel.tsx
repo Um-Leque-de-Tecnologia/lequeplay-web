@@ -2,25 +2,33 @@
 
 import { useState } from "react";
 import { CardMidia } from "@/components/card-midia";
-import type { Midia, ItemHistorico } from "@/lib/tipos";
+import type { ItemHistorico, Midia } from "@/lib/tipos";
 
-export function AcervoFiltravel({
-  itens,
-  historico = [],
-}: {
+type Props = {
   itens: Midia[];
-  historico?: ItemHistorico[];
-}) {
+  historico: ItemHistorico[];
+};
+
+// A menor fatia que precisa de estado: o toggle e a grade que ele filtra. O
+// título e o contador ficam no `HomeAcervo`, que continua no servidor.
+export function AcervoFiltravel({ itens, historico }: Props) {
   const [soNaoVistos, setSoNaoVistos] = useState(false);
 
-  // Quem já foi visto vem no histórico: comparamos pelo slug.
-  const jaVistos = new Set(historico.map((h) => h.midiaSlug));
-  const naoVistos = itens.filter((m) => !jaVistos.has(m.slug));
+  // `Set` e não `array`: a pergunta é "esse slug está aqui?", e ela é feita
+  // uma vez por título do acervo.
+  const jaComecados = new Set(historico.map((h) => h.midiaSlug));
+
+  // O recorte do filtro: o que sobra depois de tirar o que já foi aberto.
+  const naoVistos = itens.filter((midia) => !jaComecados.has(midia.slug));
 
   const visiveis = soNaoVistos ? naoVistos : itens;
 
   return (
-    <section aria-labelledby="acervo">
+    <>
+      {/*
+        <label> envolvendo o campo: o texto inteiro vira área de clique, sem
+        precisar casar `id` com `htmlFor`.
+      */}
       <div className="mb-6">
         <label className="inline-flex items-center gap-2 text-sm text-zinc-400">
           <input
@@ -28,7 +36,7 @@ export function AcervoFiltravel({
             name="nao-vistos"
             className="size-4 accent-violet-600"
             checked={soNaoVistos}
-            onChange={() => setSoNaoVistos((s) => !s)}
+            onChange={(e) => setSoNaoVistos(e.target.checked)}
           />
           Só o que eu ainda não vi ({naoVistos.length})
         </label>
@@ -41,6 +49,6 @@ export function AcervoFiltravel({
           </li>
         ))}
       </ul>
-    </section>
+    </>
   );
 }

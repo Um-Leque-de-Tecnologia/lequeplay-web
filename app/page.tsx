@@ -3,19 +3,14 @@ import { HomeAcervo } from "@/components/home-acervo";
 import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
 import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
 import { listarHistorico, listarMidias } from "@/lib/api";
-import { AcervoFiltravel } from "../components/acervo-filtravel";
 
 // Server Component: estes `await` rodam no servidor, e o navegador recebe o
 // HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
 // abaixo recebem os dados por props, e nenhuma delas busca nada por conta.
-
-
 export default async function Home() {
-  console.log("[quem me executou?] a Home rodou");
-
   // As duas buscas não dependem uma da outra: em série, a home esperaria a
   // soma das duas; em paralelo, espera a mais lenta.
-  const [{ itens }, historico] = await Promise.all([
+  const [{ itens, total }, historico] = await Promise.all([
     listarMidias(),
     listarHistorico(),
   ]);
@@ -44,7 +39,7 @@ export default async function Home() {
 
       <HomeCarrosselDestaques destaques={destaques} />
 
-      <AcervoFiltravel itens={itens}  historico={historico} />;
+      <HomeAcervo itens={itens} total={total} historico={historico} />
     </>
   );
 }
