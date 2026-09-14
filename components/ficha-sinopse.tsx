@@ -13,10 +13,15 @@ import type { Midia } from "@/lib/tipos";
  *
  * É corte de **apresentação**, não de dado: o pedaço que sobra continua no
  * HTML, só que escondido. Cortar no servidor — mandar para o navegador só os
- * primeiros caracteres — economizaria uns bytes e custaria caro: quem busca
- * com Ctrl+F, quem lê com leitor de tela e quem indexa a página passariam a
- * ver meia sinopse. O texto inteiro sai do servidor sempre; o que muda é o
- * que está visível.
+ * primeiros caracteres — economizaria uns bytes e custaria caro: quem indexa
+ * a página passaria a ver meia sinopse, e abrir o "ver mais" viraria uma nova
+ * ida ao servidor. O texto inteiro sai do servidor sempre; o que muda é o que
+ * está visível.
+ *
+ * O custo aceito: `hidden` tira o trecho da busca do navegador e da árvore de
+ * acessibilidade. Leitor de tela chega nele pelo botão; o Ctrl+F só acha o que
+ * está aberto. `hidden="until-found"` resolveria o Ctrl+F — fica como próximo
+ * passo.
  */
 const CARACTERES_NO_RESUMO = 180;
 
