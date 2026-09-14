@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Midia } from "@/lib/tipos";
 
+
 const ROTULO_TIPO: Record<Midia["tipo"], string> = {
   filme: "Filme",
   serie: "Série",
@@ -9,11 +10,7 @@ const ROTULO_TIPO: Record<Midia["tipo"], string> = {
 };
 
 export function CardMidia({ midia }: { midia: Midia }) {
-  const temAvaliacao =
-    typeof midia.totalAvaliacoes === "number" &&
-    midia.totalAvaliacoes > 0 &&
-    typeof midia.notaMedia === "number" &&
-    !Number.isNaN(midia.notaMedia);
+  const temAvaliacao = midia.totalAvaliacoes > 0;
 
   const notaFormatada = temAvaliacao
     ? midia.notaMedia.toLocaleString("pt-BR", {
