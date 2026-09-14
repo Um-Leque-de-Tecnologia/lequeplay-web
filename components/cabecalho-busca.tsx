@@ -13,6 +13,10 @@ import { useEffect, useRef, useState } from "react";
  *
  * Ela abre por um botão, e não fica sempre aberta, porque o cabeçalho é
  * estreito no celular e o campo empurraria a navegação para a segunda linha.
+ *
+ * Só esta peça é client: abrir, fechar no Esc e fechar no clique fora
+ * precisam do navegador, mas o resto do cabeçalho não. Assim a marca e a
+ * navegação continuam saindo prontas do servidor, fora do bundle.
  */
 export function CabecalhoBusca() {
   const [buscaAberta, setBuscaAberta] = useState(false);
@@ -36,8 +40,16 @@ export function CabecalhoBusca() {
 
     const fecharComEscape = (evento: KeyboardEvent) => {
       if (evento.key === "Escape") {
+        // Só devolve o foco para a lupa se ele estava na busca — senão ele
+        // ficaria num campo que acabou de sumir. Quem já saiu com Tab não é
+        // puxado de volta para o cabeçalho.
+        const focoEstavaDentro = buscaRef.current?.contains(
+          document.activeElement,
+        );
         setBuscaAberta(false);
-        botaoBuscaRef.current?.focus();
+        if (focoEstavaDentro) {
+          botaoBuscaRef.current?.focus();
+        }
       }
     };
 
