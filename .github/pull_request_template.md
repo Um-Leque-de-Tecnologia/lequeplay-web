@@ -1,8 +1,12 @@
 ## O que este PR faz
 
-<!-- Uma ou duas frases. O ticket que ele fecha. -->
+<!--
+Uma ou duas frases. O ticket que ele fecha.
+Complete o "Closes #" com o número da issue e deixe em inglês: é a palavra
+que o GitHub reconhece para fechar a issue no merge e mover o card no board.
+-->
 
-Fecha #
+Closes #
 
 ## A decisão que eu tomei
 
