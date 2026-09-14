@@ -5,8 +5,10 @@ import { useRef } from "react";
 /**
  * O seletor de ordenação do catálogo.
  *
- * Componente folha controlado: recebe a ordem selecionada e notifica
- * o componente pai quando uma nova opção é escolhida.
+ * A ordem é dado da URL, e não estado de tela: `?ordem=recentes` é um
+ * endereço que a pessoa compartilha e que volta igual quando ela recarrega.
+ * Por isso o componente é controlado: desenha a ordem que recebe e avisa
+ * quando a pessoa escolhe outra. Quem lê e escreve a URL é o `CatalogoGrade`.
  */
 
 export type OrdemCatalogo = "relevancia" | "recentes" | "nota" | "az";
@@ -24,6 +26,15 @@ const ORDENS: { valor: OrdemCatalogo; rotulo: string }[] = [
   { valor: "nota", rotulo: "Melhor avaliados" },
   { valor: "az", rotulo: "A-Z" },
 ];
+
+/**
+ * O `?ordem=` chega da URL como texto livre: link antigo, valor digitado à
+ * mão. O que não está no menu vira o padrão, em vez de uma ordem que não
+ * existe — e sem `as` para convencer o compilador.
+ */
+export function lerOrdem(valor: string | null): OrdemCatalogo {
+  return ORDENS.find((item) => item.valor === valor)?.valor ?? "relevancia";
+}
 
 export function CatalogoOrdenacao({ ordem, aoMudarOrdem }: Props) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -64,8 +75,11 @@ export function CatalogoOrdenacao({ ordem, aoMudarOrdem }: Props) {
 
           return (
             <li key={item.valor}>
+              {/* `aria-pressed` porque a cor sozinha não diz ao leitor de
+                  tela qual é a ordem atual. */}
               <button
                 type="button"
+                aria-pressed={selecionada}
                 onClick={() => {
                   aoMudarOrdem(item.valor);
                   fecharMenu();
