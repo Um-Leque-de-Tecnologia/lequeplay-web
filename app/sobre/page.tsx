@@ -12,7 +12,7 @@ export default function Sobre() {
   return (
     <article>
       <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-        Sobre o LequePlay  
+        Sobre o LequePlay
       </h1>
 
       <p className="mt-4 max-w-prose text-zinc-300">
