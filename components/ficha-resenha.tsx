@@ -28,4 +28,3 @@ export function FichaResenha({ titulo }: { titulo: string }) {
     </section>
   );
 }
-

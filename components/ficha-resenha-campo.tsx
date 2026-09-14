@@ -6,11 +6,16 @@ import { LIMITE_TEXTO_RESENHA } from "@/lib/tipos";
 /**
  * O tamanho máximo do texto da resenha.
  *
- * Confirmado em docs/api-contrato.md (PUT /midias/{id}/resenha aceita texto de 10 a 5.000 caracteres)
- * e centralizado em LIMITE_TEXTO_RESENHA em lib/tipos.ts.
- * O limite no cliente serve para orientar a pessoa que digita antes do envio.
+ * Vem de LIMITE_TEXTO_RESENHA, em lib/tipos.ts, que segue o combinado em
+ * docs/api-contrato.md: `PUT /midias/{midiaId}/resenha` aceita `texto` entre
+ * 10 e 5000 caracteres. O endpoint ainda é 🕓 — é contrato, não API no ar.
+ *
+ * O campo não tem `maxLength`, de propósito: ele corta em silêncio o que é
+ * colado, e quem usa leitor de tela nem fica sabendo que perdeu o fim do
+ * texto. Aqui dá para passar do limite, e o contador avisa quanto passou.
+ * O limite no cliente orienta quem digita; quem garante é a API.
  */
-export const MAXIMO_DE_CARACTERES = LIMITE_TEXTO_RESENHA.maximo;
+const MAXIMO_DE_CARACTERES = LIMITE_TEXTO_RESENHA.maximo;
 
 /**
  * Margem a partir da qual o leitor de tela começa a anunciar a contagem.
@@ -26,6 +31,10 @@ export function FichaResenhaCampo() {
   const passouDoLimite = escritos > MAXIMO_DE_CARACTERES;
   const pertoDoLimite = restantes <= CARACTERES_AVISO_LEITOR && restantes >= 0;
   const deveAnunciar = pertoDoLimite || passouDoLimite;
+
+  const contagem = passouDoLimite
+    ? `${escritos}/${MAXIMO_DE_CARACTERES} caracteres (${escritos - MAXIMO_DE_CARACTERES} acima do limite)`
+    : `${escritos}/${MAXIMO_DE_CARACTERES} caracteres`;
 
   return (
     <div>
@@ -44,24 +53,26 @@ export function FichaResenhaCampo() {
         }`}
       />
 
-      {/*
-        `aria-live="polite"` condicional: só anuncia quando estiver perto ou acima
-        do limite. Dessa forma o leitor de tela não interrompe a leitura a cada tecla.
-      */}
       <p
         id="contador-resenha"
-        role={deveAnunciar ? "status" : undefined}
-        aria-live={deveAnunciar ? "polite" : "off"}
-        aria-atomic="true"
         className={`mt-1 text-sm ${
           passouDoLimite
             ? "font-medium text-red-400"
             : "text-zinc-500"
         }`}
       >
-        {passouDoLimite
-          ? `${escritos}/${MAXIMO_DE_CARACTERES} caracteres (${escritos - MAXIMO_DE_CARACTERES} acima do limite)`
-          : `${escritos}/${MAXIMO_DE_CARACTERES} caracteres`}
+        {contagem}
+      </p>
+
+      {/*
+        O anúncio mora numa região viva à parte, que existe desde o primeiro
+        render e só ganha texto perto ou acima do limite. Ligar `aria-live` no
+        mesmo render em que o texto muda não é confiável: o leitor de tela
+        costuma perder justamente o primeiro aviso. Longe do limite ela fica
+        vazia, e o leitor não é interrompido a cada tecla.
+      */}
+      <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {deveAnunciar ? contagem : ""}
       </p>
     </div>
   );
