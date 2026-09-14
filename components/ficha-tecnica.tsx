@@ -52,7 +52,9 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
 
       {midia.tipo === "serie" && (
         <>
-          <dt className="text-zinc-500">Temporadas</dt>
+          <dt className="text-zinc-500">
+            {midia.temporadas.length === 1 ? "Temporada" : "Temporadas"}
+          </dt>
           <dd>{midia.temporadas.length}</dd>
         </>
       )}
