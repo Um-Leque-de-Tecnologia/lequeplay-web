@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { CardMidia } from "@/components/card-midia";
 import {
@@ -8,14 +8,20 @@ import {
   lerOrdem,
   type OrdemCatalogo,
 } from "@/components/catalogo-ordenacao";
-import { CatalogoVazio } from "@/components/catalogo-vazio";
 import type { Midia } from "@/lib/tipos";
 
 type Props = {
   itens: Midia[];
+  /**
+   * O que mostrar quando não há itens, já montado pela página. Chega pronto,
+   * e não importado aqui, para o estado vazio continuar Server Component:
+   * o que um arquivo client importa vai junto para o navegador; o que ele
+   * recebe por prop, não.
+   */
+  vazio: ReactNode;
 };
 
-export function CatalogoGrade({ itens }: Props) {
+export function CatalogoGrade({ itens, vazio }: Props) {
   // A ordem mora na URL, e não em `useState`: `?ordem=az` volta igual quando
   // a pessoa recarrega e vai junto no link compartilhado. A rota é dinâmica,
   // então o servidor já entrega a grade na ordem pedida.
@@ -81,7 +87,7 @@ export function CatalogoGrade({ itens }: Props) {
       </div>
 
       {itensOrdenados.length === 0 ? (
-        <CatalogoVazio />
+        vazio
       ) : (
         <ul className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
           {itensOrdenados.map((midia) => (

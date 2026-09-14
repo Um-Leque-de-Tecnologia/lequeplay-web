@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
 import { CatalogoGrade } from "@/components/catalogo-grade";
+import { CatalogoVazio } from "@/components/catalogo-vazio";
 import { listarGeneros, listarMidias } from "@/lib/api";
 import type { Midia } from "@/lib/tipos";
 
@@ -53,7 +54,15 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
 
       <CatalogoChipsGenero generos={generos} />
 
-      <CatalogoGrade itens={itens} />
+      <CatalogoGrade
+        itens={itens}
+        vazio={
+          <CatalogoVazio
+            q={typeof q === "string" ? q : undefined}
+            tipo={typeof tipo === "string" ? tipo : undefined}
+          />
+        }
+      />
     </>
   );
 }
