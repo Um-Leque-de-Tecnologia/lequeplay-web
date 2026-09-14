@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CabecalhoMenuMobileCasca } from "@/components/cabecalho-menu-mobile-casca";
 
 /**
  * Os mesmos destinos da navegação principal, empilhados. A lista mora aqui
@@ -8,7 +9,6 @@ import Link from "next/link";
 const ITENS = [
   { href: "/", rotulo: "Início" },
   { href: "/midias", rotulo: "Catálogo" },
-  { href: "/", rotulo: "Início" },
 ];
 
 /**
@@ -16,12 +16,20 @@ const ITENS = [
  *
  * `<details>` e não uma div com classe: o abrir e fechar é do navegador,
  * chega com teclado e com leitor de tela de graça, e continua funcionando
- * antes do JavaScript carregar. O `sm:hidden` some com tudo no desktop,
- * onde a navegação principal já aparece inteira.
+ * antes do JavaScript carregar. O `sm:hidden` da casca some com tudo no
+ * desktop, onde a navegação principal já aparece inteira.
+ *
+ * O JavaScript da casca é acréscimo em cima desse comportamento, não
+ * substituto: ele só fecha o menu nos casos em que o navegador sozinho não
+ * fecharia, mexendo no `open` do próprio `<details>`. Trocar por uma div com
+ * `useState` jogaria fora o que o `<details>` dá de graça.
+ *
+ * Este arquivo continua de servidor de propósito: a lista e os links saem
+ * prontos daqui, e só a casca vai para o navegador.
  */
 export function CabecalhoMenuMobile() {
   return (
-    <details className="relative sm:hidden">
+    <CabecalhoMenuMobileCasca>
       <summary
         aria-label="Abrir o menu"
         className="cursor-pointer list-none rounded-md p-2 text-zinc-400 transition hover:bg-white/5 hover:text-zinc-100 [&::-webkit-details-marker]:hidden"
@@ -37,6 +45,7 @@ export function CabecalhoMenuMobile() {
           <button
             type="button"
             aria-label="Fechar o menu"
+            data-fecha-menu
             className="rounded-md p-1.5 text-zinc-500 transition hover:bg-white/5 hover:text-zinc-100"
           >
             <span aria-hidden="true">✕</span>
@@ -44,10 +53,10 @@ export function CabecalhoMenuMobile() {
         </div>
 
         <ul className="flex flex-col">
-          {ITENS.map((item, indice) => (
-            // Índice como chave porque a lista é fixa: ela não reordena,
-            // não cresce e não some no meio da vida da tela.
-            <li key={indice}>
+          {ITENS.map((item) => (
+            // `href` como chave porque cada destino aparece uma vez só: a
+            // chave fica presa ao dado, e não à posição dele na lista.
+            <li key={item.href}>
               <Link
                 href={item.href}
                 className="block rounded-md px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/5 hover:text-zinc-100"
@@ -58,6 +67,6 @@ export function CabecalhoMenuMobile() {
           ))}
         </ul>
       </nav>
-    </details>
+    </CabecalhoMenuMobileCasca>
   );
 }
