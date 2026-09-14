@@ -262,7 +262,57 @@
     "totalAvaliacoes": 512,
     "apresentador": "Rafa Okumura",
     "duracaoMin": 192,
-    "totalEpisodios": 3
+    "totalEpisodios": 6,
+    "frequencia": "Semanal",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "rafa-okumura",
+          "nome": "Rafa Okumura",
+          "fotoUrl": null
+        },
+        "papel": "apresentacao",
+        "personagem": null
+      }
+    ],
+    "episodios": [
+      {
+        "numero": 1,
+        "titulo": "O switch com 40 casos",
+        "duracaoMin": 30,
+        "publicadoEm": "2025-02-05"
+      },
+      {
+        "numero": 2,
+        "titulo": "Tratamento de erro que engole exceção",
+        "duracaoMin": 32,
+        "publicadoEm": "2025-02-12"
+      },
+      {
+        "numero": 3,
+        "titulo": "Variáveis de uma letra só",
+        "duracaoMin": 35,
+        "publicadoEm": "2025-02-19"
+      },
+      {
+        "numero": 4,
+        "titulo": "Herança com sete níveis",
+        "duracaoMin": 28,
+        "publicadoEm": "2025-02-26"
+      },
+      {
+        "numero": 5,
+        "titulo": "Testes que só testam mock",
+        "duracaoMin": 31,
+        "publicadoEm": "2025-03-05"
+      },
+      {
+        "numero": 6,
+        "titulo": "Refatorando código legado ao vivo",
+        "duracaoMin": 36,
+        "publicadoEm": "2025-03-12"
+      }
+    ]
   },
   {
     "id": "8",
@@ -276,6 +326,32 @@
     "totalAvaliacoes": 189,
     "apresentador": "Dandara Reis",
     "duracaoMin": 91,
-    "totalEpisodios": 2
+    "totalEpisodios": 2,
+    "frequencia": "Quinzenal",
+    "creditos": [
+      {
+        "pessoa": {
+          "slug": "dandara-reis",
+          "nome": "Dandara Reis",
+          "fotoUrl": null
+        },
+        "papel": "apresentacao",
+        "personagem": null
+      }
+    ],
+    "episodios": [
+      {
+        "numero": 1,
+        "titulo": "De advogada a desenvolvedora",
+        "duracaoMin": 45,
+        "publicadoEm": "2025-01-15"
+      },
+      {
+        "numero": 2,
+        "titulo": "A coragem do recomeço",
+        "duracaoMin": 46,
+        "publicadoEm": "2025-01-29"
+      }
+    ]
   }
 ]

@@ -200,8 +200,9 @@ veja o quadro logo abaixo.
 `{ numero, ano, totalEpisodios }`. **Sem os episódios** — eles vêm do
 endpoint da temporada.
 
-**`podcast`** acrescenta `totalEpisodios: number` — e só. A apresentação
-também sai de `creditos`.
+**`podcast`** acrescenta `totalEpisodios: number`, `frequencia: string`
+(opcional — ex: "Semanal", "Quinzenal") e `episodios: EpisodioPodcast[]`
+(opcional, no detalhe). A apresentação também sai de `creditos`.
 
 ### Direção e apresentação: derivados, não campos
 
@@ -235,6 +236,19 @@ traz no máximo 12 itens ordenados por relevância.
   ]
 }
 ```
+
+### EpisodioPodcast 🕓
+
+```json
+{
+  "numero": 1,
+  "titulo": "O switch com 40 casos",
+  "duracaoMin": 30,
+  "publicadoEm": "2025-02-05"
+}
+```
+
+`publicadoEm` é **data** ISO 8601 (`YYYY-MM-DD`).
 
 ### Usuario
 
