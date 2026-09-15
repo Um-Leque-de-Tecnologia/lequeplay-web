@@ -264,18 +264,18 @@
     "duracaoMin": 192,
     "totalEpisodios": 3
   },
-  {
-    "id": "8",
-    "slug": "primeira-cadeira",
-    "tipo": "podcast",
-    "titulo": "Primeira Cadeira",
-    "ano": 2025,
-    "generos": ["Drama"],
-    "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
-    "notaMedia": 8.6,
-    "totalAvaliacoes": 189,
-    "apresentador": "Dandara Reis",
-    "duracaoMin": 91,
-    "totalEpisodios": 2
-  }
+ {
+  "id": "8",
+  "slug": "primeira-cadeira",
+  "tipo": "podcast",
+  "titulo": "Primeira Cadeira",
+  "ano": 2025,
+  "generos": ["Drama"],
+  "sinopse": "Conversas com pessoas que mudaram de profissão depois dos trinta, sobre o intervalo entre largar uma coisa e conseguir a outra.",
+  "notaMedia": 8.6,
+  "totalAvaliacoes": 189,
+  "apresentador": "Dandara Reis",
+  "duracaoMin": 91,
+  "totalEpisodios": 2
+}
 ]
