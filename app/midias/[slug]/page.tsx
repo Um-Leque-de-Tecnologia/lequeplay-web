@@ -23,7 +23,7 @@ export async function generateMetadata({
 
   if (!midia) {
     return { 
-      title: "Mídia não encontrada · LequePlay",
+      title: "Mídia não encontrada",
       description: "A mídia solicitada não existe no catálogo.",
     };
   }
