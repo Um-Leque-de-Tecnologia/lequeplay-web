@@ -8,6 +8,7 @@ import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { buscarMidia } from "@/lib/api";
+import { corte, CARACTERES_NO_RESUMO } from "@/lib/utils";
 
 type SearchParams = {
   temporada?: string;
@@ -30,10 +31,11 @@ export async function generateMetadata({
 
   const tituloFormatado = midia.titulo;
 
-  const descricaoCurta =
-    midia.sinopse.length > 150
-      ? `${midia.sinopse.slice(0, 147)}...`
-      : midia.sinopse;
+  const pontoMeta = corte(midia.sinopse);
+  const descricaoCorte = midia.sinopse.slice(0, pontoMeta);
+  const descricaoCurta = pontoMeta < midia.sinopse.length
+    ? `${descricaoCorte.trimEnd()}...`
+    : descricaoCorte;
   
   return {
     title: tituloFormatado,
@@ -43,16 +45,6 @@ export async function generateMetadata({
       description: descricaoCurta,
       url: `/midias/${slug}`, // Link da própria página no Open Graph
       siteName: 'LequePlay',
-      images: midia.posterUrl
-        ? [
-            {
-              url: midia.posterUrl,
-              width: 1200,
-              height: 630,
-              alt: `Capa de ${midia.titulo}`,
-            },
-          ]
-        : [],
       type: 'article',
     },
   };
