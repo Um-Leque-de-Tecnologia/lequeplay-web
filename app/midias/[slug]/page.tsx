@@ -8,7 +8,7 @@ import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { buscarMidia } from "@/lib/api";
-import { corte, CARACTERES_NO_RESUMO } from "@/lib/utils";
+import { corte } from "@/lib/utils";
 
 type SearchParams = {
   temporada?: string;

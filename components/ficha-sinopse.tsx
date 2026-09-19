@@ -7,7 +7,7 @@
 
 import { useState } from "react";
 import type { Midia } from "@/lib/tipos";
-import { corte, CARACTERES_NO_RESUMO } from "@/lib/utils";
+import { corte } from "@/lib/utils";
 
 export function FichaSinopse({ midia }: { midia: Midia }) {
   const [expandida, setExpandida] = useState(false);
