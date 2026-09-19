@@ -8,6 +8,7 @@ import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { buscarMidia } from "@/lib/api";
+import { corte } from "@/lib/utils";
 
 type SearchParams = {
   temporada?: string;
@@ -22,14 +23,30 @@ export async function generateMetadata({
   const midia = await buscarMidia(slug);
 
   if (!midia) {
-    return {
-      title: "Título não encontrado",
+    return { 
+      title: "Mídia não encontrada",
+      description: "A mídia solicitada não existe no catálogo.",
     };
   }
 
+  const tituloFormatado = midia.titulo;
+
+  const pontoMeta = corte(midia.sinopse);
+  const descricaoCorte = midia.sinopse.slice(0, pontoMeta);
+  const descricaoCurta = pontoMeta < midia.sinopse.length
+    ? `${descricaoCorte.trimEnd()}...`
+    : descricaoCorte;
+  
   return {
-    title: midia.titulo,
-    description: midia.sinopse,
+    title: tituloFormatado,
+    description: descricaoCurta,
+    openGraph: {
+      title: tituloFormatado,
+      description: descricaoCurta,
+      url: `/midias/${slug}`, // Link da própria página no Open Graph
+      siteName: 'LequePlay',
+      type: 'article',
+    },
   };
 }
 
