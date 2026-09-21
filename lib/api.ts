@@ -430,6 +430,46 @@ export async function buscarVersaoDoCatalogo(): Promise<number> {
 }
 
 /**
+ * Consulta a versão atual do catálogo na API (LP-310).
+ *
+ * O vigia chama esta função para saber se houve ingestão nova no acervo.
+ * OBRIGATÓRIO: `cache: "no-store"` para garantir leitura do dado mais recente.
+ */
+export async function obterVersaoCatalogo(): Promise<{ versao: number }> {
+  if (!process.env.API_URL) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  const resposta = await fetch(`${process.env.API_URL}/v1/catalogo/versao`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      "x-api-key": process.env.API_KEY ?? "",
+    },
+  });
+
+  if (!resposta.ok) {
+    throw new ErroDaApi(
+      `A API respondeu ${resposta.status} em /v1/catalogo/versao`,
+      resposta.status,
+    );
+  }
+
+  const dados: unknown = await resposta.json();
+  if (
+    typeof dados === "object" &&
+    dados !== null &&
+    "versao" in dados &&
+    typeof dados.versao === "number"
+  ) {
+    return { versao: dados.versao };
+  }
+
+  throw new ErroDaApi("Resposta da API com formato inesperado para versão", 502);
+}
+
+
+/**
  * O histórico do player: onde a pessoa parou em cada título que começou.
  *
  * Vem sem duração e sem título — só o `midiaSlug` e a posição. Quem quiser
