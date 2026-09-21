@@ -15,6 +15,18 @@ import { cache } from "react";
 
 const BASE = process.env.API_URL;
 const USAR_MOCK = process.env.USAR_MOCK !== "false";
+
+/**
+ * Quanto tempo esperar a API antes de desistir.
+ *
+ * Sem limite, uma API lenta não vira erro: vira página pendurada. O servidor
+ * fica segurando a renderização, e quem está do outro lado não recebe nem o
+ * conteúdo nem uma explicação. Dez segundos é folgado para o que o contrato
+ * promete (até 300ms nas listagens) e curto o bastante para a espera virar
+ * uma tela de erro enquanto a pessoa ainda está olhando.
+ */
+const TEMPO_LIMITE_API_MS = 10_000;
+
 /** Erro com o status HTTP preservado, para a tela decidir o que mostrar. */
 export class ErroDaApi extends Error {
   constructor(
@@ -38,34 +50,57 @@ async function buscar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
   }
 
-  let resposta: Response;
-
   try {
-    resposta = await fetch(`${BASE}${caminho}`, {
+    const resposta = await fetch(`${BASE}${caminho}`, {
       next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
+      // O sinal cobre a requisição inteira, inclusive a leitura do corpo:
+      // uma API que manda os cabeçalhos depressa e trava no meio do JSON
+      // também é uma espera sem fim, e o relógio precisa alcançar esse caso.
+      signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
     });
+
+    // `fetch` só rejeita quando a REDE falha. 404 e 500 chegam aqui como
+    // resposta normal — sem esta checagem, o `.json()` abaixo tentaria
+    // interpretar uma página de erro e falharia com uma mensagem
+    // incompreensível sobre token inesperado.
+    if (!resposta.ok) {
+      if (resposta.status === 401 || resposta.status === 403) {
+        // Credencial recusada é alarme, e não "erro do dia": a chave do
+        // servidor está errada, vencida ou foi revogada, e nenhuma pessoa
+        // usando o site consegue fazer nada a respeito. Quem precisa ver
+        // isto é quem opera.
+        console.error(
+          `A API recusou a credencial (${resposta.status}) em ${caminho}`,
+        );
+      } else {
+        console.error(`A API respondeu ${resposta.status} em ${caminho}`);
+      }
+
+      throw new ErroDaApi(
+        `A API respondeu ${resposta.status} em ${caminho}`,
+        resposta.status,
+      );
+    }
+
+    return (await resposta.json()) as T;
   } catch (erro) {
+    // Já classificado acima, com o status que a API mandou: sobe como está.
+    // Sem esta linha, o `catch` transformaria um 404 em 503 e a ficha de um
+    // título inexistente viraria tela de erro em vez de 404.
+    if (erro instanceof ErroDaApi) throw erro;
+
+    if (erro instanceof Error && erro.name === "TimeoutError") {
+      console.error(
+        `A API passou de ${TEMPO_LIMITE_API_MS}ms em ${caminho}`,
+      );
+      throw new ErroDaApi("A API demorou mais que o tempo esperado", 408);
+    }
+
+    // Rede: DNS, conexão recusada, TLS. O erro cru não serve para a tela —
+    // vira `ErroDaApi` para quem chama continuar decidindo pelo status.
     console.error(`Falha ao conectar com a API em ${caminho}`, erro);
-    throw erro;
+    throw new ErroDaApi("Não foi possível alcançar a API", 503);
   }
-
-  // `fetch` só rejeita quando a REDE falha. 404 e 500 chegam aqui como
-  // resposta normal — sem esta checagem, o `.json()` abaixo tentaria
-  // interpretar uma página de erro e falharia com uma mensagem
-  // incompreensível sobre token inesperado.
-  if (!resposta.ok) {
-    // O `fetch` só rejeita quando a REDE falha, então uma API respondendo 500
-    // ou 503 não passa pelo `catch` acima. Sem este log, esse caso vira uma
-    // tela amigável para quem usa e silêncio absoluto para quem opera.
-    console.error(`A API respondeu ${resposta.status} em ${caminho}`);
-
-    throw new ErroDaApi(
-      `A API respondeu ${resposta.status} em ${caminho}`,
-      resposta.status,
-    );
-  }
-
-  return resposta.json() as Promise<T>;
 }
 
 /* -------------------------------------------------------------------------
