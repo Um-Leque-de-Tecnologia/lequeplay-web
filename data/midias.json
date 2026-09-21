@@ -250,7 +250,7 @@
     ]
   },
   {
-    "id": "7",
+    "id": "9",
     "slug": "mapa-das-mares",
     "tipo": "serie",
     "titulo": "Mapa das Marés",
@@ -289,10 +289,10 @@
         ]
       }
     ],
-    "duracaoMin": 166
+    "status": "Returning Series"
   },
   {
-    "id": "8",
+    "id": "7",
     "slug": "revisao-de-codigo",
     "tipo": "podcast",
     "titulo": "Revisão de Código",
@@ -357,7 +357,7 @@
     ]
   },
   {
-    "id": "9",
+    "id": "8",
     "slug": "primeira-cadeira",
     "tipo": "podcast",
     "titulo": "Primeira Cadeira",
