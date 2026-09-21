@@ -10,7 +10,7 @@ import { listarHistorico, listarMidias } from "@/lib/api";
 export default async function Home() {
   // As duas buscas não dependem uma da outra: em série, a home esperaria a
   // soma das duas; em paralelo, espera a mais lenta.
-  const [{ itens }, historico] = await Promise.all([
+  const [{ itens, total }, historico] = await Promise.all([
     listarMidias(),
     listarHistorico(),
   ]);
@@ -39,7 +39,7 @@ export default async function Home() {
 
       <HomeCarrosselDestaques destaques={destaques} />
 
-      <HomeAcervo itens={itens} historico={historico} />
+      <HomeAcervo itens={itens} total={total} historico={historico} />
     </>
   );
 }

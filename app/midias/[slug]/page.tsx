@@ -1,21 +1,32 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CapaMidia } from "@/components/capa-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
+import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
+
+type SearchParams = {
+  temporada?: string;
+  episodio?: string;
+};
 
 export async function generateMetadata({
   params,
 }: PageProps<"/midias/[slug]">): Promise<Metadata> {
   const { slug } = await params;
+
   const midia = await buscarMidia(slug);
 
-  if (!midia) return { title: "Título não encontrado" };
+  if (!midia) {
+    return {
+      title: "Título não encontrado",
+    };
+  }
 
   return {
     title: midia.titulo,
@@ -25,30 +36,58 @@ export async function generateMetadata({
 
 export default async function PaginaDaMidia({
   params,
-}: PageProps<"/midias/[slug]">) {
+  searchParams,
+}: PageProps<"/midias/[slug]"> & {
+  searchParams?: Promise<SearchParams>;
+}) {
   const { slug } = await params;
+
+  const parametros = await searchParams;
+
   const midia = await buscarMidia(slug);
 
-  // `buscarMidia` devolve `Midia | null`, então o TypeScript obriga a tratar
-  // o caso "não achei" — que na tela vira o 404.
-  if (!midia) notFound();
+  /*
+   * `buscarMidia` devolve `Midia | null`.
+   *
+   * Se a mídia não existir, mostramos a página 404.
+   */
+  if (!midia) {
+    notFound();
+  }
+
+  /*
+   * O botão "Retomar" envia temporada e episódio
+   * pela query string.
+   *
+   * Exemplo:
+   *
+   * ?temporada=2&episodio=2
+   */
+  const temporadaNumero = parametros?.temporada
+    ? Number(parametros.temporada)
+    : undefined;
+
+  const episodioNumero = parametros?.episodio
+    ? Number(parametros.episodio)
+    : undefined;
 
   return (
     <article>
-      <nav aria-label="Trilha" className="mb-6 text-sm">
-        <Link href="/midias" className="text-zinc-400 hover:text-zinc-100">
+      <nav
+        aria-label="Trilha"
+        className="mb-6 text-sm"
+      >
+        <Link
+          href="/midias"
+          className="text-zinc-400 hover:text-zinc-100"
+        >
           ← Voltar ao catálogo
         </Link>
       </nav>
 
       <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
-        <Image
-          // Mesma regra do card: `posterUrl` vem ausente, não `null`, e o `??`
-          // cobre os dois. Ver o comentário em components/card-midia.tsx.
-          src={midia.posterUrl ?? "/capas/sem-capa.svg"}
-          alt=""
-          width={300}
-          height={450}
+        <CapaMidia
+          posterUrl={midia.posterUrl}
           className="w-full rounded-lg border border-white/10"
           priority
         />
@@ -58,36 +97,32 @@ export default async function PaginaDaMidia({
             {midia.titulo}
           </h1>
 
-          {/*
-            `totalAvaliacoes === 0` e não `notaMedia === null`: a nota agora é
-            sempre número, e sozinha ela não distingue "ninguém avaliou" de
-            "todo mundo detestou". O contador distingue.
-          */}
           <p className="mt-2 text-sm text-zinc-500">
-            {midia.totalAvaliacoes === 0
-              ? "Ainda sem avaliações"
-              : `★ ${midia.notaMedia.toFixed(1)} · ${midia.totalAvaliacoes} avaliações`}
+            {temAvaliacoes(midia)
+              ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
+              : "Ainda sem avaliações"}
           </p>
 
-          {/*
-            A sinopse aparece duas vezes na página, e é de propósito: aqui em
-            cima cortada, para quem só passou o olho, e inteira na aba
-            "Sinopse", para quem desceu atrás do texto completo. É o mesmo
-            campo vindo da mesma chamada — a duplicação é de apresentação,
-            não de dado.
-          */}
           <FichaSinopse midia={midia} />
         </div>
       </div>
 
       <FichaAbas midia={midia} />
 
-      {/* O narrowing por `tipo` é o que garante que `temporadas` existe. */}
-      {midia.tipo === "serie" && <FichaTemporadas serie={midia} />}
+      {midia.tipo === "serie" && (
+        <FichaTemporadas
+          serie={midia}
+          temporadaNumero={temporadaNumero}
+          episodioNumero={episodioNumero}
+        />
+      )}
 
       <FichaResenha titulo={midia.titulo} />
 
-      <FichaCompartilhar slug={midia.slug} titulo={midia.titulo} />
+      <FichaCompartilhar
+        slug={midia.slug}
+        titulo={midia.titulo}
+      />
     </article>
   );
 }
