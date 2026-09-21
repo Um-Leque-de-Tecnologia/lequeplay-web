@@ -1,7 +1,10 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { NOMES_DOS_COOKIES } from "@/lib/nomes-dos-cookies";
+import {
+  NOMES_DOS_COOKIES,
+  OPCOES_DO_COOKIE_DE_SESSAO,
+} from "@/lib/nomes-dos-cookies";
 import type { TokensDaSessao } from "@/lib/tipos";
 
 /**
@@ -22,9 +25,9 @@ import type { TokensDaSessao } from "@/lib/tipos";
  * **build quebra**, em vez de o segredo viajar para o navegador junto com o
  * pacote. É uma barreira que falha cedo e alto.
  *
- * É também por causa do `server-only` que os **nomes** dos cookies moram em
- * `lib/nomes-dos-cookies.ts`: o `proxy.ts` precisa deles e não pode importar
- * este arquivo.
+ * É também por causa do `server-only` que os nomes e as opções dos cookies
+ * moram em `lib/nomes-dos-cookies.ts`: o `proxy.ts` precisa dos dois e não
+ * pode importar este arquivo.
  */
 
 /** O token de acesso: é ele que vai no `Authorization` das chamadas à API. */
@@ -34,39 +37,13 @@ const COOKIE_ACESSO = NOMES_DOS_COOKIES.acesso;
 const COOKIE_RENOVACAO = NOMES_DOS_COOKIES.renovacao;
 
 /**
- * `secure` só em produção.
- *
- * Em `http://localhost`, Chrome e Firefox aceitam cookie `Secure` — mas nem
- * todo navegador aceita, e um login que "não funciona" por causa disso custa
- * uma tarde. Em produção ele é obrigatório: sem `secure`, o cookie viaja em
- * texto puro se alguém abrir o site por `http`.
- */
-const EM_PRODUCAO = process.env.NODE_ENV === "production";
-
-/**
- * As opções que valem para os dois cookies.
- *
- * **`sameSite: "lax"`, e não `"strict"`.** Com `strict`, o cookie não
- * acompanha nenhuma navegação vinda de fora do site: quem clicasse num link
- * do LequePlay compartilhado no WhatsApp chegaria **deslogado**, e o site
- * mostraria "Entrar" para quem acabou de entrar. `lax` manda o cookie em
- * navegação de topo (clicar num link), e não manda em requisição de terceiro
- * — que é a proteção que interessa contra CSRF.
- */
-const OPCOES_BASE = {
-  httpOnly: true,
-  secure: EM_PRODUCAO,
-  sameSite: "lax",
-  path: "/",
-} as const;
-
-/**
  * Grava o par de tokens.
  *
  * Só funciona em Server Action ou Route Handler: num Server Component o Next
  * lança `Cookies can only be modified in a Server Action or Route Handler`.
  * Não é capricho do framework — o cabeçalho `Set-Cookie` precisa sair antes
- * do corpo, e durante a renderização o corpo já começou.
+ * do corpo, e durante a renderização o corpo já começou. (O proxy é a outra
+ * exceção: ele responde antes de a página existir.)
  *
  * O `maxAge` de cada cookie é a validade que a própria API informou
  * (`expiresIn` e `refreshExpiresIn`, em segundos). Assim o cookie **some
@@ -77,12 +54,12 @@ export async function gravarSessao(tokens: TokensDaSessao): Promise<void> {
   const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_ACESSO, tokens.accessToken, {
-    ...OPCOES_BASE,
+    ...OPCOES_DO_COOKIE_DE_SESSAO,
     maxAge: tokens.expiresIn,
   });
 
   cookieStore.set(COOKIE_RENOVACAO, tokens.refreshToken, {
-    ...OPCOES_BASE,
+    ...OPCOES_DO_COOKIE_DE_SESSAO,
     maxAge: tokens.refreshExpiresIn,
   });
 }
