@@ -7,11 +7,53 @@ import "./globals.css";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const DESCRICAO =
+  "Catálogo de filmes, séries e podcasts. Ache pelo que você está a fim de ver, não pelo título exato.";
+
+/**
+ * O endereço público do site.
+ *
+ * Vem da variável de ambiente, e não do código: com `localhost` chumbado,
+ * todo link compartilhado de produção apontaria para a máquina de quem
+ * compartilhou. O fallback é o de desenvolvimento, que é onde `NEXT_PUBLIC_SITE_URL`
+ * costuma faltar — em produção, faltar é erro de configuração, e é melhor ele
+ * aparecer numa prévia quebrada do que virar um link para a máquina de alguém.
+ */
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  /**
+   * É o `metadataBase` que transforma caminho relativo em URL absoluta em
+   * toda a árvore de rotas. Sem ele, `og:image` e `og:url` saem relativos — e
+   * relativo não funciona fora do site, que é exatamente onde a prévia é
+   * lida: no WhatsApp, no navegador de outra pessoa, num post.
+   */
+  metadataBase: new URL(SITE),
+
   // `template` faz cada página virar "Título · LequePlay" sem repetir isto.
   title: { default: "LequePlay", template: "%s · LequePlay" },
-  description:
-    "Catálogo de filmes, séries e podcasts. Ache pelo que você está a fim de ver, não pelo título exato.",
+  description: DESCRICAO,
+
+  /**
+   * A prévia padrão do site. Cada ficha sobrescreve título e descrição na sua
+   * `generateMetadata`; a imagem vem da convenção `opengraph-image`, que o
+   * Next aplica ao segmento e a tudo abaixo dele — e já declara tipo, largura
+   * e altura sozinha.
+   */
+  openGraph: {
+    type: "website",
+    siteName: "LequePlay",
+    locale: "pt_BR",
+    title: "LequePlay",
+    description: DESCRICAO,
+    url: "/",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "LequePlay",
+    description: DESCRICAO,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
