@@ -150,7 +150,11 @@ export default async function PaginaDaMidia({
         </>
       )}
 
-      <FichaResenha titulo={midia.titulo} />
+      {/*
+        O slug vai junto porque, sem sessão, o bloco oferece o login com o
+        caminho de volta para esta ficha (`?de=/midias/<slug>`).
+      */}
+      <FichaResenha titulo={midia.titulo} slug={midia.slug} />
 
       <FichaCompartilhar
         slug={midia.slug}
