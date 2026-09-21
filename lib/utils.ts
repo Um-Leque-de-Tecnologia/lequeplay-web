@@ -12,8 +12,11 @@
  * acessibilidade. Leitor de tela chega nele pelo botão; o Ctrl+F só acha o que
  * está aberto. `hidden="until-found"` resolveria o Ctrl+F — fica como próximo
  * passo.
+ *
+ * O mesmo número serve à descrição da metadata: o resumo que a pessoa lê na
+ * ficha e o que aparece na prévia do link são o mesmo texto, e não faria
+ * sentido cortarem em lugares diferentes.
  */
-
 export const CARACTERES_NO_RESUMO = 180;
 
 /**
@@ -24,8 +27,7 @@ export const CARACTERES_NO_RESUMO = 180;
  * Pontuação colada no fim do resumo passa para o lado do resto: fechada, a
  * sinopse não termina em `superação,…`; aberta, a vírgula volta ao lugar.
  */
-
-export function corte(sinopse: string, ): number {
+export function corte(sinopse: string): number {
   if (sinopse.length <= CARACTERES_NO_RESUMO) return sinopse.length;
 
   const ultimoEspaco = sinopse.lastIndexOf(" ", CARACTERES_NO_RESUMO);

@@ -24,29 +24,30 @@ export async function generateMetadata({
   const midia = await buscarMidia(slug);
 
   if (!midia) {
-    return { 
+    return {
       title: "Mídia não encontrada",
       description: "A mídia solicitada não existe no catálogo.",
     };
   }
 
-  const tituloFormatado = midia.titulo;
+  // O mesmo corte da sinopse que a ficha usa na tela: o resumo lido na página
+  // e o que aparece na prévia do link são o mesmo texto, então cortam no mesmo
+  // lugar — no espaço, nunca no meio da palavra. As reticências são o caractere
+  // `…`, e não três pontos seguidos.
+  const pontoDoCorte = corte(midia.sinopse);
+  const descricaoCurta =
+    pontoDoCorte < midia.sinopse.length
+      ? `${midia.sinopse.slice(0, pontoDoCorte).trimEnd()}…`
+      : midia.sinopse;
 
-  const pontoMeta = corte(midia.sinopse);
-  const descricaoCorte = midia.sinopse.slice(0, pontoMeta);
-  const descricaoCurta = pontoMeta < midia.sinopse.length
-    ? `${descricaoCorte.trimEnd()}...`
-    : descricaoCorte;
-  
   return {
-    title: tituloFormatado,
+    title: midia.titulo,
     description: descricaoCurta,
     openGraph: {
-      title: tituloFormatado,
+      title: midia.titulo,
       description: descricaoCurta,
-      url: `/midias/${slug}`, // Link da própria página no Open Graph
-      siteName: 'LequePlay',
-      type: 'article',
+      siteName: "LequePlay",
+      type: "article",
     },
   };
 }
