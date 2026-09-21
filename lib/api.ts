@@ -11,7 +11,15 @@
  */
 
 import { CACHE_TAGS, tagMidia } from "@/lib/cache-tags";
-import type { Genero, ItemHistorico, Midia, Pagina } from "@/lib/tipos";
+import type {
+  CredenciaisDeLogin,
+  Genero,
+  ItemHistorico,
+  Midia,
+  Pagina,
+  TokensDaSessao,
+  UsuarioDaSessao,
+} from "@/lib/tipos";
 import { cache } from "react";
 
 const BASE = process.env.API_URL;
@@ -133,6 +141,128 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
     console.error(`Falha ao conectar com a API em ${caminho}`, erro);
     throw new ErroDaApi("Não foi possível alcançar a API", 503);
   }
+}
+
+/* -------------------------------------------------------------------------
+   A conta: login, renovação, saída e quem está logado.
+   ------------------------------------------------------------------------- */
+
+/**
+ * Um POST na API, com o mesmo tratamento de erro e o mesmo tempo limite das
+ * buscas.
+ *
+ * Separado do `buscar` porque as duas coisas diferem no que importa: isto
+ * **nunca** é cacheado (é escrita, e resposta de credencial não se guarda) e
+ * manda corpo. Reaproveitar o `buscar` aqui significaria um parâmetro a mais
+ * em toda busca do catálogo para atender um caso que nenhuma delas tem.
+ */
+async function enviar<T>(
+  caminho: string,
+  corpo: unknown,
+  cabecalhos: Record<string, string> = {},
+): Promise<T> {
+  if (!BASE) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  try {
+    const resposta = await fetch(`${BASE}${caminho}`, {
+      method: "POST",
+      headers: { "content-type": "application/json", ...cabecalhos },
+      body: JSON.stringify(corpo),
+      cache: "no-store",
+      signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
+    });
+
+    if (!resposta.ok) {
+      // O corpo de erro da API traz `detail` com mensagem interna do Keycloak
+      // ("Invalid user credentials", "oidc: malformed jwt…"). Ele NÃO é lido
+      // aqui de propósito: o que sobe é o status, e a tela escolhe a frase.
+      throw new ErroDaApi(
+        `A API respondeu ${resposta.status} em ${caminho}`,
+        resposta.status,
+      );
+    }
+
+    // 204 (o logout) não tem corpo: `json()` quebraria numa saída bem
+    // sucedida.
+    if (resposta.status === 204) return undefined as T;
+
+    return (await resposta.json()) as T;
+  } catch (erro) {
+    if (erro instanceof ErroDaApi) throw erro;
+
+    if (erro instanceof Error && erro.name === "TimeoutError") {
+      console.error(`A API passou de ${TEMPO_LIMITE_API_MS}ms em ${caminho}`);
+      throw new ErroDaApi("A API demorou mais que o tempo esperado", 408);
+    }
+
+    console.error(`Falha ao conectar com a API em ${caminho}`, erro);
+    throw new ErroDaApi("Não foi possível alcançar a API", 503);
+  }
+}
+
+/**
+ * Troca usuário e senha pelo par de tokens.
+ *
+ * Credencial errada e usuário inexistente devolvem o **mesmo** 401 na API — e
+ * é assim que tem de ser: dizer qual dos dois falhou entrega quais usuários
+ * existem na base.
+ */
+export async function entrarNaConta(
+  credenciais: CredenciaisDeLogin,
+): Promise<TokensDaSessao> {
+  return enviar<TokensDaSessao>("/auth/login", credenciais);
+}
+
+/** Troca o token de renovação por um par novo. */
+export async function renovarSessao(
+  refreshToken: string,
+): Promise<TokensDaSessao> {
+  return enviar<TokensDaSessao>("/auth/refresh", { refreshToken });
+}
+
+/**
+ * Avisa a API que a sessão acabou (responde 204).
+ *
+ * Mata o token de **renovação**. O de acesso é um JWT e continua válido até
+ * vencer — é por isso que ele vive minutos, e não horas.
+ */
+export async function sairDaConta(refreshToken: string): Promise<void> {
+  await enviar<void>("/auth/logout", { refreshToken });
+}
+
+/**
+ * Quem é o dono deste token, perguntado à API.
+ *
+ * Ter o cookie não prova nada: qualquer pessoa escreve um no navegador. Quem
+ * sabe se o token vale é o `/auth/me`, e ele responde 401 quando não vale —
+ * inclusive para token vencido e para token malformado, que são o mesmo caso
+ * do ponto de vista de quem chama.
+ *
+ * Nunca cacheado: resposta de uma pessoa não entra em cache compartilhado.
+ */
+export async function buscarUsuarioDaSessao(
+  tokenDeAcesso: string,
+): Promise<UsuarioDaSessao> {
+  if (!BASE) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  const resposta = await fetch(`${BASE}/auth/me`, {
+    headers: { Authorization: `Bearer ${tokenDeAcesso}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
+  });
+
+  if (!resposta.ok) {
+    throw new ErroDaApi(
+      `A API respondeu ${resposta.status} em /auth/me`,
+      resposta.status,
+    );
+  }
+
+  return (await resposta.json()) as UsuarioDaSessao;
 }
 
 /* -------------------------------------------------------------------------
