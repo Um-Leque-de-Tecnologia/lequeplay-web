@@ -55,6 +55,18 @@ type Opcoes = {
   tags: string[];
   /** Segundos até revalidar. `0` desliga o cache (dado por usuário). */
   revalidar?: number;
+  /**
+   * Desliga o cache inteiro (`cache: "no-store"`).
+   *
+   * Existe para uma busca só, e é o ponto do LP-310: a versão do catálogo.
+   * Um vigia que lê valor guardado não vigia nada — ele responderia "não
+   * mudou" com a resposta de cinco minutos atrás, para sempre, e a
+   * invalidação nunca aconteceria.
+   *
+   * Para qualquer outra busca, o caminho é `revalidar` + `tags`: dado que não
+   * se cacheia é exceção, e exceção precisa ser declarada.
+   */
+  semCache?: boolean;
 };
 
 // Sem valor padrão para `opcoes`: com `tags` obrigatório no tipo, um `= {}`
@@ -67,7 +79,12 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
 
   try {
     const resposta = await fetch(`${BASE}${caminho}`, {
-      next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
+      // `no-store` e `next` são exclusivos: um diz "nunca guarde", o outro diz
+      // por quanto tempo guardar. Mandar os dois é deixar o Next escolher, e a
+      // escolha dele pode não ser a que está escrita aqui.
+      ...(opcoes.semCache
+        ? { cache: "no-store" as const }
+        : { next: { tags: opcoes.tags, revalidate: opcoes.revalidar } }),
       // O sinal cobre a requisição inteira, inclusive a leitura do corpo:
       // uma API que manda os cabeçalhos depressa e trava no meio do JSON
       // também é uma espera sem fim, e o relógio precisa alcançar esse caso.
@@ -239,6 +256,32 @@ export async function listarGeneros(): Promise<Genero[]> {
   });
 
   return itens;
+}
+
+/**
+ * A versão do catálogo: um contador que a API incrementa a cada ingestão.
+ *
+ * **A única busca do projeto que nunca é cacheada.** Ela existe para
+ * responder "mudou desde a última vez que olhei?", e uma resposta guardada
+ * responde sempre a mesma coisa — o vigia do LP-310 passaria a vida dizendo
+ * "não mudou" com a leitura de cinco minutos atrás.
+ *
+ * Sem etiqueta pelo mesmo motivo: não há cache para invalidar.
+ */
+export async function buscarVersaoDoCatalogo(): Promise<number> {
+  if (USAR_MOCK) {
+    // Com o mock não existe ingestão: o catálogo é um arquivo no repositório,
+    // e a versão só muda quando alguém edita e publica. Devolver um número
+    // fixo mantém o vigia honesto — ele diz "não mudou", que é a verdade.
+    return 1;
+  }
+
+  const { versao } = await buscar<{ versao: number }>("/catalogo/versao", {
+    tags: [],
+    semCache: true,
+  });
+
+  return versao;
 }
 
 /**
