@@ -250,6 +250,48 @@
     ]
   },
   {
+    "id": "9",
+    "slug": "mapa-das-mares",
+    "tipo": "serie",
+    "titulo": "Mapa das Marés",
+    "ano": 2026,
+    "generos": ["Documentário", "Drama"],
+    "sinopse": "Quando uma vila costeira começa a desaparecer dos mapas oficiais, uma cartógrafa retorna à cidade onde cresceu para descobrir quem está redesenhando a linha do mar — e por quê.",
+    "posterUrl": "/capas/mapa-das-mares.svg",
+    "notaMedia": 8.7,
+    "totalAvaliacoes": 86,
+    "temporadas": [
+      {
+        "numero": 1,
+        "ano": 2026,
+        "totalEpisodios": 4,
+        "episodios": [
+          {
+            "numero": 1,
+            "titulo": "A linha que recuou",
+            "duracaoMin": 42
+          },
+          {
+            "numero": 2,
+            "titulo": "Nome de enseada",
+            "duracaoMin": 39
+          },
+          {
+            "numero": 3,
+            "titulo": "Terra de ninguém",
+            "duracaoMin": 44
+          },
+          {
+            "numero": 4,
+            "titulo": "O mar no papel",
+            "duracaoMin": 41
+          }
+        ]
+      }
+    ],
+    "status": "Returning Series"
+  },
+  {
     "id": "7",
     "slug": "revisao-de-codigo",
     "tipo": "podcast",

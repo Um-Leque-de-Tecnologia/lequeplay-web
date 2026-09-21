@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450" role="presentation">
+  <defs>
+    <linearGradient id="gmapadasmares" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f4c5c"/>
+      <stop offset="54%" stop-color="#155e75"/>
+      <stop offset="100%" stop-color="#164e63"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="450" fill="url(#gmapadasmares)"/>
+  <path d="M-25 96C25 54 76 133 125 91s94-5 139-45" fill="none" stroke="#e0f2fe" stroke-width="3" opacity=".45"/>
+  <path d="M-40 171c55-40 104 41 154-2s87 13 154-34" fill="none" stroke="#bae6fd" stroke-width="2" opacity=".35"/>
+  <path d="M-18 270c42-58 88 11 135-40s86 9 149-61" fill="none" stroke="#fef3c7" stroke-width="2" opacity=".38"/>
+  <circle cx="221" cy="312" r="58" fill="#fef3c7" opacity=".09"/>
+</svg>

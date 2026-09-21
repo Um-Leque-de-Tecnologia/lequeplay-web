@@ -1,6 +1,23 @@
 import { formatarDuracao } from "@/lib/formatadores";
 import type { Midia } from "@/lib/tipos";
 
+/**
+ * O `status` da série chega da API **em inglês**, como a TMDB publica. A API
+ * guarda o dado cru de propósito; virar rótulo em português é decisão de
+ * tela, e por isso a tradução mora aqui.
+ *
+ * O que não estiver no mapa aparece como veio, em vez de sumir: um status
+ * novo na origem vira um rótulo estranho na ficha, que alguém nota e corrige
+ * — melhor do que uma linha que desaparece em silêncio.
+ */
+const STATUS_DA_SERIE: Record<string, string> = {
+  "Returning Series": "Em exibição",
+  Ended: "Encerrada",
+  Canceled: "Cancelada",
+  "In Production": "Em produção",
+  Planned: "Anunciada",
+};
+
 /** A ficha muda conforme o tipo — e o narrowing dá o campo certo em cada caso. */
 export function FichaTecnica({ midia }: { midia: Midia }) {
   return (
@@ -47,8 +64,37 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
 
       {midia.tipo === "serie" && (
         <>
-          <dt className="text-zinc-500">Temporadas</dt>
+          <dt className="text-zinc-500">
+            {/* O rótulo acompanha a cardinalidade, como no gênero acima. */}
+            {midia.temporadas.length === 1 ? "Temporada" : "Temporadas"}
+          </dt>
           <dd>{midia.temporadas.length}</dd>
+
+          {/*
+            O total soma o `totalEpisodios` de cada temporada, e NÃO
+            `episodios.length`. O resumo da temporada pode vir sem a lista —
+            é o que a API devolve fora do detalhe —, e aí contar o array daria
+            um número menor, sem erro nenhum na tela para denunciar.
+          */}
+          <dt className="text-zinc-500">Episódios</dt>
+          <dd>
+            {midia.temporadas.reduce(
+              (total, temporada) => total + temporada.totalEpisodios,
+              0,
+            )}
+          </dd>
+
+          {/*
+            A situação pode faltar, e some a linha inteira quando falta — pelo
+            mesmo motivo da duração ali em cima: uma `<dl>` com termo sem
+            definição é lida como campo vazio pelo leitor de tela.
+          */}
+          {midia.status !== undefined && (
+            <>
+              <dt className="text-zinc-500">Situação</dt>
+              <dd>{STATUS_DA_SERIE[midia.status] ?? midia.status}</dd>
+            </>
+          )}
         </>
       )}
     </dl>
