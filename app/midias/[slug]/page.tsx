@@ -9,6 +9,7 @@ import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
+import { corte } from "@/lib/utils";
 
 type SearchParams = {
   temporada?: string;
@@ -24,13 +25,30 @@ export async function generateMetadata({
 
   if (!midia) {
     return {
-      title: "Título não encontrado",
+      title: "Mídia não encontrada",
+      description: "A mídia solicitada não existe no catálogo.",
     };
   }
 
+  // O mesmo corte da sinopse que a ficha usa na tela: o resumo lido na página
+  // e o que aparece na prévia do link são o mesmo texto, então cortam no mesmo
+  // lugar — no espaço, nunca no meio da palavra. As reticências são o caractere
+  // `…`, e não três pontos seguidos.
+  const pontoDoCorte = corte(midia.sinopse);
+  const descricaoCurta =
+    pontoDoCorte < midia.sinopse.length
+      ? `${midia.sinopse.slice(0, pontoDoCorte).trimEnd()}…`
+      : midia.sinopse;
+
   return {
     title: midia.titulo,
-    description: midia.sinopse,
+    description: descricaoCurta,
+    openGraph: {
+      title: midia.titulo,
+      description: descricaoCurta,
+      siteName: "LequePlay",
+      type: "article",
+    },
   };
 }
 
