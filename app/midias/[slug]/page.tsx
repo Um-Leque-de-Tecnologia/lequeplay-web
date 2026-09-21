@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CapaMidia } from "@/components/capa-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
+import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
 import { corte } from "@/lib/utils";
 
@@ -102,14 +103,8 @@ export default async function PaginaDaMidia({
       </nav>
 
       <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
-        <Image
-          src={
-            midia.posterUrl ??
-            "/capas/sem-capa.svg"
-          }
-          alt=""
-          width={300}
-          height={450}
+        <CapaMidia
+          posterUrl={midia.posterUrl}
           className="w-full rounded-lg border border-white/10"
           priority
         />
@@ -120,9 +115,9 @@ export default async function PaginaDaMidia({
           </h1>
 
           <p className="mt-2 text-sm text-zinc-500">
-            {midia.totalAvaliacoes === 0
-              ? "Ainda sem avaliações"
-              : `★ ${midia.notaMedia.toFixed(1)} · ${midia.totalAvaliacoes} avaliações`}
+            {temAvaliacoes(midia)
+              ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
+              : "Ainda sem avaliações"}
           </p>
 
           <FichaSinopse midia={midia} />

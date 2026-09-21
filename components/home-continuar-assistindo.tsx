@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { CapaMidia } from "@/components/capa-midia";
 import type { ItemHistorico, Midia } from "@/lib/tipos";
 
 type Props = {
@@ -194,14 +194,8 @@ export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
               key={`${item.midiaSlug}-${item.temporadaNumero ?? ""}-${item.episodioNumero ?? ""}`}
               className="flex gap-4 rounded-lg border border-white/10 bg-zinc-900/40 p-3"
             >
-              <Image
-                src={
-                  midia.posterUrl ??
-                  "/capas/sem-capa.svg"
-                }
-                alt=""
-                width={300}
-                height={450}
+              <CapaMidia
+                posterUrl={midia.posterUrl}
                 className="h-24 w-16 shrink-0 rounded-md border border-white/10 object-cover"
               />
 
