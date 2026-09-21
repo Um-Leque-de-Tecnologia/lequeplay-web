@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { sair } from "@/app/perfil/acoes";
 import { buscarUsuarioLogado } from "@/lib/dal";
 
 export const metadata: Metadata = {
@@ -16,13 +17,13 @@ export const metadata: Metadata = {
  *
  * ## Quem protege esta página é esta página
  *
- * O proxy (LP-406) vai adiantar o caminho — ele roda antes e devolve 307 sem
- * nem montar a tela. Mas ele olha só se o **cookie existe**, e cookie qualquer
- * um escreve. Quem decide se a pessoa vê o dado é quem busca o dado: a
- * chamada abaixo pergunta à API se aquele token vale.
+ * O proxy (LP-406) adianta o caminho — ele roda antes e devolve 307 sem nem
+ * montar a tela. Mas ele olha só se o **cookie existe**, e cookie qualquer um
+ * escreve. Quem decide se a pessoa vê o dado é quem busca o dado: a chamada
+ * abaixo pergunta à API se aquele token vale.
  *
- * O teste que prova isso: apagar o `proxy.ts` não pode abrir nada. Se abrir, a
- * proteção estava no lugar errado o tempo todo.
+ * O teste que prova isso: apagar o `proxy.ts` não abre nada — medido no
+ * LP-406, continua 307.
  *
  * ## Só o que o `/me` devolve
  *
@@ -35,8 +36,8 @@ export default async function PaginaDePerfil() {
 
   if (!usuario) {
     // O `de` leva a pessoa de volta para cá depois de entrar. Quem valida
-    // esse destino é a action do login (LP-407) — aqui ele é escrito por nós,
-    // mas lá ele chega como texto de estranho.
+    // esse destino é o filtro do LP-407: aqui ele é escrito por nós, mas lá
+    // ele chega como texto de estranho.
     redirect("/entrar?de=/perfil");
   }
 
@@ -65,7 +66,23 @@ export default async function PaginaDePerfil() {
         </div>
       </dl>
 
-      <p className="mt-10 border-t border-white/10 pt-6 text-sm text-zinc-500">
+      {/*
+        Sair é um `<form>`, e não um link, porque um `GET /sair` é disparável
+        de fora: um `<img src="…/sair">` num fórum deslogaria quem passasse
+        por lá. Server Action é sempre POST na própria rota.
+
+        Sem JavaScript isto continua funcionando — é um formulário comum.
+      */}
+      <form action={sair} className="mt-10 border-t border-white/10 pt-6">
+        <button
+          type="submit"
+          className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:border-white/30 hover:text-zinc-100"
+        >
+          Sair da conta
+        </button>
+      </form>
+
+      <p className="mt-6 text-sm text-zinc-500">
         Ainda não dá para alterar esses dados por aqui — eles vêm do sistema de
         contas, e a API só os mostra.
       </p>
