@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CabecalhoAlternadorTema } from "@/components/cabecalho-alternador-tema";
 import { CabecalhoBusca } from "@/components/cabecalho-busca";
+import { CabecalhoConta } from "@/components/cabecalho-conta";
 import { CabecalhoMenuMobile } from "@/components/cabecalho-menu-mobile";
 
 /**
@@ -34,6 +35,13 @@ export function CabecalhoSite() {
         <div className="ml-auto flex items-center gap-1">
           <CabecalhoBusca />
           <CabecalhoAlternadorTema />
+
+          {/*
+            Quem entrou, perguntado do navegador. Se este componente lesse a
+            sessão no servidor, toda rota do site viraria dinâmica — ver o
+            comentário dele e a tabela do build no LP-409.
+          */}
+          <CabecalhoConta />
         </div>
       </div>
     </header>
