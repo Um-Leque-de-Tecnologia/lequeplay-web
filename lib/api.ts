@@ -10,6 +10,7 @@
  * das telas.
  */
 
+import { CACHE_TAGS, tagMidia } from "@/lib/cache-tags";
 import type { Genero, ItemHistorico, Midia, Pagina } from "@/lib/tipos";
 import { cache } from "react";
 
@@ -39,13 +40,27 @@ export class ErroDaApi extends Error {
 }
 
 type Opcoes = {
-  /** Tags de cache, para invalidar com `revalidateTag` depois. */
-  tags?: string[];
+  /**
+   * As etiquetas de cache desta busca, para invalidar com `revalidateTag`
+   * depois. Os nomes estão em `lib/cache-tags.ts`, e o esquema inteiro em
+   * `docs/cache-tags.md`.
+   *
+   * **Obrigatório de propósito.** Uma busca cacheada sem etiqueta não tem
+   * como ser invalidada: ela fica servindo resposta velha até o tempo de
+   * revalidação passar, e nenhum erro aparece para avisar. Exigir o campo no
+   * tipo faz o compilador cobrar a decisão de quem escrever a próxima busca —
+   * e quem não quiser cache nenhum escreve `tags: []`, que é uma escolha
+   * registrada, e não um esquecimento.
+   */
+  tags: string[];
   /** Segundos até revalidar. `0` desliga o cache (dado por usuário). */
   revalidar?: number;
 };
 
-async function buscar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
+// Sem valor padrão para `opcoes`: com `tags` obrigatório no tipo, um `= {}`
+// aqui daria de volta, na porta dos fundos, a busca sem etiqueta que o campo
+// obrigatório existe para impedir.
+async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
   if (!BASE) {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
   }
@@ -158,7 +173,7 @@ export async function listarMidias(
   );
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {
-    tags: ["midias"],
+    tags: [CACHE_TAGS.MIDIAS],
     revalidar: 300,
   });
 }
@@ -172,7 +187,7 @@ export const buscarMidia = cache(async (slug: string): Promise<Midia | null> => 
 
   try {
     return await buscar<Midia>(`/midias/${slug}`, {
-      tags: ["midias", `midia:${slug}`],
+      tags: [CACHE_TAGS.MIDIAS, tagMidia(slug)],
       revalidar: 300,
     });
   } catch (erro) {
@@ -206,7 +221,7 @@ export async function listarGeneros(): Promise<Genero[]> {
 
   // Muda quando o catálogo muda, ou seja: quase nunca. Uma hora de cache.
   const { itens } = await buscar<{ itens: Genero[] }>("/generos", {
-    tags: ["generos"],
+    tags: [CACHE_TAGS.GENEROS],
     revalidar: 3600,
   });
 
@@ -227,7 +242,9 @@ export async function listarHistorico(): Promise<ItemHistorico[]> {
   try {
     const { itens } = await buscar<{ itens: ItemHistorico[] }>(
       "/perfil/historico",
-      { revalidar: 0 },
+      // Lista vazia, e não ausência: não há o que invalidar aqui, e dizer
+      // isso explicitamente é diferente de esquecer a etiqueta.
+      { tags: [], revalidar: 0 },
     );
 
     return itens;
