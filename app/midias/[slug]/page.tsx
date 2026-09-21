@@ -116,9 +116,11 @@ export default async function PaginaDaMidia({
           </h1>
 
           <p className="mt-2 text-sm text-zinc-500">
+            {/* A ficha tem espaço para o convite; o cartão da grade, não.
+                A nota, porém, sai da mesma função nos dois lugares. */}
             {temAvaliacoes(midia)
               ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
-              : "Ainda sem avaliações"}
+              : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
           </p>
 
           <FichaSinopse midia={midia} />

@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# lixo que o explorador de arquivos cria sozinho, no Windows e no macOS
+desktop.ini
+Thumbs.db
+
 # debug
 npm-debug.log*
 yarn-debug.log*

@@ -25,10 +25,15 @@ export function CardMidia({ midia }: { midia: Midia }) {
       </Link>
 
       <p className="mt-1 text-sm text-zinc-500">
-        {ROTULO_TIPO[midia.tipo]} · {midia.ano}
+        {ROTULO_TIPO[midia.tipo]} · {midia.ano} ·{" "}
         {/* Sem nota não é nota zero: quem separa os dois é `temAvaliacoes`,
-            e o porquê está em lib/avaliacao.ts. */}
-        {temAvaliacoes(midia) && ` · ★ ${notaFormatada(midia)}`}
+            e o porquê está em lib/avaliacao.ts. Aqui a ausência é dita com
+            todas as letras, em vez de a linha simplesmente não aparecer. */}
+        {temAvaliacoes(midia) ? (
+          <span className="text-amber-400">★ {notaFormatada(midia)}</span>
+        ) : (
+          <span className="italic">ainda não avaliado</span>
+        )}
       </p>
     </article>
   );
