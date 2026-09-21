@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import { NOMES_DOS_COOKIES } from "@/lib/nomes-dos-cookies";
 import type { TokensDaSessao } from "@/lib/tipos";
 
 /**
@@ -20,13 +21,17 @@ import type { TokensDaSessao } from "@/lib/tipos";
  * engano — um import automático do editor resolve isso em meio segundo —, o
  * **build quebra**, em vez de o segredo viajar para o navegador junto com o
  * pacote. É uma barreira que falha cedo e alto.
+ *
+ * É também por causa do `server-only` que os **nomes** dos cookies moram em
+ * `lib/nomes-dos-cookies.ts`: o `proxy.ts` precisa deles e não pode importar
+ * este arquivo.
  */
 
 /** O token de acesso: é ele que vai no `Authorization` das chamadas à API. */
-const COOKIE_ACESSO = "lp_acesso";
+const COOKIE_ACESSO = NOMES_DOS_COOKIES.acesso;
 
 /** O token de renovação: só serve para pedir um par novo à API. */
-const COOKIE_RENOVACAO = "lp_renovacao";
+const COOKIE_RENOVACAO = NOMES_DOS_COOKIES.renovacao;
 
 /**
  * `secure` só em produção.
@@ -106,9 +111,3 @@ export async function apagarSessao(): Promise<void> {
   cookieStore.delete(COOKIE_ACESSO);
   cookieStore.delete(COOKIE_RENOVACAO);
 }
-
-/** Os nomes, exportados para o proxy — que lê cookie sem passar por aqui. */
-export const NOMES_DOS_COOKIES = {
-  acesso: COOKIE_ACESSO,
-  renovacao: COOKIE_RENOVACAO,
-} as const;
