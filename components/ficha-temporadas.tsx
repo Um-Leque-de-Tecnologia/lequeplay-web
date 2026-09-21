@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { formatarDuracao } from "@/lib/formatadores";
 import type { Serie } from "@/lib/tipos";
@@ -138,6 +139,18 @@ export function FichaTemporadas({
             </option>
           ))}
         </select>
+
+        {/*
+          O seletor troca a temporada aqui mesmo, sem sair da ficha; o link
+          leva ao endereço próprio da temporada (LP-301), que é o que se
+          compartilha e o que abre numa aba nova.
+        */}
+        <Link
+          href={`/midias/${serie.slug}/temporada/${temporada.numero}`}
+          className="text-sm font-medium text-violet-400 transition hover:text-violet-300"
+        >
+          Ver a página desta temporada
+        </Link>
       </div>
 
       {temporada.episodios.length === 0 ? (
