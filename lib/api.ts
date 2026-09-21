@@ -38,15 +38,27 @@ async function buscar<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
   }
 
-  const resposta = await fetch(`${BASE}${caminho}`, {
-    next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
-  });
+  let resposta: Response;
+
+  try {
+    resposta = await fetch(`${BASE}${caminho}`, {
+      next: { tags: opcoes.tags, revalidate: opcoes.revalidar },
+    });
+  } catch (erro) {
+    console.error(`Falha ao conectar com a API em ${caminho}`, erro);
+    throw erro;
+  }
 
   // `fetch` só rejeita quando a REDE falha. 404 e 500 chegam aqui como
   // resposta normal — sem esta checagem, o `.json()` abaixo tentaria
   // interpretar uma página de erro e falharia com uma mensagem
   // incompreensível sobre token inesperado.
   if (!resposta.ok) {
+    // O `fetch` só rejeita quando a REDE falha, então uma API respondendo 500
+    // ou 503 não passa pelo `catch` acima. Sem este log, esse caso vira uma
+    // tela amigável para quem usa e silêncio absoluto para quem opera.
+    console.error(`A API respondeu ${resposta.status} em ${caminho}`);
+
     throw new ErroDaApi(
       `A API respondeu ${resposta.status} em ${caminho}`,
       resposta.status,
