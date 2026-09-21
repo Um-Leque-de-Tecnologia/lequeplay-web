@@ -120,11 +120,21 @@ export type Serie = MidiaBase & {
   temporadas: Temporada[];
 };
 
+export type EpisodioPodcast = {
+  numero: number;
+  titulo: string;
+  duracaoMin: number;
+  /** Data em formato ISO (ex: "2025-03-12"). */
+  publicadoEm: string;
+};
+
 export type Podcast = MidiaBase & {
   tipo: "podcast";
   /** Como `diretor`: derivado do crédito com `papel: "apresentacao"`. */
   apresentador: string;
   totalEpisodios: number;
+  frequencia?: string;
+  episodios?: EpisodioPodcast[];
 };
 
 export type Midia = Filme | Serie | Podcast;

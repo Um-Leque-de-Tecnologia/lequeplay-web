@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { CapaMidia } from "@/components/capa-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
+import { FichaPodcast } from "@/components/ficha-podcast";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
@@ -14,6 +15,7 @@ import { corte } from "@/lib/utils";
 type SearchParams = {
   temporada?: string;
   episodio?: string;
+  episodios?: string;
 };
 
 export async function generateMetadata({
@@ -89,6 +91,8 @@ export default async function PaginaDaMidia({
     ? Number(parametros.episodio)
     : undefined;
 
+  const mostrarTodosEpisodios = parametros?.episodios === "todos";
+
   return (
     <article>
       <nav
@@ -123,18 +127,27 @@ export default async function PaginaDaMidia({
               : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
           </p>
 
-          <FichaSinopse midia={midia} />
+          <FichaSinopse sinopse={midia.sinopse} />
         </div>
       </div>
 
-      <FichaAbas midia={midia} />
-
-      {midia.tipo === "serie" && (
-        <FichaTemporadas
-          serie={midia}
-          temporadaNumero={temporadaNumero}
-          episodioNumero={episodioNumero}
+      {midia.tipo === "podcast" ? (
+        <FichaPodcast
+          podcast={midia}
+          mostrarTodosEpisodios={mostrarTodosEpisodios}
         />
+      ) : (
+        <>
+          <FichaAbas midia={midia} />
+
+          {midia.tipo === "serie" && (
+            <FichaTemporadas
+              serie={midia}
+              temporadaNumero={temporadaNumero}
+              episodioNumero={episodioNumero}
+            />
+          )}
+        </>
       )}
 
       <FichaResenha titulo={midia.titulo} />

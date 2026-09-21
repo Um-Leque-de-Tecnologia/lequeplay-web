@@ -1,10 +1,5 @@
+import { formatarDuracao } from "@/lib/formatadores";
 import type { Midia } from "@/lib/tipos";
-
-function formatarDuracao(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ""}` : `${m}min`;
-}
 
 /** A ficha muda conforme o tipo — e o narrowing dá o campo certo em cada caso. */
 export function FichaTecnica({ midia }: { midia: Midia }) {
@@ -54,14 +49,6 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
         <>
           <dt className="text-zinc-500">Temporadas</dt>
           <dd>{midia.temporadas.length}</dd>
-        </>
-      )}
-
-      {midia.tipo === "podcast" && (
-        <>
-          <dt className="text-zinc-500">Apresentação</dt>
-          {/* Idem: crédito com `papel: "apresentacao"`. */}
-          <dd>{midia.apresentador}</dd>
         </>
       )}
     </dl>
