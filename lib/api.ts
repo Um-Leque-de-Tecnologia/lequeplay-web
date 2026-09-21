@@ -224,10 +224,18 @@ export async function listarHistorico(): Promise<ItemHistorico[]> {
 
   // `revalidar: 0` porque isto é dado de uma pessoa só: cachear serviria o
   // progresso de alguém para outra pessoa.
-  const { itens } = await buscar<{ itens: ItemHistorico[] }>(
-    "/perfil/historico",
-    { revalidar: 0 },
-  );
+  try {
+    const { itens } = await buscar<{ itens: ItemHistorico[] }>(
+      "/perfil/historico",
+      { revalidar: 0 },
+    );
 
-  return itens;
+    return itens;
+  } catch (erro) {
+    if (erro instanceof ErroDaApi && erro.status === 404) {
+      return [];
+    }
+
+    throw erro;
+  }
 }
