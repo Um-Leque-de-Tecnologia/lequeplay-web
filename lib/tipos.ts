@@ -120,6 +120,18 @@ export type Serie = MidiaBase & {
   tipo: "serie";
 
   /**
+   * A situação de produção, como a API publica: `"Returning Series"`,
+   * `"Ended"`, `"Canceled"`. O texto vem da TMDB e chega **em inglês, sem
+   * tradução** — a API guarda o dado, e virar rótulo em português é decisão
+   * de tela, aqui no front.
+   *
+   * Opcional porque nem todo título tem: podcast não tem, e título semeado à
+   * mão pode não trazer. Quem mostra precisa tratar a ausência escondendo a
+   * linha, como a ficha já faz com `duracaoMin`.
+   */
+  status?: string;
+
+  /**
    * As temporadas vêm **completas**, com os episódios dentro, e não como
    * `ResumoTemporada`. A série tem meia dúzia de temporadas, não mil: mandar
    * tudo de uma vez custa alguns kB e poupa uma ida ao servidor toda vez que
