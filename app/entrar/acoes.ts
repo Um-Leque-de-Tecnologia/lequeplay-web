@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { ErroDaApi, entrarNaConta } from "@/lib/api";
+import { destinoSeguro } from "@/lib/destino-seguro";
 import { gravarSessao } from "@/lib/sessao";
 
 /**
@@ -15,28 +16,6 @@ export type EstadoDoLogin = {
   erro?: string;
   usuario?: string;
 };
-
-/** O destino padrão de quem entra sem vir de lugar nenhum. */
-const DESTINO_PADRAO = "/";
-
-/**
- * Aceita só caminho interno.
- *
- * Quem decide são as duas primeiras letras. `/` sozinho é caminho nosso, mas
- * `//outro-host` e `/\outro-host` o navegador lê como "mesmo protocolo, outro
- * servidor": na hora de resolver o endereço, a contrabarra vira barra. Medido
- * neste servidor: com `de=/\golpe.example` o `Location` saía inteiro, e quem
- * clicasse terminaria no golpe.example achando que entrou no LequePlay.
- *
- * Aqui estão só as formas que eu medi. A validação completa — espaço, TAB e
- * quebra de linha antes das barras, e o mesmo teste reaproveitado pelas outras
- * telas que aceitam destino — é o LP-407.
- */
-function destinoSeguro(de: string | undefined): string {
-  if (!de || !de.startsWith("/")) return DESTINO_PADRAO;
-  if (de[1] === "/" || de[1] === "\\") return DESTINO_PADRAO;
-  return de;
-}
 
 /**
  * Troca usuário e senha por uma sessão em cookie.
@@ -52,6 +31,9 @@ export async function entrar(
 ): Promise<EstadoDoLogin> {
   const usuario = String(dados.get("usuario") ?? "").trim();
   const senha = String(dados.get("senha") ?? "");
+
+  // O destino passa pelo filtro antes de qualquer coisa. Ele chega de um
+  // campo escondido, que é escrito por quem quiser — ver `lib/destino-seguro`.
   const destino = destinoSeguro(String(dados.get("de") ?? ""));
 
   if (!usuario || !senha) {
