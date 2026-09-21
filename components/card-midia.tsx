@@ -26,12 +26,8 @@ export function CardMidia({ midia }: { midia: Midia }) {
 
       <p className="mt-1 text-sm text-zinc-500">
         {ROTULO_TIPO[midia.tipo]} · {midia.ano}
-        {/*
-          Quem responde "ninguém avaliou" é o CONTADOR, não a nota: a API
-          manda `notaMedia` sempre como número, então o `0` de um título sem
-          voto nenhum é o mesmo `0` de um título detestado. Só
-          `totalAvaliacoes` separa os dois.
-        */}
+        {/* Sem nota não é nota zero: quem separa os dois é `temAvaliacoes`,
+            e o porquê está em lib/avaliacao.ts. */}
         {temAvaliacoes(midia) && ` · ★ ${notaFormatada(midia)}`}
       </p>
     </article>

@@ -99,7 +99,7 @@ export default async function PaginaDaMidia({
 
           <p className="mt-2 text-sm text-zinc-500">
             {temAvaliacoes(midia)
-              ? `${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
+              ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
               : "Ainda sem avaliações"}
           </p>
 
