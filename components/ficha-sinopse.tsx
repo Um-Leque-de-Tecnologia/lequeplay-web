@@ -6,52 +6,23 @@
  */
 
 import { useState } from "react";
-import type { Midia } from "@/lib/tipos";
+import { corte } from "@/lib/utils";
 
 /**
- * Quantos caracteres da sinopse cabem no resumo antes do "ver mais".
- *
- * É corte de **apresentação**, não de dado: o pedaço que sobra continua no
- * HTML, só que escondido. Cortar no servidor — mandar para o navegador só os
- * primeiros caracteres — economizaria uns bytes e custaria caro: quem indexa
- * a página passaria a ver meia sinopse, e abrir o "ver mais" viraria uma nova
- * ida ao servidor. O texto inteiro sai do servidor sempre; o que muda é o que
- * está visível.
- *
- * O custo aceito: `hidden` tira o trecho da busca do navegador e da árvore de
- * acessibilidade. Leitor de tela chega nele pelo botão; o Ctrl+F só acha o que
- * está aberto. `hidden="until-found"` resolveria o Ctrl+F — fica como próximo
- * passo.
+ * Recebe a sinopse, e não a mídia inteira, de propósito: tudo o que um Server
+ * Component passa por prop a um Client Component é serializado e viaja no HTML
+ * até o navegador. Com a `Midia` inteira, a lista de episódios de um podcast
+ * iria junto — mesmo os episódios que a tela cortou para não mandar.
  */
-const CARACTERES_NO_RESUMO = 180;
-
-/**
- * Onde cortar sem partir palavra: o último espaço até o limite. Se não
- * houver espaço nenhum (palavra gigante, improvável numa sinopse), cai no
- * limite cru — melhor cortar do que não cortar.
- *
- * Pontuação colada no fim do resumo passa para o lado do resto: fechada, a
- * sinopse não termina em `superação,…`; aberta, a vírgula volta ao lugar.
- */
-function corte(sinopse: string): number {
-  if (sinopse.length <= CARACTERES_NO_RESUMO) return sinopse.length;
-
-  const ultimoEspaco = sinopse.lastIndexOf(" ", CARACTERES_NO_RESUMO);
-  if (ultimoEspaco === -1) return CARACTERES_NO_RESUMO;
-
-  const antes = sinopse.charAt(ultimoEspaco - 1);
-  return /[,;:]/.test(antes) ? ultimoEspaco - 1 : ultimoEspaco;
-}
-
-export function FichaSinopse({ midia }: { midia: Midia }) {
+export function FichaSinopse({ sinopse }: { sinopse: string }) {
   const [expandida, setExpandida] = useState(false);
 
-  const ponto = corte(midia.sinopse);
-  const inicio = midia.sinopse.slice(0, ponto);
+  const ponto = corte(sinopse);
+  const inicio = sinopse.slice(0, ponto);
   // O resto começa no próprio espaço (ou na pontuação) do corte: é ele que
   // separa as duas metades quando a sinopse abre. Nenhum espaço é inventado,
   // então o corte no limite cru não parte a palavra em duas ao abrir.
-  const resto = midia.sinopse.slice(ponto).trimEnd();
+  const resto = sinopse.slice(ponto).trimEnd();
 
   return (
     <div className="mt-5 max-w-prose">

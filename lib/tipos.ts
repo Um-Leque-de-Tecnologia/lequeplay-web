@@ -25,6 +25,7 @@ type MidiaBase = {
   slug: string;
   titulo: string;
   ano: number;
+
   /**
    * Lista, não um valor só: um título pode ser drama *e* suspense. Vem
    * ordenada por relevância, então `generos[0]` é o gênero principal.
@@ -33,19 +34,26 @@ type MidiaBase = {
    * singular — só o campo da resposta é plural.
    */
   generos: Genero[];
+
   sinopse: string;
+
   /**
-   * A API **omite** o campo quando o título não tem capa; ela não manda
-   * `null`. Por isso é `?: string` — o valor ausente é `undefined`.
+   * A API omite o campo quando o título não tem pôster.
+   *
+   * Por isso o campo é opcional: quando não existe pôster,
+   * `posterUrl` simplesmente não vem na resposta.
    */
   posterUrl?: string;
+
   /**
    * Sempre um número — a API nunca manda `null` aqui. Quem responde
    * "ninguém avaliou" é `totalAvaliacoes === 0`, não a nota.
    */
   notaMedia: number;
+
   /** `0` quando ninguém avaliou ainda. É este campo que separa os casos. */
   totalAvaliacoes: number;
+
   /**
    * Somado pelo backend: o front nao tem os episodios para calcular.
    *
@@ -57,12 +65,14 @@ type MidiaBase = {
    * "NaNmin" na ficha. Faltando, a linha da duracao nao e exibida.
    */
   duracaoMin?: number;
+
   /** Só vem no detalhe, nunca na listagem. No máximo 12. */
   creditos?: Credito[];
 };
 
 export type Filme = MidiaBase & {
   tipo: "filme";
+
   /**
    * A API **não** manda este campo solto: ela manda `creditos`, e a direção é
    * o crédito com `papel: "direcao"`. Aqui ele já vem derivado — o mock de
@@ -79,6 +89,7 @@ export type Episodio = {
    */
   numero: number;
   titulo: string;
+
   /** Sempre presente no episódio — quem pode faltar é a soma da série. */
   duracaoMin: number;
 };
@@ -95,6 +106,7 @@ export type ResumoTemporada = {
    */
   numero: number;
   ano: number;
+
   /** Igual a `episodios.length` — vem repetido porque o resumo pode vir só. */
   totalEpisodios: number;
 };
@@ -106,6 +118,19 @@ export type Temporada = ResumoTemporada & {
 
 export type Serie = MidiaBase & {
   tipo: "serie";
+
+  /**
+   * A situação de produção, como a API publica: `"Returning Series"`,
+   * `"Ended"`, `"Canceled"`. O texto vem da TMDB e chega **em inglês, sem
+   * tradução** — a API guarda o dado, e virar rótulo em português é decisão
+   * de tela, aqui no front.
+   *
+   * Opcional porque nem todo título tem: podcast não tem, e título semeado à
+   * mão pode não trazer. Quem mostra precisa tratar a ausência escondendo a
+   * linha, como a ficha já faz com `duracaoMin`.
+   */
+  status?: string;
+
   /**
    * As temporadas vêm **completas**, com os episódios dentro, e não como
    * `ResumoTemporada`. A série tem meia dúzia de temporadas, não mil: mandar
@@ -120,15 +145,25 @@ export type Serie = MidiaBase & {
   temporadas: Temporada[];
 };
 
+export type EpisodioPodcast = {
+  numero: number;
+  titulo: string;
+  duracaoMin: number;
+  /** Data em formato ISO (ex: "2025-03-12"). */
+  publicadoEm: string;
+};
+
 export type Podcast = MidiaBase & {
   tipo: "podcast";
+
   /** Como `diretor`: derivado do crédito com `papel: "apresentacao"`. */
   apresentador: string;
   totalEpisodios: number;
+  frequencia?: string;
+  episodios?: EpisodioPodcast[];
 };
 
 export type Midia = Filme | Serie | Podcast;
-
 
 /* ------------------------------------------------------------------ *
  * Pessoas — quem dirige, atua ou apresenta
@@ -148,6 +183,7 @@ export type Pessoa = {
 export type Credito = {
   pessoa: Pick<Pessoa, "slug" | "nome" | "fotoUrl">;
   papel: Papel;
+
   /** Só existe quando `papel` é `"elenco"`. */
   personagem: string | null;
 };
@@ -168,6 +204,7 @@ export type Credito = {
  */
 export type ItemHistorico = {
   midiaSlug: string;
+
   /**
    * Os dois só vêm quando o player soube dizer qual episódio estava tocando.
    * O player antigo gravava só o título, e essas linhas continuam no
@@ -176,8 +213,10 @@ export type ItemHistorico = {
    */
   temporadaNumero?: number;
   episodioNumero?: number;
+
   /** Quanto já rodou, em segundos. `0` é possível: abriu e fechou. */
   segundosAssistidos: number;
+
   /**
    * ISO com fuso. É o instante do último "salvar posição" — e é por ele que
    * "continuar assistindo" se ordena, do mais recente para o mais antigo.
@@ -197,7 +236,8 @@ export type ItemHistorico = {
 export type ResumoMidia = {
   slug: string;
   titulo: string;
-  /** Mesmo nome e mesma regra de `Midia.posterUrl`: some quando não há capa. */
+
+  /** Mesmo nome e mesma regra de `Midia.posterUrl`: o campo pode ser omitido. */
   posterUrl?: string;
 };
 
@@ -212,13 +252,17 @@ export type Resenha = {
   id: string;
   midia: ResumoMidia;
   autor: Autor;
+
   /** `null` quando a pessoa escreveu sem dar nota — é permitido. */
   nota: number | null;
+
   texto: string;
   contemSpoiler: boolean;
   curtidas: number;
+
   /** Só vem verdadeiro em chamada autenticada; nas públicas é sempre false. */
   curtidaPeloUsuario: boolean;
+
   criadaEm: string;
   atualizadaEm: string;
 };
@@ -232,8 +276,10 @@ export type Resenha = {
 export type RascunhoResenha = {
   midiaSlug: string;
   texto: string;
+
   /** `null` quando a pessoa escreve sem dar nota — é permitido. */
   nota: number | null;
+
   contemSpoiler: boolean;
 };
 
@@ -243,7 +289,10 @@ export type RascunhoResenha = {
  * a validação antes de enviar. Dois lugares com o mesmo literal viram um
  * lugar só que ninguém atualizou.
  */
-export const LIMITE_TEXTO_RESENHA = { minimo: 10, maximo: 5000 } as const;
+export const LIMITE_TEXTO_RESENHA = {
+  minimo: 10,
+  maximo: 5000,
+} as const;
 
 /** O que a listagem de listas devolve: sem os itens, só o mosaico de capas. */
 export type ResumoLista = {
@@ -254,8 +303,10 @@ export type ResumoLista = {
   autor: Autor;
   publica: boolean;
   totalItens: number;
+
   /** As 4 primeiras capas, para o mosaico. Vazio se a lista estiver vazia. */
   capas: string[];
+
   curtidas: number;
   criadaEm: string;
 };
@@ -268,11 +319,15 @@ export type Lista = ResumoLista & {
 export type RegistroDiario = {
   id: string;
   midia: ResumoMidia;
+
   /** Data, não instante: "2026-08-20". Ninguém anota a hora que assistiu. */
   assistidoEm: string;
+
   nota: number | null;
+
   /** Aponta para a resenha, quando a pessoa escreveu uma. */
   resenhaId: string | null;
+
   /** A mesma mídia pode ter vários registros — assistir de novo conta. */
   revisita: boolean;
 };
@@ -308,11 +363,23 @@ type AtividadeBase = {
 };
 
 export type Atividade =
-  | (AtividadeBase & { tipo: "resenha"; resenhaId: string })
-  | (AtividadeBase & { tipo: "diario"; nota: number | null })
-  | (AtividadeBase & { tipo: "lista"; listaSlug: string; listaTitulo: string })
-  | (AtividadeBase & { tipo: "curtida"; resenhaId: string });
-
+  | (AtividadeBase & {
+      tipo: "resenha";
+      resenhaId: string;
+    })
+  | (AtividadeBase & {
+      tipo: "diario";
+      nota: number | null;
+    })
+  | (AtividadeBase & {
+      tipo: "lista";
+      listaSlug: string;
+      listaTitulo: string;
+    })
+  | (AtividadeBase & {
+      tipo: "curtida";
+      resenhaId: string;
+    });
 
 /** Resposta paginada da API. */
 export type Pagina<T> = {
