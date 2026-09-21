@@ -2,6 +2,7 @@ import Link from "next/link";
 import { HomeAcervo } from "@/components/home-acervo";
 import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
 import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
+import { HomeEmAlta } from "@/components/home-em-alta";
 import { listarHistorico, listarMidias } from "@/lib/api";
 
 // Server Component: estes `await` rodam no servidor, e o navegador recebe o
@@ -36,6 +37,13 @@ export default async function Home() {
       </section>
 
       <HomeContinuarAssistindo historico={historico} itens={itens} />
+
+      {/*
+        A faixa busca sozinha, e por isso não recebe props: ela é um
+        componente de servidor assíncrono. O `cache()` de `listarMidias` faz a
+        busca dela e a desta página serem uma só ida à API.
+      */}
+      <HomeEmAlta />
 
       <HomeCarrosselDestaques destaques={destaques} />
 
