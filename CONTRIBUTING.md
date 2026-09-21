@@ -45,8 +45,8 @@ git switch -c feat/lp-205-ficha-do-filme
 git switch -c chore/lp-212-auditoria-de-tipos
 ```
 
-Os tipos são os mesmos dos commits, logo abaixo. Cada card do Trello já traz
-o nome da branch pronto no rodapé — copie de lá.
+Os tipos são os mesmos dos commits, logo abaixo. Quando a issue do ticket já
+traz o nome da branch pronto, no fim da descrição, copie de lá.
 
 Tudo em minúsculas, separado por hífen. Sem acento, sem espaço, sem cedilha.
 
@@ -165,6 +165,10 @@ começando de quem já trabalhou em time. Você vai achar coisa.
 **Título:** a mesma regra do commit — `fix(lp-101): contador do acervo passa a
 vir da API`.
 
+**A primeira linha da descrição liga o PR ao ticket:** `Closes #N`, com o
+número da issue. Em inglês — `Closes`, `Fixes` ou `Resolves` —, porque é a
+palavra que o GitHub reconhece. "Fecha #N" vira texto comum, e o card não anda.
+
 **Descrição:** o template abre com as perguntas certas. A seção que mais pesa é
 **"a decisão que eu tomei"** — por que este componente é server e não client,
 por que este dado é cacheado e aquele não, por que a validação ficou aqui e não
@@ -251,8 +255,11 @@ git pull
 git branch -d fix/lp-101-contador-e-filtro
 ```
 
-E mova o card no Trello. Board desatualizado faz o time trabalhar duas vezes no
-mesmo ticket.
+O card anda sozinho no
+[board do time](https://github.com/orgs/Um-Leque-de-Tecnologia/projects/1): o
+merge fecha a issue do `Closes #N`, e o card vai para **Done**. Se o PR não
+tinha essa linha, o card fica parado — feche a issue na mão. Board
+desatualizado faz o time trabalhar duas vezes no mesmo ticket.
 
 ---
 
