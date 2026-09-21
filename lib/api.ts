@@ -204,7 +204,18 @@ export const listarMidias = cache(async function listarMidias(
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {
     tags: [CACHE_TAGS.MIDIAS],
-    revalidar: 300,
+    // Uma hora, e o motivo: o catálogo muda por **ingestão**, não por minuto.
+    // Entre duas ingestões, buscar de novo devolve byte a byte a mesma coisa.
+    //
+    // Este número é rede de segurança, não o caminho normal: quem faz a
+    // mudança aparecer é o vigia do LP-310, que invalida a etiqueta `midias`
+    // assim que a versão do catálogo sobe. A hora é o teto de quanto tempo o
+    // site serviria dado velho se o vigia estivesse parado.
+    //
+    // E a promessa do campo é "não busco de novo antes de N segundos" — e não
+    // "o que você vê tem no máximo N segundos". Sem visita, o dado guardado
+    // envelhece à vontade.
+    revalidar: 3600,
   });
 });
 
@@ -218,7 +229,11 @@ export const buscarMidia = cache(async (slug: string): Promise<Midia | null> => 
   try {
     return await buscar<Midia>(`/midias/${slug}`, {
       tags: [CACHE_TAGS.MIDIAS, tagMidia(slug)],
-      revalidar: 300,
+      // Mesma hora do catálogo, e pela mesma razão: a ficha muda quando o
+      // título muda, e isso vem por ingestão. A diferença é que esta busca
+      // tem etiqueta própria (`midia:<slug>`), então dá para derrubar só ela
+      // quando um título específico for corrigido, sem tocar no resto.
+      revalidar: 3600,
     });
   } catch (erro) {
     // 404 não é falha do sistema: é "esse título não existe".

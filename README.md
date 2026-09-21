@@ -75,6 +75,28 @@ formato de erro, paginação e os casos de borda que ela produz de propósito �
 título sem nota, título sem capa, busca sem resultado. **É a primeira leitura
 de quem chega.**
 
+### Quanto tempo uma mudança no catálogo leva para aparecer
+
+**No pior caso, uma hora.** É o `revalidate` de 3600 segundos que o
+`lib/api.ts` usa no catálogo, na ficha e nos gêneros.
+
+Mas esse é o **teto**, não o normal. O caminho normal é a invalidação sob
+demanda: a API incrementa `GET /v1/catalogo/versao` a cada ingestão, e o vigia
+(`POST /api/vigia-do-catalogo`) compara com a última versão que viu e solta a
+etiqueta `midias` quando ela muda. Com o vigia rodando de cinco em cinco
+minutos, a mudança aparece em cinco minutos; a hora só entra em cena se ele
+estiver parado.
+
+Uma leitura que confunde muita gente: `revalidate: 3600` promete *"não busco
+de novo antes de uma hora"*, e **não** *"o que você vê tem no máximo uma
+hora"*. Se ninguém visitar a página por um dia, o que está guardado tem um
+dia.
+
+O esquema das etiquetas está em [`docs/cache-tags.md`](docs/cache-tags.md).
+Dado de uma pessoa — o histórico — não é cacheado (`revalidate: 0`), e a
+versão do catálogo nunca é (`cache: "no-store"`), porque um vigia que lê valor
+guardado não vigia nada.
+
 ---
 
 ## Como a gente trabalha
