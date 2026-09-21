@@ -11,10 +11,10 @@
  */
 
 import type { Genero, ItemHistorico, Midia, Pagina } from "@/lib/tipos";
+import { cache } from "react";
 
 const BASE = process.env.API_URL;
 const USAR_MOCK = process.env.USAR_MOCK !== "false";
-
 /** Erro com o status HTTP preservado, para a tela decidir o que mostrar. */
 export class ErroDaApi extends Error {
   constructor(
@@ -116,7 +116,8 @@ export async function listarMidias(
   });
 }
 
-export async function buscarMidia(slug: string): Promise<Midia | null> {
+export const buscarMidia = cache(async (slug: string): Promise<Midia | null> => {
+
   if (USAR_MOCK) {
     const todas = await doMock();
     return todas.find((m) => m.slug === slug) ?? null;
@@ -133,7 +134,7 @@ export async function buscarMidia(slug: string): Promise<Midia | null> {
     if (erro instanceof ErroDaApi && erro.status === 404) return null;
     throw erro;
   }
-}
+});
 
 /**
  * Os gêneros que existem no acervo, em ordem alfabética.

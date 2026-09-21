@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CapaMidia } from "@/components/capa-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
+import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
+import { corte } from "@/lib/utils";
 
 type SearchParams = {
   temporada?: string;
@@ -23,13 +25,30 @@ export async function generateMetadata({
 
   if (!midia) {
     return {
-      title: "Título não encontrado",
+      title: "Mídia não encontrada",
+      description: "A mídia solicitada não existe no catálogo.",
     };
   }
 
+  // O mesmo corte da sinopse que a ficha usa na tela: o resumo lido na página
+  // e o que aparece na prévia do link são o mesmo texto, então cortam no mesmo
+  // lugar — no espaço, nunca no meio da palavra. As reticências são o caractere
+  // `…`, e não três pontos seguidos.
+  const pontoDoCorte = corte(midia.sinopse);
+  const descricaoCurta =
+    pontoDoCorte < midia.sinopse.length
+      ? `${midia.sinopse.slice(0, pontoDoCorte).trimEnd()}…`
+      : midia.sinopse;
+
   return {
     title: midia.titulo,
-    description: midia.sinopse,
+    description: descricaoCurta,
+    openGraph: {
+      title: midia.titulo,
+      description: descricaoCurta,
+      siteName: "LequePlay",
+      type: "article",
+    },
   };
 }
 
@@ -85,14 +104,8 @@ export default async function PaginaDaMidia({
       </nav>
 
       <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
-        <Image
-          src={
-            midia.posterUrl ??
-            "/capas/sem-capa.svg"
-          }
-          alt=""
-          width={300}
-          height={450}
+        <CapaMidia
+          posterUrl={midia.posterUrl}
           className="w-full rounded-lg border border-white/10"
           priority
         />
@@ -103,9 +116,11 @@ export default async function PaginaDaMidia({
           </h1>
 
           <p className="mt-2 text-sm text-zinc-500">
-            {midia.totalAvaliacoes === 0
-              ? "Título ainda não avaliado. Seja a primeira pessoa a avaliar."
-              : `★ ${midia.notaMedia.toLocaleString("pt-BR")} · ${midia.totalAvaliacoes} avaliações`}
+            {/* A ficha tem espaço para o convite; o cartão da grade, não.
+                A nota, porém, sai da mesma função nos dois lugares. */}
+            {temAvaliacoes(midia)
+              ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
+              : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
           </p>
 
           <FichaSinopse midia={midia} />
