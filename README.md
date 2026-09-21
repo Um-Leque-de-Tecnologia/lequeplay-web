@@ -54,6 +54,7 @@ lib/
   api.ts                ⭐ TODO acesso à API passa por aqui
 docs/
   api-contrato.md       ⭐ o contrato com o backend — leia antes de codar
+  server-actions-seguranca.md  o que o Next garante e o que é seu
 data/midias.json        catálogo de mentira, usado quando USAR_MOCK=true
 public/capas/           imagens
 ```
@@ -93,9 +94,27 @@ hora"*. Se ninguém visitar a página por um dia, o que está guardado tem um
 dia.
 
 O esquema das etiquetas está em [`docs/cache-tags.md`](docs/cache-tags.md).
+Resposta de uma pessoa nunca entra em cache compartilhado — quem trabalha com
+sessão deve ler também o documento da próxima seção.
 Dado de uma pessoa — o histórico — não é cacheado (`revalidate: 0`), e a
 versão do catálogo nunca é (`cache: "no-store"`), porque um vigia que lê valor
 guardado não vigia nada.
+
+---
+
+## Conta e sessão
+
+O login troca usuário e senha por dois tokens, que moram em cookies
+`httpOnly` — o JavaScript da página não os enxerga. Quem confere se a sessão
+vale é o servidor, perguntando à API a cada renderização (`lib/dal.ts`), e não
+o cookie em si: cookie qualquer pessoa escreve no console.
+
+**Antes de escrever uma Server Action, leia
+[`docs/server-actions-seguranca.md`](docs/server-actions-seguranca.md).** Action
+parece função e é endereço público: qualquer um manda o mesmo POST, com o corpo
+que quiser, sem passar pela sua tela. O documento separa, com os números
+medidos no projeto, o que o framework já garante do que continua sendo
+trabalho seu.
 
 ---
 
