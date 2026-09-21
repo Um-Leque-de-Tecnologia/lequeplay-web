@@ -2,9 +2,24 @@ import Link from "next/link";
 import { CardMidia } from "@/components/card-midia";
 import { listarMidias } from "@/lib/api";
 
+/**
+ * Os destaques são o acessório desta tela, e por isso a busca deles não pode
+ * derrubá-la: quem chega aqui veio de um link quebrado, e a mensagem, a busca
+ * e os caminhos de volta não dependem de rede nenhuma. Com a API fora do ar a
+ * lista vem vazia, e a seção inteira deixa de aparecer em vez de trocar a 404
+ * por uma tela de erro.
+ */
+async function destaquesOuNada() {
+  try {
+    const { itens } = await listarMidias();
+    return itens.slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
 export default async function MidiaNaoEncontrada() {
-  const { itens } = await listarMidias();
-  const destaques = itens.slice(0, 6);
+  const destaques = await destaquesOuNada();
 
   return (
     <>
