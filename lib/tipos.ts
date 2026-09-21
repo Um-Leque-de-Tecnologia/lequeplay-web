@@ -226,6 +226,65 @@ export type ItemHistorico = {
 };
 
 /* ------------------------------------------------------------------ *
+ * A conta — com os nomes que a API publica
+ * ------------------------------------------------------------------ */
+
+/**
+ * O que a tela de entrar manda em `POST /v1/auth/login`.
+ *
+ * **`usuario`, e não `email`.** A API repassa ao Keycloak, que entra pelo
+ * nome de usuário; o contrato antigo prometia `email` e ninguém tinha
+ * conferido. Trocar o nome aqui só criaria uma tradução a mais no caminho —
+ * e uma tradução a mais é um lugar a mais para errar.
+ */
+export type CredenciaisDeLogin = {
+  usuario: string;
+  senha: string;
+};
+
+/**
+ * O par de tokens que o login devolve.
+ *
+ * Os nomes são os da API, em inglês, de propósito: este objeto atravessa a
+ * fronteira, e renomear campo de contrato é a origem de metade dos bugs de
+ * integração deste projeto. O contrato antigo prometia
+ * `{ token, expiraEm, usuario }`, que não existe em lugar nenhum.
+ *
+ * **`expiresIn` é em segundos a partir de agora**, e não uma data — é o que
+ * vai virar `maxAge` do cookie no LP-403. Somar isso a um relógio para gerar
+ * uma data seria inventar precisão que a API não deu.
+ */
+export type TokensDaSessao = {
+  accessToken: string;
+  expiresIn: number;
+  refreshToken: string;
+  refreshExpiresIn: number;
+  tokenType: string;
+
+  /** Os escopos do token, separados por espaço. Nem sempre vem. */
+  scope?: string;
+};
+
+/**
+ * Quem está logado, como `GET /v1/auth/me` devolve: **as claims do token**,
+ * e não um `Usuario` com `{ id, nome, email }`.
+ *
+ * Só `sub` é garantido. Os outros três dependem do que o Keycloak põe no
+ * token, então quem for mostrar na tela trata a ausência — é por isso que
+ * eles são opcionais aqui, e não `string` com valor vazio.
+ *
+ * A rota é `/v1/auth/me`; `/v1/auth/eu`, que o contrato antigo publicava,
+ * responde **404** (conferido em 21/09/2026).
+ */
+export type UsuarioDaSessao = {
+  /** O identificador da pessoa no Keycloak. É o único campo garantido. */
+  sub: string;
+  email?: string;
+  username?: string;
+  roles?: string[];
+};
+
+/* ------------------------------------------------------------------ *
  * Camada social
  * ------------------------------------------------------------------ */
 
