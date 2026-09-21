@@ -38,7 +38,15 @@ export function FichaPodcast({
 
   const ultimoEpisodio = episodiosOrdenados[0];
   const totalEpisodios = podcast.totalEpisodios;
-  const precisaDeCorte = episodiosOrdenados.length > LIMITE_INICIAL;
+
+  // Duas razões para oferecer "Ver todos": ou a lista que chegou é maior que o
+  // limite, ou ela já veio incompleta da API — `episodios` é opcional no
+  // contrato, e um podcast de 300 episódios pode mandar só os últimos. Sem a
+  // segunda checagem, o caso que motivou o ticket ficaria sem nenhum caminho
+  // para os demais episódios.
+  const precisaDeCorte =
+    episodiosOrdenados.length > LIMITE_INICIAL ||
+    totalEpisodios > episodiosOrdenados.length;
 
   // Corte no servidor: se não estiver expandido, envia apenas os 5 mais recentes
   const episodiosExibidos =

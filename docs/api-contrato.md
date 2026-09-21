@@ -200,9 +200,13 @@ veja o quadro logo abaixo.
 `{ numero, ano, totalEpisodios }`. **Sem os episódios** — eles vêm do
 endpoint da temporada.
 
-**`podcast`** acrescenta `totalEpisodios: number`, `frequencia: string`
-(opcional — ex: "Semanal", "Quinzenal") e `episodios: EpisodioPodcast[]`
+**`podcast`** acrescenta `totalEpisodios: number` ✅, `frequencia: string` 🕓
+(opcional — ex: "Semanal", "Quinzenal") e `episodios: EpisodioPodcast[]` 🕓
 (opcional, no detalhe). A apresentação também sai de `creditos`.
+
+> Os dois campos novos são **especificação**: existem no mock e na ficha do
+> podcast, e ainda não na API. Quem for consumi-los antes disso trata a
+> ausência, como a própria ficha faz.
 
 ### Direção e apresentação: derivados, não campos
 

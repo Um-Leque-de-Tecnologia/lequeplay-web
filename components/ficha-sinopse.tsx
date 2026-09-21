@@ -6,18 +6,23 @@
  */
 
 import { useState } from "react";
-import type { Midia } from "@/lib/tipos";
 import { corte } from "@/lib/utils";
 
-export function FichaSinopse({ midia }: { midia: Midia }) {
+/**
+ * Recebe a sinopse, e não a mídia inteira, de propósito: tudo o que um Server
+ * Component passa por prop a um Client Component é serializado e viaja no HTML
+ * até o navegador. Com a `Midia` inteira, a lista de episódios de um podcast
+ * iria junto — mesmo os episódios que a tela cortou para não mandar.
+ */
+export function FichaSinopse({ sinopse }: { sinopse: string }) {
   const [expandida, setExpandida] = useState(false);
 
-  const ponto = corte(midia.sinopse);
-  const inicio = midia.sinopse.slice(0, ponto);
+  const ponto = corte(sinopse);
+  const inicio = sinopse.slice(0, ponto);
   // O resto começa no próprio espaço (ou na pontuação) do corte: é ele que
   // separa as duas metades quando a sinopse abre. Nenhum espaço é inventado,
   // então o corte no limite cru não parte a palavra em duas ao abrir.
-  const resto = midia.sinopse.slice(ponto).trimEnd();
+  const resto = sinopse.slice(ponto).trimEnd();
 
   return (
     <div className="mt-5 max-w-prose">

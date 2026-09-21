@@ -127,7 +127,7 @@ export default async function PaginaDaMidia({
               : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
           </p>
 
-          <FichaSinopse midia={midia} />
+          <FichaSinopse sinopse={midia.sinopse} />
         </div>
       </div>
 

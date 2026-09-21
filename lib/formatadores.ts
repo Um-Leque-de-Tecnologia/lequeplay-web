@@ -35,6 +35,13 @@ export function formatarDataPorExtenso(dataIso: string): string {
     }
   }
 
+  // Data que não casa com o formato esperado: devolve o texto cru em vez de
+  // quebrar. `Intl.format` lança RangeError com `Invalid Date`, e como isto
+  // roda no servidor, o erro derrubaria a rota inteira por causa de uma linha
+  // de episódio.
+  const data = new Date(dataIso);
+  if (Number.isNaN(data.getTime())) return dataIso;
+
   // Fallback seguro com timeZone UTC explícito
   return new Intl.DateTimeFormat("pt-BR", {
     day: "numeric",
