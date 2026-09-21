@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatarDuracao } from "@/lib/formatadores";
 import type { Serie } from "@/lib/tipos";
 
 type Props = {
@@ -186,7 +187,7 @@ export function FichaTemporadas({
                 )}
 
                 <span className="ml-auto text-zinc-500">
-                  {episodio.duracaoMin} min
+                  {formatarDuracao(episodio.duracaoMin)}
                 </span>
               </li>
             );

@@ -1,3 +1,25 @@
+/**
+ * Como o LequePlay escreve data, hora e duração — num lugar só.
+ *
+ * ## O fuso de referência é o UTC
+ *
+ * Data formatada é onde o Next morde: o servidor roda com um fuso, o
+ * navegador de quem lê roda com outro, e `new Date(...).toLocaleDateString()`
+ * devolve textos diferentes nos dois. O HTML sai com um, o React pinta outro,
+ * e aparece o aviso de hidratação — quando aparece, porque o caso silencioso
+ * é pior: um episódio publicado às 21h de 12/03 vira "13 de março" para quem
+ * está em UTC+3, e ninguém percebe.
+ *
+ * A saída é não deixar o ambiente decidir. Todo o acervo é formatado **em
+ * UTC**, que é o fuso em que a API publica (`publicadoEm` vem como data ISO,
+ * sem hora). Datas do acervo são a data que a emissora anunciou, e não um
+ * instante no tempo: elas não devem mudar de dia conforme quem olha.
+ *
+ * O dia em que existir hora de exibição — "estreia às 21h" — aí sim o fuso
+ * passa a ser informação do dado, e este módulo ganha uma segunda função que
+ * recebe o fuso junto.
+ */
+
 const MESES = [
   "janeiro",
   "fevereiro",
@@ -13,13 +35,22 @@ const MESES = [
   "dezembro",
 ] as const;
 
+/** O fuso de referência do acervo. Veja o bloco no topo do arquivo. */
+export const FUSO_DO_ACERVO = "UTC";
+
 /**
- * Formata uma data ISO (ex: "2025-03-12") por extenso em português
- * (ex: "12 de março de 2025").
+ * Data ISO (`2025-03-12`) por extenso em português: "12 de março de 2025".
  *
- * É 100% determinística e imune a discrepâncias de fuso horário / hydration mismatch:
- * datas no formato YYYY-MM-DD são lidas diretamente sem conversão de fuso local,
- * garantindo que UTC-3 ou qualquer outro fuso não desloque a data para o dia anterior.
+ * Lê as partes da string direto, sem passar por `new Date`, porque
+ * `new Date("2025-03-12")` é interpretado como meia-noite **UTC** e, impresso
+ * no fuso local de quem renderiza, volta como 11 de março em qualquer lugar a
+ * oeste de Greenwich. Ler `"2025"`, `"03"` e `"12"` como texto não tem fuso
+ * nenhum para errar, e dá o mesmo resultado no servidor e no navegador.
+ *
+ * Data fora do formato esperado devolve o texto cru em vez de quebrar: o
+ * `Intl.format` lança `RangeError` com data inválida, e como isto roda no
+ * servidor, o erro derrubaria a rota inteira por causa de uma linha de
+ * episódio.
  */
 export function formatarDataPorExtenso(dataIso: string): string {
   const somenteData = dataIso.split("T")[0];
@@ -30,30 +61,45 @@ export function formatarDataPorExtenso(dataIso: string): string {
     const mesIndex = Number(partes[1]) - 1;
     const dia = Number(partes[2]);
 
-    if (!Number.isNaN(ano) && mesIndex >= 0 && mesIndex < 12 && !Number.isNaN(dia)) {
+    if (
+      !Number.isNaN(ano) &&
+      !Number.isNaN(dia) &&
+      mesIndex >= 0 &&
+      mesIndex < 12
+    ) {
       return `${dia} de ${MESES[mesIndex]} de ${ano}`;
     }
   }
 
-  // Data que não casa com o formato esperado: devolve o texto cru em vez de
-  // quebrar. `Intl.format` lança RangeError com `Invalid Date`, e como isto
-  // roda no servidor, o erro derrubaria a rota inteira por causa de uma linha
-  // de episódio.
   const data = new Date(dataIso);
   if (Number.isNaN(data.getTime())) return dataIso;
 
-  // Fallback seguro com timeZone UTC explícito
+  // Chegou aqui com data válida em outro formato (com hora, por exemplo):
+  // formata com o fuso fixo, pelo mesmo motivo do bloco do topo.
   return new Intl.DateTimeFormat("pt-BR", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(dataIso));
+    timeZone: FUSO_DO_ACERVO,
+  }).format(data);
 }
 
-/** Formata minutos para formato amigável (ex: "1h 30min" ou "45min"). */
-export function formatarDuracao(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return h > 0 ? `${h}h${m > 0 ? ` ${m}min` : ""}` : `${m}min`;
+/**
+ * Duração em minutos como o brasileiro lê: **`1h47`**, e `47min` abaixo de
+ * uma hora.
+ *
+ * Os minutos vão com dois dígitos quando há hora (`2h05`, e não `2h5`):
+ * `2h5` se lê como "duas horas e cinco" só depois de um instante de dúvida,
+ * e a coluna fica desalinhada numa lista.
+ *
+ * Zero minutos devolve `0min` em vez de string vazia — quem chama decide se
+ * esconde a linha, e é o que a ficha faz quando o campo nem vem.
+ */
+export function formatarDuracao(minutos: number): string {
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+
+  if (horas === 0) return `${resto}min`;
+
+  return `${horas}h${String(resto).padStart(2, "0")}`;
 }

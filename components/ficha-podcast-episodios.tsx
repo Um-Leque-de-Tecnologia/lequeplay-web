@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatarDataPorExtenso } from "@/lib/formatadores";
+import { formatarDataPorExtenso, formatarDuracao } from "@/lib/formatadores";
 import type { EpisodioPodcast } from "@/lib/tipos";
 
 type Props = {
@@ -82,7 +82,7 @@ export function FichaPodcastEpisodios({
                 <span aria-hidden="true" className="text-zinc-600">
                   ·
                 </span>
-                <span>{episodio.duracaoMin} min</span>
+                <span>{formatarDuracao(episodio.duracaoMin)}</span>
               </div>
             </div>
           </li>
