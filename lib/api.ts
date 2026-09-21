@@ -149,7 +149,20 @@ export type FiltrosCatalogo = {
   q?: string;
 };
 
-export async function listarMidias(
+/**
+ * O catálogo, com filtros.
+ *
+ * Envolvida em `cache()` pelo mesmo motivo de `buscarMidia`: a home e a faixa
+ * "Em alta" pedem o catálogo na mesma renderização, e sem isso seriam duas
+ * idas à API por visita.
+ *
+ * A dedupe vale para chamadas com os **mesmos argumentos**, e o `cache()`
+ * compara por identidade: `listarMidias()` duas vezes é uma busca só, mas
+ * `listarMidias({ tipo: "filme" })` em dois lugares são dois objetos
+ * diferentes, e portanto duas buscas. Quem precisar dedupar com filtro passa
+ * o mesmo objeto aos dois.
+ */
+export const listarMidias = cache(async function listarMidias(
   filtros: FiltrosCatalogo = {},
 ): Promise<Pagina<Midia>> {
   if (USAR_MOCK) {
@@ -176,7 +189,7 @@ export async function listarMidias(
     tags: [CACHE_TAGS.MIDIAS],
     revalidar: 300,
   });
-}
+});
 
 export const buscarMidia = cache(async (slug: string): Promise<Midia | null> => {
 

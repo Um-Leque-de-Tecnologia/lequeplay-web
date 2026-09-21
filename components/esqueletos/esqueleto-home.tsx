@@ -1,6 +1,7 @@
 import { EsqueletoHomeAcervo } from "./esqueleto-home-acervo";
 import { EsqueletoHomeCarrosselDestaques } from "./esqueleto-home-carrossel-destaques";
 import { EsqueletoHomeContinuarAssistindo } from "./esqueleto-home-continuar-assistindo";
+import { EsqueletoHomeEmAlta } from "./esqueleto-home-em-alta";
 
 export function EsqueletoHome() {
     return (
@@ -14,6 +15,8 @@ export function EsqueletoHome() {
             </section>
 
             <EsqueletoHomeContinuarAssistindo />
+
+            <EsqueletoHomeEmAlta />
 
             <EsqueletoHomeCarrosselDestaques />
 
