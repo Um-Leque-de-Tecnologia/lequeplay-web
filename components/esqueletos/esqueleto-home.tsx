@@ -1,4 +1,3 @@
-import { EsqueletoCard } from "./esqueleto-card-midia";
 import { EsqueletoHomeAcervo } from "./esqueleto-home-acervo";
 import { EsqueletoHomeCarrosselDestaques } from "./esqueleto-home-carrossel-destaques";
 import { EsqueletoHomeContinuarAssistindo } from "./esqueleto-home-continuar-assistindo";
