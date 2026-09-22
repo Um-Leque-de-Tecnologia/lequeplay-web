@@ -154,33 +154,3 @@ O segundo comando pode encontrar logs de produção já existentes; remova somen
 | :--- | :--- | :--- | :--- | :--- |
 | `/midias` | chamadas HTTP Next -> API por visita | **2 chamadas** (`/midias`, `/generos`) | **0 chamadas** (cache quente) | log de acesso do backend; `revalidate: 3600` |
 
----
-
-## 5. Modelo para o Pull Request
-
-Copie e cole a seção abaixo na descrição do seu PR:
-
-```markdown
-### 📊 Medição e Auditoria de Chamadas à API
-
-#### 1. Configuração Nativa de Log do Next.js
-- **Opção configurada:** `logging.fetches.fullUrl` em `next.config.ts`.
-- **Referência na documentação:** [Logging > Fetching](https://nextjs.org/docs/app/api-reference/config/next-config-js/logging), linhas 12–15 da página consultada em 2026-09-22.
-
-#### 2. Fundamentação Conceitual
-> *Número sem unidade não é número: chamadas por visita e chamadas por renderização são coisas diferentes, e a diferença é a camada.*
-- **Chamadas por renderização (Camada React):** Quantas vezes funções de busca são invocadas no código dos Server Components.
-- **Chamadas por visita (Camada de Rede HTTP):** Quantas requisições HTTP reais chegam ao backend.
-- O React Request Memoization e o Next.js Data Cache atuam como camadas intermediárias, desduplicando e cacheando as requisições para que múltiplas chamadas na renderização resultem no menor número possível de requisições de rede.
-
-#### 3. Resultados Medidos em Produção (`npm run build && npm run start`)
-*Medição realizada com `USAR_MOCK=false`; a contagem é do log de acesso da API:*
-
-| Rota testada | Unidade | 1ª visita (cache frio) | 2ª visita (cache quente) |
-| :--- | :---: | :---: |
-| `/midias` (Catálogo) | chamadas HTTP Next -> API por visita | **2** (`/midias`, `/generos`) | **0** (cache quente) |
-
-#### 4. Verificação de Código Limpo
-- [x] Medição validada em `build + start` (não em `dev`).
-- [x] Nenhum `console.log` de teste commitado (conferido com `git grep` e `git diff --check`).
-```
