@@ -1,0 +1,91 @@
+/** O destino de quem entra sem vir de lugar nenhum. */
+export const DESTINO_PADRAO = "/";
+
+/**
+ * Códigos dos caracteres que o navegador **descarta** ao resolver um
+ * endereço: TAB (9), quebra de linha (10) e retorno de carro (13).
+ *
+ * Eles somem da URL antes de ela virar um pedido — está na especificação —, e
+ * é isso que transforma `/<TAB>/golpe.example` em `//golpe.example` depois
+ * que o servidor já aprovou o texto. Por isso saem **antes** da conferência.
+ *
+ * Aqui vão os códigos numéricos, e não uma expressão regular com escapes
+ * unicode (barra invertida, `u`, quatro dígitos). Motivo prático: um escape
+ * desses pode acabar gravado como o **byte** que ele representa em vez do
+ * texto, e aí a fonte ganha caracteres invisíveis — o git passa a tratar o
+ * arquivo como binário e ninguém mais lê um diff dele. Aconteceu duas vezes
+ * com este arquivo, a segunda dentro do comentário que explicava a primeira.
+ */
+const DESCARTADOS_PELO_NAVEGADOR = [9, 10, 13];
+
+/** O último código da faixa de controle, e o código do DEL. */
+const ULTIMO_CONTROLE = 31;
+const DEL = 127;
+
+function ehCaractereDeControle(codigo: number): boolean {
+  return codigo <= ULTIMO_CONTROLE || codigo === DEL;
+}
+
+/**
+ * Transforma um `?de=` qualquer num caminho interno seguro.
+ *
+ * ## Por que isto existe
+ *
+ * Depois de entrar, a pessoa volta para o `?de=`. Sem conferir, a tela de
+ * login vira um **redirecionador aberto**: um link com a cara do LequePlay
+ * — `/entrar?de=https://golpe.example` — leva alguém recém-logado e confiante
+ * para uma página falsa, que pede a senha "de novo".
+ *
+ * ## Por que `startsWith("/")` não basta
+ *
+ * Todas estas começam com barra, e todas saem do site (medido neste projeto,
+ * com o servidor de produção):
+ *
+ * | `?de=` | o navegador entende |
+ * | --- | --- |
+ * | `//golpe.example` | outro host, mesmo protocolo |
+ * | `/\golpe.example` | a contrabarra vira barra: outro host |
+ * | `/<TAB>/golpe.example` | o TAB some: `//golpe.example` |
+ * | `/<LF>/golpe.example` | a quebra some: `//golpe.example` |
+ *
+ * As duas últimas eram, além de furo, um **erro 500**: quebra de linha não
+ * cabe num cabeçalho `Location`, e o pedido estourava em vez de mandar a
+ * pessoa para a home.
+ *
+ * ## O que passa
+ *
+ * Caminho que começa com uma barra e não tem outra barra nem contrabarra
+ * logo depois. Espaço no meio continua valendo (`/busca?q=star wars`): o
+ * navegador o codifica como `%20` em vez de descartá-lo, então ele não tem
+ * como colar duas barras. Espaço nas pontas é aparado.
+ *
+ * Isto roda **no servidor**, dentro da action. O campo escondido do
+ * formulário e a query da URL são escritos por quem quiser.
+ */
+export function destinoSeguro(de: string | null | undefined): string {
+  if (!de) return DESTINO_PADRAO;
+
+  let limpo = "";
+  for (const caractere of de) {
+    const codigo = caractere.codePointAt(0) ?? 0;
+    if (!DESCARTADOS_PELO_NAVEGADOR.includes(codigo)) limpo += caractere;
+  }
+  limpo = limpo.trim();
+
+  // Tem de ser caminho nosso...
+  if (!limpo.startsWith("/")) return DESTINO_PADRAO;
+
+  // ...e não pode virar "outro servidor" na segunda letra.
+  if (limpo[1] === "/" || limpo[1] === "\\") return DESTINO_PADRAO;
+
+  // Sobrou caractere de controle? Não é caminho de gente. Fora.
+  for (const caractere of limpo) {
+    if (ehCaractereDeControle(caractere.codePointAt(0) ?? 0)) {
+      return DESTINO_PADRAO;
+    }
+  }
+
+  // O que volta é o texto LIMPO. Devolver o original seria deixar o navegador
+  // refazer o estrago: ele descartaria o TAB e colaria as duas barras.
+  return limpo;
+}
