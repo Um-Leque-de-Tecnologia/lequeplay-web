@@ -183,3 +183,102 @@ export async function listarHistorico(): Promise<ItemHistorico[]> {
 
   return itens;
 }
+
+export type TokensDaApi = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+export type UsuarioDaApi = {
+  usuario: string;
+  nome?: string;
+};
+
+export type ResultadoDoLogin =
+  | { ok: true; tokens: TokensDaApi }
+  | { ok: false; motivo: "credencial" | "indisponivel" };
+
+function pedirConta(caminho: string, init: RequestInit = {}) {
+  if (!BASE) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  return fetch(`${BASE}${caminho}`, {
+    ...init,
+    // Resposta de uma pessoa não é guardada. Nunca (LP-411).
+    cache: "no-store",
+    // Sem tempo limite, uma API travada deixa o botão "Entrando…" para sempre.
+    signal: AbortSignal.timeout(5000),
+  });
+}
+
+function postJson(corpo: unknown): RequestInit {
+  return {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(corpo),
+  };
+}
+
+/**
+ * Troca usuário e senha por um par de tokens.
+ *
+ * O campo é `usuario`, e não `email`: a API repassa ao Keycloak, que entra pelo nome de usuário.
+ */
+export async function entrarNaApi(
+  usuario: string,
+  senha: string,
+): Promise<ResultadoDoLogin> {
+  try {
+    const resposta = await pedirConta("/auth/login", postJson({ usuario, senha }));
+
+    if (resposta.status === 401 || resposta.status === 400) {
+      return { ok: false, motivo: "credencial" };
+    }
+    if (!resposta.ok) return { ok: false, motivo: "indisponivel" };
+
+    return { ok: true, tokens: (await resposta.json()) as TokensDaApi };
+  } catch {
+    // Rede fora ou tempo limite estourado.
+    return { ok: false, motivo: "indisponivel" };
+  }
+}
+
+/**
+ * Quem é o dono do token — ou `null` quando o token não vale mais.
+ *
+ * A API não separa "vencido" de "malformado": os dois são 401 com
+ * `title: "Token inválido"`. Para o front, os dois significam o mesmo: sem
+ * sessão.
+ */
+export async function lerUsuarioDaApi(token: string): Promise<UsuarioDaApi | null> {
+  const resposta = await pedirConta("/auth/me", {
+    headers: { authorization: `Bearer ${token}` },
+  });
+
+  if (resposta.status === 401) return null;
+  if (!resposta.ok) {
+    throw new ErroDaApi(`A API respondeu ${resposta.status} em /auth/me`, resposta.status);
+  }
+
+  return (await resposta.json()) as UsuarioDaApi;
+}
+
+/** Troca o token de renovação por um par novo, ou `null` quando ele também venceu. */
+export async function renovarNaApi(refreshToken: string): Promise<TokensDaApi | null> {
+  try {
+    const resposta = await pedirConta("/auth/refresh", postJson({ refreshToken }));
+    return resposta.ok ? ((await resposta.json()) as TokensDaApi) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Avisa a API que a sessão acabou.*/
+export async function sairDaApi(refreshToken: string): Promise<void> {
+  try {
+    await pedirConta("/auth/logout", postJson({ refreshToken }));
+  } catch {
+   
+  }
+}
