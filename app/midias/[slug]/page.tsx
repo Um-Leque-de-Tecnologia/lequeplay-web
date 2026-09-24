@@ -10,6 +10,11 @@ import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
+import {
+  desmarcarComoAssistida,
+  marcarComoAssistida,
+} from "@/app/midias/[slug]/acoes";
+import { listarAssistidas } from "@/lib/assistidas";
 import { corte } from "@/lib/utils";
 
 type SearchParams = {
@@ -75,6 +80,8 @@ export default async function PaginaDaMidia({
     notFound();
   }
 
+  const jaFoiAssistida = (await listarAssistidas()).includes(midia.slug);
+
   /*
    * O botão "Retomar" envia temporada e episódio
    * pela query string.
@@ -128,6 +135,28 @@ export default async function PaginaDaMidia({
           </p>
 
           <FichaSinopse sinopse={midia.sinopse} />
+
+          {jaFoiAssistida ? (
+            <form action={desmarcarComoAssistida} className="mt-6">
+              <input type="hidden" name="slug" value={midia.slug} />
+              <button
+                type="submit"
+                className="rounded-md border border-white/15 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-violet-500 hover:text-white"
+              >
+                Desmarcar como já assistido
+              </button>
+            </form>
+          ) : (
+            <form action={marcarComoAssistida} className="mt-6">
+              <input type="hidden" name="slug" value={midia.slug} />
+              <button
+                type="submit"
+                className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
+              >
+                Já assisti
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
