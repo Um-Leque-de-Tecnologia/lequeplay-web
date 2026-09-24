@@ -139,17 +139,17 @@ export function FichaTemporadas({
         </select>
       </div>
 
-      {temporada.episodios.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Os episódios desta temporada ainda não foram
-          anunciados.
-        </p>
-      ) : (
-        <ol className="divide-y divide-white/10 border-y border-white/10">
-          {temporada.episodios.map((episodio) => {
-            const selecionado = ehOEpisodioDoRetomar(
-              episodio.numero,
-            );
+     {(temporada.episodios?.length ?? 0) === 0 ? (
+  <p className="text-sm text-zinc-500">
+    Os episódios desta temporada ainda não foram
+    anunciados.
+  </p>
+) : (
+  <ol className="divide-y divide-white/10 border-y border-white/10">
+    {temporada.episodios.map((episodio) => {
+      const selecionado = ehOEpisodioDoRetomar(
+        episodio.numero,
+      );
 
             return (
               <li

@@ -1,3 +1,4 @@
+
 /**
  * O tamanho máximo do texto da resenha.
  *
@@ -19,6 +20,7 @@ export function FichaResenha({ titulo }: { titulo: string }) {
       <label htmlFor="texto" className="block text-sm text-zinc-400">
         O que você achou de {titulo}?
       </label>
+
       <textarea
         id="texto"
         name="texto"
@@ -28,7 +30,7 @@ export function FichaResenha({ titulo }: { titulo: string }) {
         className="mt-2 block w-full max-w-prose rounded-md border border-white/15 bg-zinc-900 px-3 py-2 text-base placeholder:text-zinc-600"
       />
 
-      {/*
+      {/* 
         `aria-live="polite"` porque o contador muda enquanto a pessoa digita:
         sem ele, quem usa leitor de tela só descobre que estourou o limite
         quando o campo para de aceitar letra.
@@ -38,9 +40,15 @@ export function FichaResenha({ titulo }: { titulo: string }) {
       </p>
 
       {/*
-        Desabilitado enquanto `PUT /midias/{id}/resenha` não existe na API —
-        o contrato marca a camada social como backlog. O campo já fica de pé
-        para a tela nascer pronta no dia em que o endpoint subir.
+        Decisão registrada no LP-511:
+        manter o botão desabilitado enquanto a API não disponibilizar
+        o endpoint oficial para publicação de resenhas.
+
+        Não habilitar o botão com uma rota inventada evita que a tela
+        prometa uma funcionalidade que o contrato atual da API não oferece.
+
+        Quando o endpoint oficial existir, remover esta explicação e
+        conectar o botão ao contrato disponibilizado pela API.
       */}
       <button
         type="button"
@@ -49,6 +57,12 @@ export function FichaResenha({ titulo }: { titulo: string }) {
       >
         Publicar resenha
       </button>
+
+      <p className="mt-2 text-sm text-zinc-500">
+        A publicação de resenhas estará disponível quando a API disponibilizar
+        esse recurso.
+      </p>
     </section>
   );
 }
+

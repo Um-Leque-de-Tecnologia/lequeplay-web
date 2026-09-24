@@ -33,7 +33,7 @@ export function CatalogoChipsGenero({ generos }: { generos: Genero[] }) {
         Todos
       </button>
 
-      {generos.map((genero) => (
+     {(generos ?? []).map((genero) => (
         // `key` é o nome cru vindo da API: ele identifica o chip, e valor de
         // identidade não passa por formatação.
         <button key={genero} type="button" className={CLASSE_CHIP}>
