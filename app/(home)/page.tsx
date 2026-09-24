@@ -10,8 +10,6 @@ import { listarHistorico, listarMidias } from "@/lib/api";
 // HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
 // abaixo recebem os dados por props, e nenhuma delas busca nada por conta.
 export default async function Home() {
-  // O histórico pertence à pessoa da requisição e não pode ser pré-renderizado.
-  await connection();
 
   // As duas buscas não dependem uma da outra: em série, a home esperaria a
   // soma das duas; em paralelo, espera a mais lenta.
