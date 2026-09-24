@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buscarMidia } from "@/lib/api";
-import { formatarDuracao } from "@/lib/formatadores";
+import { formatarDuracao, rotuloDaTemporada } from "@/lib/formatadores";
 import type { Midia, Temporada } from "@/lib/tipos";
 
 /**
@@ -54,7 +54,7 @@ export async function generateMetadata({
   if (!achado) return { title: "Temporada não encontrada" };
 
   return {
-    title: `${achado.serie.titulo} · Temporada ${achado.temporada.numero}`,
+    title: `${achado.serie.titulo} · ${rotuloDaTemporada(achado.temporada)}`,
     description: achado.serie.sinopse,
   };
 }
@@ -81,7 +81,7 @@ export default async function PaginaDaTemporada({
 
       <header>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Temporada {temporada.numero}
+          {rotuloDaTemporada(temporada)}
         </h1>
         <p className="mt-2 text-sm text-zinc-500">
           {serie.titulo}
@@ -139,7 +139,7 @@ export default async function PaginaDaTemporada({
                         : "border-white/15 text-zinc-300 hover:border-violet-500 hover:text-zinc-100"
                     }`}
                   >
-                    Temporada {outra.numero}
+                    {rotuloDaTemporada(outra)}
                   </Link>
                 </li>
               );

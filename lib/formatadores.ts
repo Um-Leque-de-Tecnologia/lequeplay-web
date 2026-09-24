@@ -103,3 +103,25 @@ export function formatarDuracao(minutos: number): string {
 
   return `${horas}h${String(resto).padStart(2, "0")}`;
 }
+
+/**
+ * Como a temporada se chama na tela: o `nome` que a API manda, e, sem ele,
+ * "Temporada 2" — nunca `undefined` nem espaço em branco (LP-305).
+ *
+ * A `0` é a de especiais (veja `ResumoTemporada.numero`): "Temporada 0" não é
+ * como ninguém fala dela. A API publicada hoje não tem temporada 0 — a
+ * ingestão ignora especiais —, mas o mock tem, e o tipo permite.
+ *
+ * O ano não entra aqui: ele é opcional, e cada tela decide como encaixá-lo
+ * (entre parênteses no seletor, depois de um "·" no cabeçalho). Colado no
+ * rótulo, a ausência dele sobraria como "()" em algum lugar.
+ */
+export function rotuloDaTemporada(temporada: {
+  numero: number;
+  nome?: string;
+}): string {
+  const nome = temporada.nome?.trim();
+  if (nome) return nome;
+
+  return temporada.numero === 0 ? "Especiais" : `Temporada ${temporada.numero}`;
+}

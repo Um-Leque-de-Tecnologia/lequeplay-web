@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { formatarDuracao } from "@/lib/formatadores";
+import { formatarDuracao, rotuloDaTemporada } from "@/lib/formatadores";
 import type { Serie } from "@/lib/tipos";
 
 type Props = {
@@ -134,8 +134,10 @@ export function FichaTemporadas({
               key={temporada.numero}
               value={indice}
             >
-              Temporada {temporada.numero} (
-              {temporada.ano})
+              {/* Sem ano, os parênteses somem junto: nada de "Temporada 4 ()". */}
+              {temporada.ano
+                ? `${rotuloDaTemporada(temporada)} (${temporada.ano})`
+                : rotuloDaTemporada(temporada)}
             </option>
           ))}
         </select>

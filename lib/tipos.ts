@@ -105,7 +105,25 @@ export type ResumoTemporada = {
    * silêncio no resto.
    */
   numero: number;
-  ano: number;
+
+  /**
+   * O nome que a emissora deu ("Temporada 1", "Especiais").
+   *
+   * Opcional porque o contrato publicado só garante `numero` e
+   * `totalEpisodios` (`required: [numero, totalEpisodios]` no schema
+   * `Temporada`). Hoje as 345 temporadas da API trazem o nome, mas o contrato
+   * permite a ausência — e o mock não traz nunca. Quem mostra usa
+   * `rotuloDaTemporada`, que monta o rótulo quando ele falta.
+   */
+  nome?: string;
+
+  /**
+   * Opcional pelo mesmo contrato — e ausente de verdade: a temporada 4 de
+   * `silo` chega sem `ano` (e com `totalEpisodios: 0`), anunciada e ainda sem
+   * data. Sem ano, a tela esconde o ano junto com o que o cerca, em vez de
+   * escrever "()".
+   */
+  ano?: number;
 
   /** Igual a `episodios.length` — vem repetido porque o resumo pode vir só. */
   totalEpisodios: number;
