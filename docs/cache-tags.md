@@ -6,7 +6,9 @@ quando um título muda na origem, dá para derrubar só o que depende dele em
 vez de esperar o tempo de revalidação ou limpar o cache inteiro.
 
 Quem invalida é a rota `POST /api/revalidar` (LP-309), que recebe a etiqueta
-e chama `revalidateTag`.
+e chama `revalidateTag`. Qual função usar numa Server Action — `updateTag`,
+`revalidateTag`, `revalidatePath` ou `refresh()` — está em
+[`docs/atualizacao-de-cache.md`](atualizacao-de-cache.md).
 
 ## O esquema
 
