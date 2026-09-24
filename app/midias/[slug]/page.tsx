@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CapaMidia } from "@/components/capa-midia";
@@ -18,9 +18,10 @@ type SearchParams = {
   episodios?: string;
 };
 
-export async function generateMetadata({
-  params,
-}: PageProps<"/midias/[slug]">): Promise<Metadata> {
+export async function generateMetadata(
+  { params }: PageProps<"/midias/[slug]">,
+  parent: ResolvingMetadata,
+): Promise<Metadata> {
   const { slug } = await params;
 
   const midia = await buscarMidia(slug);
@@ -36,11 +37,18 @@ export async function generateMetadata({
   // e o que aparece na prévia do link são o mesmo texto, então cortam no mesmo
   // lugar — no espaço, nunca no meio da palavra. As reticências são o caractere
   // `…`, e não três pontos seguidos.
-  const pontoDoCorte = corte(midia.sinopse);
-  const descricaoCurta =
-    pontoDoCorte < midia.sinopse.length
-      ? `${midia.sinopse.slice(0, pontoDoCorte).trimEnd()}…`
-      : midia.sinopse;
+  //
+  // Sem sinopse — a API manda `the-odyssey` assim —, vale a descrição do site,
+  // do `app/layout.tsx`. Ela é lida pelo `parent`, e não simplesmente omitida:
+  // o merge de metadata é raso, e o `openGraph` daqui substitui o do layout
+  // inteiro — a prévia do link sairia sem descrição nenhuma.
+  const sinopse = midia.sinopse ?? "";
+  const pontoDoCorte = corte(sinopse);
+  const descricaoCurta = !sinopse
+    ? ((await parent).description ?? undefined)
+    : pontoDoCorte < sinopse.length
+      ? `${sinopse.slice(0, pontoDoCorte).trimEnd()}…`
+      : sinopse;
 
   return {
     title: midia.titulo,
@@ -127,7 +135,7 @@ export default async function PaginaDaMidia({
               : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
           </p>
 
-          <FichaSinopse sinopse={midia.sinopse} />
+          {midia.sinopse && <FichaSinopse sinopse={midia.sinopse} />}
         </div>
       </div>
 

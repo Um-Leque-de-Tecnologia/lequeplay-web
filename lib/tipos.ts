@@ -24,7 +24,15 @@ type MidiaBase = {
   id: string;
   slug: string;
   titulo: string;
-  ano: number;
+
+  /**
+   * Opcional no contrato publicado: o schema `Midia` só exige `id`, `slug`,
+   * `tipo`, `titulo`, `generos`, `popularidade`, `notaMedia` e
+   * `totalAvaliacoes`. Os 60 títulos da API trazem o ano hoje (conferido em
+   * 24/09/2026), mas nada garante o próximo — e título sem ano não pode virar
+   * "NaN" numa ordenação nem "()" numa legenda.
+   */
+  ano?: number;
 
   /**
    * Lista, não um valor só: um título pode ser drama *e* suspense. Vem
@@ -35,7 +43,13 @@ type MidiaBase = {
    */
   generos: Genero[];
 
-  sinopse: string;
+  /**
+   * Opcional no contrato, e ausente de verdade: `the-odyssey` chega sem
+   * `sinopse` em `GET /v1/midias` e no detalhe (conferido em 24/09/2026).
+   * Sem ela, a ficha não mostra a seção, e a prévia do link cai na descrição
+   * padrão do site.
+   */
+  sinopse?: string;
 
   /**
    * A API omite o campo quando o título não tem pôster.
@@ -66,8 +80,15 @@ type MidiaBase = {
    */
   duracaoMin?: number;
 
-  /** Só vem no detalhe, nunca na listagem. No máximo 12. */
-  creditos?: Credito[];
+  /**
+   * Só vem no detalhe, nunca na listagem. No máximo 12 (o maior hoje tem 11).
+   *
+   * **`null` também**, e não só ausente: `GET /v1/midias/tagesschau` responde
+   * `"creditos": null` — contra a regra "omitido, não `null`" do
+   * `docs/api-contrato.md`. Até a API corrigir, o tipo diz a verdade: quem lê
+   * usa `?.` ou `?? []`, que cobrem os dois casos.
+   */
+  creditos?: Credito[] | null;
 };
 
 export type Filme = MidiaBase & {
@@ -78,8 +99,12 @@ export type Filme = MidiaBase & {
    * o crédito com `papel: "direcao"`. Aqui ele já vem derivado — o mock de
    * `data/midias.json` grava direto, e quando a tela passar a ler a API de
    * verdade é do `creditos` que ele sai. Um dado, uma fonte da verdade.
+   *
+   * Opcional porque a API nunca manda: com `USAR_MOCK=false`, todo filme
+   * chega sem `diretor`. Quem quer o nome com a API real lê `creditos` — os 40
+   * filmes do catálogo têm o crédito de direção.
    */
-  diretor: string;
+  diretor?: string;
 };
 
 export type Episodio = {
@@ -159,8 +184,13 @@ export type Serie = MidiaBase & {
    *
    * Ordenadas por `numero` crescente — a de especiais, quando existe, vem
    * primeiro, porque `0` é menor que `1`.
+   *
+   * Opcional porque **só o detalhe traz**: nenhuma série de `GET /v1/midias`
+   * vem com `temporadas` (conferido nas 20). Quem cruza a listagem com
+   * temporada — o "continuar assistindo" da home — não pode supor a lista.
+   * A lista de episódios dentro de cada uma é outro assunto: é o LP-306.
    */
-  temporadas: Temporada[];
+  temporadas?: Temporada[];
 };
 
 export type EpisodioPodcast = {
@@ -174,9 +204,19 @@ export type EpisodioPodcast = {
 export type Podcast = MidiaBase & {
   tipo: "podcast";
 
-  /** Como `diretor`: derivado do crédito com `papel: "apresentacao"`. */
-  apresentador: string;
-  totalEpisodios: number;
+  /**
+   * Como `diretor`: derivado do crédito com `papel: "apresentacao"`, e só o
+   * mock grava. Opcional pelo mesmo motivo.
+   */
+  apresentador?: string;
+
+  /**
+   * O contrato publicado não declara campo nenhum de podcast (o schema
+   * `MidiaDetalhe` é `Midia` + `creditos` + `temporadas`), e o catálogo não
+   * tem podcast para conferir: hoje são 40 filmes e 20 séries. Opcional até a
+   * API publicar — quem mostra usa o tamanho da lista quando ele falta.
+   */
+  totalEpisodios?: number;
   frequencia?: string;
   episodios?: EpisodioPodcast[];
 };
@@ -198,12 +238,31 @@ export type Pessoa = {
   papeis: Papel[];
 };
 
+/**
+ * Quem assina um crédito, como a API publica (schema `PessoaResumo`).
+ *
+ * Tipo próprio, e não um recorte de `Pessoa`: `Pessoa` descreve o
+ * `/pessoas/{slug}`, que ainda é backlog, com `fotoUrl: string | null`. No
+ * crédito a API **omite** a foto quando não tem — 11 dos 487 créditos de hoje
+ * chegam sem a chave, nenhum com `null`.
+ */
+export type PessoaResumo = {
+  slug: string;
+  nome: string;
+  fotoUrl?: string;
+};
+
 export type Credito = {
-  pessoa: Pick<Pessoa, "slug" | "nome" | "fotoUrl">;
+  pessoa: PessoaResumo;
   papel: Papel;
 
-  /** Só existe quando `papel` é `"elenco"`. */
-  personagem: string | null;
+  /**
+   * Só vem quando `papel` é `"elenco"`; nos outros papéis a chave **não
+   * existe** — os 68 créditos de direção de hoje chegam sem ela, nenhum com
+   * `null`. O `docs/api-contrato.md` se contradiz aqui (numa seção diz
+   * "vem sempre, com `null`", noutra "não vem"); a resposta real decide.
+   */
+  personagem?: string;
 };
 
 /* ------------------------------------------------------------------ *

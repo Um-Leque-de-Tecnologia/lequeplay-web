@@ -38,7 +38,9 @@ function duracaoEmSegundos(
      * protocolo-aberto tem temporada 0 (especiais),
      * e ali os dois não coincidem.
      */
-    const temporada = midia.temporadas.find(
+    // A listagem nunca traz `temporadas` (LP-212): sem elas, não há como
+    // achar o episódio, e o caso cai no mesmo `null` de episódio sumido.
+    const temporada = midia.temporadas?.find(
       (t) => t.numero === item.temporadaNumero,
     );
 

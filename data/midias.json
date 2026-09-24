@@ -317,11 +317,9 @@
       {
         "pessoa": {
           "slug": "rafa-okumura",
-          "nome": "Rafa Okumura",
-          "fotoUrl": null
+          "nome": "Rafa Okumura"
         },
-        "papel": "apresentacao",
-        "personagem": null
+        "papel": "apresentacao"
       }
     ],
     "episodios": [
@@ -381,11 +379,9 @@
       {
         "pessoa": {
           "slug": "dandara-reis",
-          "nome": "Dandara Reis",
-          "fotoUrl": null
+          "nome": "Dandara Reis"
         },
-        "papel": "apresentacao",
-        "personagem": null
+        "papel": "apresentacao"
       }
     ],
     "episodios": [

@@ -62,7 +62,7 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
         </>
       )}
 
-      {midia.tipo === "serie" && (
+      {midia.tipo === "serie" && midia.temporadas && (
         <>
           <dt className="text-zinc-500">
             {/* O rótulo acompanha a cardinalidade, como no gênero acima. */}

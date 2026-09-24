@@ -39,7 +39,9 @@ function acharTemporada(
   const numero = Number(numeroDaUrl);
   if (!Number.isInteger(numero)) return null;
 
-  const temporada = midia.temporadas.find((t) => t.numero === numero);
+  // `?? []`: só o detalhe traz `temporadas` (LP-212). Série sem a lista é o
+  // mesmo caso de temporada que não existe.
+  const temporada = (midia.temporadas ?? []).find((t) => t.numero === numero);
   if (!temporada) return null;
 
   return { serie: midia, temporada };
@@ -70,6 +72,7 @@ export default async function PaginaDaTemporada({
   if (!achado) notFound();
 
   const { serie, temporada } = achado;
+  const temporadas = serie.temporadas ?? [];
 
   return (
     <article>
@@ -119,13 +122,13 @@ export default async function PaginaDaTemporada({
         </ol>
       )}
 
-      {serie.temporadas.length > 1 && (
+      {temporadas.length > 1 && (
         <nav aria-label="Outras temporadas" className="mt-10">
           <h2 className="mb-3 text-sm font-medium text-zinc-400">
             Outras temporadas
           </h2>
           <ul className="flex flex-wrap gap-2">
-            {serie.temporadas.map((outra) => {
+            {temporadas.map((outra) => {
               const atual = outra.numero === temporada.numero;
 
               return (

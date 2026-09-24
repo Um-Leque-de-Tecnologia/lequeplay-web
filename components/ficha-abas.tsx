@@ -26,7 +26,8 @@ function abaInicial(): IdAba {
 }
 
 /** O elenco sai de `creditos`; a API não manda uma lista de atores solta. */
-function Elenco({ creditos }: { creditos: Credito[] | undefined }) {
+// `null` também: `GET /v1/midias/tagesschau` responde `"creditos": null` (LP-212).
+function Elenco({ creditos }: { creditos: Credito[] | null | undefined }) {
   const elenco = creditos?.filter((c) => c.papel === "elenco") ?? [];
 
   if (elenco.length === 0) {
@@ -42,8 +43,10 @@ function Elenco({ creditos }: { creditos: Credito[] | undefined }) {
       {elenco.map((credito) => (
         <li key={credito.pessoa.slug} className="text-sm">
           <span className="text-zinc-200">{credito.pessoa.nome}</span>
-          {/* `personagem` só vem preenchido quando o papel é elenco. */}
-          {credito.personagem !== null && (
+          {/* `personagem` só vem quando o papel é elenco — e, quando não vem,
+              a chave nem existe: comparar com `null` deixaria passar o
+              `undefined` e escreveria "como" sem ninguém depois. */}
+          {credito.personagem && (
             <span className="text-zinc-500"> como {credito.personagem}</span>
           )}
         </li>
@@ -55,7 +58,11 @@ function Elenco({ creditos }: { creditos: Credito[] | undefined }) {
 function PainelDaAba({ id, midia }: { id: IdAba; midia: Midia }) {
   switch (id) {
     case "sinopse":
-      return <p className="max-w-prose text-zinc-300">{midia.sinopse}</p>;
+      return (
+        <p className="max-w-prose text-zinc-300">
+          {midia.sinopse ?? "Este título ainda não tem sinopse."}
+        </p>
+      );
     case "elenco":
       return <Elenco creditos={midia.creditos} />;
     case "detalhes":
