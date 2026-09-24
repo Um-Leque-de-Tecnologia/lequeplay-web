@@ -29,9 +29,13 @@ export function FichaTemporadas({
    * Por isso encontramos o índice correspondente
    * ao número recebido na URL.
    */
+  // Só o detalhe traz `temporadas` (LP-212). Sem a lista, não há seletor —
+  // o `if (!temporada)` lá embaixo devolve `null`.
+  const temporadas = serie.temporadas ?? [];
+
   const indiceEncontrado =
     temporadaNumero !== undefined
-      ? serie.temporadas.findIndex(
+      ? temporadas.findIndex(
           (temporada) =>
             temporada.numero === temporadaNumero,
         )
@@ -74,7 +78,7 @@ export function FichaTemporadas({
   }
 
   const temporada =
-    serie.temporadas[temporadaSelecionada];
+    temporadas[temporadaSelecionada];
 
   /*
    * Proteção caso a série não tenha nenhuma temporada.
@@ -129,7 +133,7 @@ export function FichaTemporadas({
           }}
           className="rounded-md border border-white/15 bg-zinc-900 px-3 py-1.5 text-sm"
         >
-          {serie.temporadas.map((temporada, indice) => (
+          {temporadas.map((temporada, indice) => (
             <option
               key={temporada.numero}
               value={indice}
