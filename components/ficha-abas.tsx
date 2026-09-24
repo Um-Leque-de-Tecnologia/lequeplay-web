@@ -75,6 +75,7 @@ export function FichaAbas({ midia }: { midia: Midia }) {
     const abaValida = ABAS.some((aba) => aba.id === hash);
       
     if (abaValida) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAbaAberta(hash);
     } 
 
