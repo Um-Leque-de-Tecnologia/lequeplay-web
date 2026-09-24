@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { FichaTecnica } from "@/components/ficha-tecnica";
 import type { Credito, Midia } from "@/lib/tipos";
@@ -21,9 +21,6 @@ const ABAS: { id: IdAba; rotulo: string }[] = [
  * (`/midias/slug#elenco`), é esta função que passa a ler o fragmento — e só
  * ela.
  */
-function abaInicial(): IdAba {
-  return "sinopse";
-}
 
 /** O elenco sai de `creditos`; a API não manda uma lista de atores solta. */
 function Elenco({ creditos }: { creditos: Credito[] | undefined }) {
@@ -64,7 +61,7 @@ function PainelDaAba({ id, midia }: { id: IdAba; midia: Midia }) {
 }
 
 export function FichaAbas({ midia }: { midia: Midia }) {
-  const [abaAberta, setAbaAberta] = useState<IdAba>(abaInicial);
+  const [abaAberta, setAbaAberta] = useState<IdAba>("sinopse");
   const referenciasAbas = useRef<
     Record<IdAba, HTMLButtonElement | null>
   >({
@@ -73,8 +70,34 @@ export function FichaAbas({ midia }: { midia: Midia }) {
     detalhes: null,
   });
 
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "") as IdAba;
+    const abaValida = ABAS.some((aba) => aba.id === hash);
+      
+    if (abaValida) {
+      setAbaAberta(hash);
+    } 
+
+    const handleHashChange = () => {
+      const novoHash = window.location.hash.replace("#", "") as IdAba;
+      const novaAbaValida = ABAS.some((aba) => aba.id === novoHash);
+
+      if (novaAbaValida) {
+        setAbaAberta(novoHash);
+      } else if (!window.location.hash) {
+        setAbaAberta("sinopse");
+      }
+    };
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
   const selecionarAba = (id: IdAba) => {
     setAbaAberta(id);
+
+    window.history.pushState(null, "", `#${id}`);
+
     const botao = referenciasAbas.current[id];
 
     if (botao !== null) {
