@@ -13,7 +13,7 @@ export function CardMidia({ midia }: { midia: Midia }) {
   return (
     // <article> porque o card faz sentido sozinho, fora da lista.
     <article className="group">
-      <Link href={`/midias/${midia.slug}`} className="block">
+      <Link href={`/midias/${midia.slug}`} scroll={false} className="block">
         <CapaMidia
           posterUrl={midia.posterUrl}
           className="w-full rounded-lg border border-white/10 transition group-hover:border-violet-500"
