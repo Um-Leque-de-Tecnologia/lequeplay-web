@@ -1,14 +1,12 @@
 import type { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CapaMidia } from "@/components/capa-midia";
+import { CabecalhoDaMidia } from "@/components/cabecalho-da-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
 import { FichaPodcast } from "@/components/ficha-podcast";
 import { FichaResenha } from "@/components/ficha-resenha";
-import { FichaSinopse } from "@/components/ficha-sinopse";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
-import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
 import { buscarMidia } from "@/lib/api";
 import { corte } from "@/lib/utils";
 
@@ -115,29 +113,7 @@ export default async function PaginaDaMidia({
         </Link>
       </nav>
 
-      <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
-        <CapaMidia
-          posterUrl={midia.posterUrl}
-          className="w-full rounded-lg border border-white/10"
-          priority
-        />
-
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {midia.titulo}
-          </h1>
-
-          <p className="mt-2 text-sm text-zinc-500">
-            {/* A ficha tem espaço para o convite; o cartão da grade, não.
-                A nota, porém, sai da mesma função nos dois lugares. */}
-            {temAvaliacoes(midia)
-              ? `★ ${notaFormatada(midia)} · ${midia.totalAvaliacoes} avaliações`
-              : "Título ainda não avaliado. Seja a primeira pessoa a avaliar."}
-          </p>
-
-          {midia.sinopse && <FichaSinopse sinopse={midia.sinopse} />}
-        </div>
-      </div>
+      <CabecalhoDaMidia midia={midia} />
 
       {midia.tipo === "podcast" ? (
         <FichaPodcast

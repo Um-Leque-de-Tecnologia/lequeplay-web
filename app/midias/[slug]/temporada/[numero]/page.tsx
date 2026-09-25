@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buscarMidia } from "@/lib/api";
 import { formatarDuracao, rotuloDaTemporada } from "@/lib/formatadores";
@@ -71,28 +70,20 @@ export default async function PaginaDaTemporada({
   // de verdade, como no LP-204.
   if (!achado) notFound();
 
-  const { serie, temporada } = achado;
-  const temporadas = serie.temporadas ?? [];
+  const { temporada } = achado;
 
+  // A trilha, o cabeçalho da série e as abas moram no layout (LP-302): a
+  // página é só o que muda de uma temporada para outra.
   return (
-    <article>
-      <nav aria-label="Trilha" className="mb-6 text-sm">
-        <Link href={`/midias/${serie.slug}`} className="text-zinc-400 hover:text-zinc-100">
-          ← {serie.titulo}
-        </Link>
-      </nav>
-
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          {rotuloDaTemporada(temporada)}
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500">
-          {serie.titulo}
-          {temporada.ano ? ` · ${temporada.ano}` : ""} ·{" "}
-          {temporada.totalEpisodios}{" "}
-          {temporada.totalEpisodios === 1 ? "episódio" : "episódios"}
-        </p>
-      </header>
+    <section aria-labelledby="titulo-da-temporada" className="mt-8">
+      <h2 id="titulo-da-temporada" className="text-xl font-semibold">
+        {rotuloDaTemporada(temporada)}
+      </h2>
+      <p className="mt-1 text-sm text-zinc-500">
+        {temporada.ano ? `${temporada.ano} · ` : ""}
+        {temporada.totalEpisodios}{" "}
+        {temporada.totalEpisodios === 1 ? "episódio" : "episódios"}
+      </p>
 
       {/*
         A API publicada não manda os episódios (é o LP-306): quando eles não
@@ -100,11 +91,11 @@ export default async function PaginaDaTemporada({
         uma lista vazia sem explicação.
       */}
       {temporada.episodios.length === 0 ? (
-        <p className="mt-8 text-sm text-zinc-500">
+        <p className="mt-6 text-sm text-zinc-500">
           Os episódios desta temporada ainda não foram anunciados.
         </p>
       ) : (
-        <ol className="mt-8 divide-y divide-white/10 border-y border-white/10">
+        <ol className="mt-6 divide-y divide-white/10 border-y border-white/10">
           {temporada.episodios.map((episodio) => (
             <li
               key={episodio.numero}
@@ -121,35 +112,6 @@ export default async function PaginaDaTemporada({
           ))}
         </ol>
       )}
-
-      {temporadas.length > 1 && (
-        <nav aria-label="Outras temporadas" className="mt-10">
-          <h2 className="mb-3 text-sm font-medium text-zinc-400">
-            Outras temporadas
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {temporadas.map((outra) => {
-              const atual = outra.numero === temporada.numero;
-
-              return (
-                <li key={outra.numero}>
-                  <Link
-                    href={`/midias/${serie.slug}/temporada/${outra.numero}`}
-                    aria-current={atual ? "page" : undefined}
-                    className={`inline-block rounded-full border px-3 py-1.5 text-sm transition ${
-                      atual
-                        ? "border-violet-500 bg-violet-600/20 font-medium text-violet-200"
-                        : "border-white/15 text-zinc-300 hover:border-violet-500 hover:text-zinc-100"
-                    }`}
-                  >
-                    {rotuloDaTemporada(outra)}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
-    </article>
+    </section>
   );
 }
