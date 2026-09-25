@@ -233,6 +233,49 @@ export async function sairDaConta(refreshToken: string): Promise<void> {
 }
 
 /**
+ * A única porta por onde o token de uma pessoa sai para a API (LP-411).
+ *
+ * **Resposta de uma pessoa não entra no cache.** Por isso esta função não tem
+ * `opcoes`: não existe `revalidar`, `tags` nem `semCache` para escolher —
+ * é sempre `cache: "no-store"`. Quem precisar mandar um token passa por aqui,
+ * e fica sem como errar.
+ *
+ * O motivo de a regra ser de código, e não de revisão: a documentação do
+ * `fetch` da versão instalada diz que o cache guarda "any request, including
+ * `POST` and requests that send `authorization` or `cookie` headers". Com o
+ * `/me` guardado por `revalidate: 3600`, cada pessoa continuou vendo o
+ * próprio perfil (o cache separa pelo cabeçalho) — mas um token **vencido**
+ * continuou abrindo o `/perfil`, com o `/me` chamado zero vezes: a resposta
+ * guardada dizia que o token valia. Opção de cache em chamada com token é bug
+ * até prova em contrário.
+ *
+ * O `buscar` lá de cima, que cacheia, não tem parâmetro de cabeçalho — e é
+ * de propósito que continue sem.
+ */
+async function buscarComToken<T>(caminho: string, tokenDeAcesso: string): Promise<T> {
+  if (!BASE) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  const resposta = await fetch(`${BASE}${caminho}`, {
+    headers: { Authorization: `Bearer ${tokenDeAcesso}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
+  });
+
+  if (!resposta.ok) {
+    // 401 aqui é o caso normal de token vencido ou inválido, e não alarme:
+    // quem chama decide (o `/perfil` manda ao login). O status sobe intacto.
+    throw new ErroDaApi(
+      `A API respondeu ${resposta.status} em ${caminho}`,
+      resposta.status,
+    );
+  }
+
+  return (await resposta.json()) as T;
+}
+
+/**
  * Quem é o dono deste token, perguntado à API.
  *
  * Ter o cookie não prova nada: qualquer pessoa escreve um no navegador. Quem
@@ -240,29 +283,12 @@ export async function sairDaConta(refreshToken: string): Promise<void> {
  * inclusive para token vencido e para token malformado, que são o mesmo caso
  * do ponto de vista de quem chama.
  *
- * Nunca cacheado: resposta de uma pessoa não entra em cache compartilhado.
+ * Nunca cacheado: passa pelo `buscarComToken`, que não sabe cachear.
  */
 export async function buscarUsuarioDaSessao(
   tokenDeAcesso: string,
 ): Promise<UsuarioDaSessao> {
-  if (!BASE) {
-    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
-  }
-
-  const resposta = await fetch(`${BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${tokenDeAcesso}` },
-    cache: "no-store",
-    signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
-  });
-
-  if (!resposta.ok) {
-    throw new ErroDaApi(
-      `A API respondeu ${resposta.status} em /auth/me`,
-      resposta.status,
-    );
-  }
-
-  return (await resposta.json()) as UsuarioDaSessao;
+  return buscarComToken<UsuarioDaSessao>("/auth/me", tokenDeAcesso);
 }
 
 /* -------------------------------------------------------------------------
