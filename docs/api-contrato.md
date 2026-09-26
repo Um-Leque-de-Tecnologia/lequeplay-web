@@ -425,6 +425,30 @@ para decidir se revalida o cache, em vez de revalidar às cegas.
 A API **não guarda senha**: ela é um proxy do Keycloak. Quem valida a
 credencial e emite o token é o Keycloak; a API repassa.
 
+### Onde cada credencial viaja (LP-412)
+
+Conferido no contrato publicado (`securitySchemes`) e no código da API
+(`internal/auth/auth.go`) em 24/09/2026:
+
+| Cabeçalho | Leva o quê | Quem manda | Quem lê |
+| --- | --- | --- | --- |
+| `Authorization: Bearer <token>` | o token **da pessoa**, emitido pelo Keycloak | só o `buscarComToken` do `lib/api.ts`, a partir do cookie `lp_acesso` | a API, nas rotas com `bearerAuth` (`/auth/me` hoje; o `/perfil/*` quando existir) |
+| `X-Debug-Subject`, `X-Debug-Roles`… | uma pessoa de mentira | ninguém no front | a API, **só no modo dev dela** — nunca em produção |
+| _(chave de API)_ | **não existe** | — | — |
+
+- **Não há chave de API.** O contrato só declara `bearerAuth`, e as rotas do
+  catálogo são abertas (`security: []`). O LP-210, que punha uma chave no
+  `Authorization` e no `x-api-key`, foi fechado sem merge (#26).
+- **O `Authorization` tem um dono só: o token da pessoa.** Se um dia a API
+  passar a exigir uma chave do servidor, ela vai num cabeçalho próprio — o
+  `x-api-key` — e **nunca** no `Authorization`: um cabeçalho para duas
+  credenciais é "a última escrita ganha", e o erro aparece como um `401` sem
+  explicação.
+- **Os dois `401` são separados no código.** O do token vem do
+  `buscarComToken` e é sessão vencida: vai ao login, sem alarme. Um `401` no
+  `buscar`, que não manda credencial, quer dizer que uma rota pública passou
+  a pedir login — esse é alarme, no log de quem opera.
+
 ### `POST /auth/login`
 
 ```json
