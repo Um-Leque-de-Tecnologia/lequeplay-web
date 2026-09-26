@@ -94,6 +94,9 @@ hora"*. Se ninguém visitar a página por um dia, o que está guardado tem um
 dia.
 
 O esquema das etiquetas está em [`docs/cache-tags.md`](docs/cache-tags.md).
+Quando alguma coisa "continua velha", o caminho para achar a camada — com as
+provas medidas neste projeto — está em
+[`docs/eu-revalidei-e-continua-velho.md`](docs/eu-revalidei-e-continua-velho.md).
 Resposta de uma pessoa nunca entra em cache compartilhado — quem trabalha com
 sessão deve ler também o documento da próxima seção.
 Dado de uma pessoa — o histórico — nunca é cacheado: toda chamada com o token
