@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { FormularioDeEntrar } from "@/app/entrar/formulario";
+import { buscarUsuarioLogado } from "@/lib/dal";
+import { destinoSeguro } from "@/lib/destino-seguro";
 
 export const metadata: Metadata = {
   title: "Entrar",
@@ -18,6 +21,13 @@ export default async function PaginaDeEntrar({
   searchParams?: Promise<Busca>;
 }) {
   const { de } = (await searchParams) ?? {};
+
+  // Quem já entrou não precisa da tela de entrar (LP-402): vai direto para
+  // onde ia — o `?de=`, validado como no login (LP-407), ou a home. A sessão
+  // é conferida no `/auth/me`, e não pela existência do cookie: um token
+  // vencido cai aqui como "não entrou" e vê o formulário, que é o certo.
+  // Fora de `try`: o `redirect` lança, e um `catch` o engoliria.
+  if (await buscarUsuarioLogado()) redirect(destinoSeguro(de));
 
   return (
     <section className="mx-auto max-w-sm py-10">
