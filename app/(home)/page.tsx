@@ -3,23 +3,23 @@ import { HomeAcervo } from "@/components/home-acervo";
 import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
 import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
 import { HomeEmAlta } from "@/components/home-em-alta";
-import { listarHistorico, listarMidias } from "@/lib/api";
+import { ProvedorDoHistorico } from "@/components/historico-da-pessoa";
+import { listarMidias } from "@/lib/api";
 
 // Server Component: estes `await` rodam no servidor, e o navegador recebe o
 // HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
 // abaixo recebem os dados por props, e nenhuma delas busca nada por conta.
 export default async function Home() {
-  // As duas buscas não dependem uma da outra: em série, a home esperaria a
-  // soma das duas; em paralelo, espera a mais lenta.
-  const [{ itens, total }, historico] = await Promise.all([
-    listarMidias(),
-    listarHistorico(),
-  ]);
+  // Só o catálogo, que é igual para todo mundo. O histórico é de uma pessoa
+  // e não entra aqui (LP-414): lido no servidor, ele tornaria a home dinâmica
+  // — e, sem sessão, era o do mock para qualquer visitante. Ele chega pelo
+  // navegador, e se falhar, só a faixa dele some.
+  const { itens, total } = await listarMidias();
 
   const destaques = itens.slice(0, 4);
 
   return (
-    <>
+    <ProvedorDoHistorico>
       <section className="mb-14">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           O que você quer ver hoje?
@@ -36,7 +36,7 @@ export default async function Home() {
         </Link>
       </section>
 
-      <HomeContinuarAssistindo historico={historico} itens={itens} />
+      <HomeContinuarAssistindo itens={itens} />
 
       {/*
         A faixa busca sozinha, e por isso não recebe props: ela é um
@@ -47,7 +47,7 @@ export default async function Home() {
 
       <HomeCarrosselDestaques destaques={destaques} />
 
-      <HomeAcervo itens={itens} total={total} historico={historico} />
-    </>
+      <HomeAcervo itens={itens} total={total} />
+    </ProvedorDoHistorico>
   );
 }

@@ -20,6 +20,7 @@ import type {
   TokensDaSessao,
   UsuarioDaSessao,
 } from "@/lib/tipos";
+import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 
 const BASE = process.env.API_URL;
@@ -124,6 +125,12 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
 
     return (await resposta.json()) as T;
   } catch (erro) {
+    // Os erros de controle do Next passam direto (LP-414). Um `fetch` sem
+    // cache chamado durante uma pré-geração lança "Dynamic server usage" para
+    // o Next marcar a rota como dinâmica — e este `catch` o transformava num
+    // 503 que derrubava o `next build` inteiro.
+    unstable_rethrow(erro);
+
     // Já classificado acima, com o status que a API mandou: sobe como está.
     // Sem esta linha, o `catch` transformaria um 404 em 503 e a ficha de um
     // título inexistente viraria tela de erro em vez de 404.
@@ -190,6 +197,7 @@ async function enviar<T>(
 
     return (await resposta.json()) as T;
   } catch (erro) {
+    unstable_rethrow(erro);
     if (erro instanceof ErroDaApi) throw erro;
 
     if (erro instanceof Error && erro.name === "TimeoutError") {
@@ -456,30 +464,35 @@ export async function buscarVersaoDoCatalogo(): Promise<number> {
 }
 
 /**
- * O histórico do player: onde a pessoa parou em cada título que começou.
+ * O histórico do player **de uma pessoa**: onde ela parou em cada título que
+ * começou (LP-414).
  *
  * Vem sem duração e sem título — só o `midiaSlug` e a posição. Quem quiser
  * mostrar capa, nome ou porcentagem cruza com `listarMidias`.
+ *
+ * Pede o token porque o histórico é de alguém: sem token não há de quem
+ * perguntar. Sai pelo `buscarComToken`, que nunca cacheia (LP-411).
+ *
+ * Devolve `null` quando a API responde 404: **`GET /v1/perfil/historico` não
+ * existe na API publicada** (conferido em 24/09/2026). `null` e `[]` são
+ * coisas diferentes — "a API ainda não guarda progresso" e "esta pessoa não
+ * começou nada" —, e a tela diz frases diferentes para cada uma.
  */
-export async function listarHistorico(): Promise<ItemHistorico[]> {
+export async function listarHistorico(
+  tokenDeAcesso: string,
+): Promise<ItemHistorico[] | null> {
+  // O mock responde como se a pessoa logada fosse a dona de
+  // `data/historico.json`. Sem sessão, esta função nem é chamada.
   if (USAR_MOCK) return historicoDoMock();
 
-  // `revalidar: 0` porque isto é dado de uma pessoa só: cachear serviria o
-  // progresso de alguém para outra pessoa.
   try {
-    const { itens } = await buscar<{ itens: ItemHistorico[] }>(
+    const { itens } = await buscarComToken<{ itens: ItemHistorico[] }>(
       "/perfil/historico",
-      // Lista vazia, e não ausência: não há o que invalidar aqui, e dizer
-      // isso explicitamente é diferente de esquecer a etiqueta.
-      { tags: [], revalidar: 0 },
+      tokenDeAcesso,
     );
-
     return itens;
   } catch (erro) {
-    if (erro instanceof ErroDaApi && erro.status === 404) {
-      return [];
-    }
-
+    if (erro instanceof ErroDaApi && erro.status === 404) return null;
     throw erro;
   }
 }
