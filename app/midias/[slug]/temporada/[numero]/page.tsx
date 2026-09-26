@@ -46,6 +46,32 @@ function acharTemporada(
   return { serie: midia, temporada };
 }
 
+/**
+ * As temporadas de cada série que o layout pré-gerou (LP-303).
+ *
+ * Roda uma vez por `slug` que o `generateStaticParams` do layout devolveu, e
+ * recebe esse slug pronto em `params` — objeto comum, e não Promise, como na
+ * página.
+ *
+ * Os dois cuidados do card:
+ * - a chave se chama `numero`, igual à pasta `[numero]`. Com outro nome o
+ *   build não reclama: simplesmente não gera nada;
+ * - o valor é **texto**. O segmento da URL é sempre string, e `numero` na API
+ *   é número.
+ */
+export async function generateStaticParams({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const midia = await buscarMidia(params.slug);
+  if (midia?.tipo !== "serie") return [];
+
+  return (midia.temporadas ?? []).map((temporada) => ({
+    numero: String(temporada.numero),
+  }));
+}
+
 export async function generateMetadata({
   params,
 }: PageProps<"/midias/[slug]/temporada/[numero]">): Promise<Metadata> {
@@ -72,6 +98,13 @@ export default async function PaginaDaTemporada({
 
   const { temporada } = achado;
 
+  // A API publicada não manda `episodios` na temporada — a chave nem existe.
+  // A decisão sobre o que fazer com isso é do LP-306; este `?? []` é só o
+  // mínimo para esta página, que o build pré-gera (LP-303), não derrubar o
+  // build inteiro com `USAR_MOCK=false`: sem ele, a primeira temporada da API
+  // quebra o `next build` com "Cannot read properties of undefined".
+  const episodios = temporada.episodios ?? [];
+
   // A trilha, o cabeçalho da série e as abas moram no layout (LP-302): a
   // página é só o que muda de uma temporada para outra.
   return (
@@ -90,13 +123,13 @@ export default async function PaginaDaTemporada({
         vierem, a página mostra o que existe — número, ano e total — em vez de
         uma lista vazia sem explicação.
       */}
-      {temporada.episodios.length === 0 ? (
+      {episodios.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">
           Os episódios desta temporada ainda não foram anunciados.
         </p>
       ) : (
         <ol className="mt-6 divide-y divide-white/10 border-y border-white/10">
-          {temporada.episodios.map((episodio) => (
+          {episodios.map((episodio) => (
             <li
               key={episodio.numero}
               className="flex flex-wrap items-baseline gap-x-3 py-3 text-sm"

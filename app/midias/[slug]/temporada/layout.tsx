@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AbasDeTemporada } from "@/components/abas-de-temporada";
 import { CabecalhoDaMidia } from "@/components/cabecalho-da-midia";
-import { buscarMidia } from "@/lib/api";
+import { buscarMidia, listarMidias } from "@/lib/api";
 
 /**
  * O que fica parado enquanto a pessoa troca de temporada (LP-302): a trilha,
@@ -24,6 +24,24 @@ import { buscarMidia } from "@/lib/api";
  * aqui. Quem precisa saber a temporada ativa são as abas, e elas perguntam no
  * cliente.
  */
+/**
+ * As séries que o build pré-gera (LP-303).
+ *
+ * Mora no layout, e não na página da ficha: o `generateStaticParams` de um
+ * segmento só passa os params para o de baixo quando está num **layout** acima
+ * dele — a página `[slug]/page.tsx` é folha, irmã desta pasta, e ainda lê
+ * `searchParams`, o que a deixa dinâmica de qualquer jeito.
+ *
+ * `listarMidias` traz a primeira página da listagem: 20 títulos, que hoje são
+ * todas as séries. Se o catálogo passar disso, as de fora não quebram nada —
+ * abrem sob demanda na primeira visita. Pré-gerar é adiantamento, não
+ * permissão.
+ */
+export async function generateStaticParams() {
+  const { itens } = await listarMidias({ tipo: "serie" });
+  return itens.map((serie) => ({ slug: serie.slug }));
+}
+
 export default async function LayoutDasTemporadas({
   children,
   params,
