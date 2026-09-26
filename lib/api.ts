@@ -106,12 +106,17 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
     // incompreensível sobre token inesperado.
     if (!resposta.ok) {
       if (resposta.status === 401 || resposta.status === 403) {
-        // Credencial recusada é alarme, e não "erro do dia": a chave do
-        // servidor está errada, vencida ou foi revogada, e nenhuma pessoa
-        // usando o site consegue fazer nada a respeito. Quem precisa ver
-        // isto é quem opera.
+        // Este caminho não manda credencial nenhuma: tudo o que passa pelo
+        // `buscar` é rota pública (`security: []` no contrato), e não existe
+        // chave de API — o LP-210, que a traria, nunca entrou (LP-412). Então
+        // 401/403 aqui não é "chave vencida": é a API passando a exigir login
+        // numa rota que o contrato diz ser aberta. Continua sendo alarme,
+        // porque ninguém usando o site resolve isso — mas com o nome certo.
+        //
+        // O 401 do token de uma pessoa nunca chega aqui: ele é do
+        // `buscarComToken`, e lá é o caso normal de sessão vencida (LP-411).
         console.error(
-          `A API recusou a credencial (${resposta.status}) em ${caminho}`,
+          `Rota pública da API pediu credencial (${resposta.status}) em ${caminho} — confira o contrato`,
         );
       } else {
         console.error(`A API respondeu ${resposta.status} em ${caminho}`);
