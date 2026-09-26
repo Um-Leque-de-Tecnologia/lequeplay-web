@@ -1,4 +1,5 @@
 import { formatarDuracao } from "@/lib/formatadores";
+import { obterDiretor } from "@/lib/creditos";
 import type { Midia } from "@/lib/tipos";
 
 /**
@@ -57,8 +58,7 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
       {midia.tipo === "filme" && (
         <>
           <dt className="text-zinc-500">Direção</dt>
-          {/* Vem do crédito com `papel: "direcao"` — a API não manda o nome solto. */}
-          <dd>{midia.diretor}</dd>
+          <dd>{obterDiretor(midia)}</dd>
         </>
       )}
 

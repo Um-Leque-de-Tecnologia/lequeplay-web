@@ -1,4 +1,10 @@
-import type { Podcast } from "@/lib/tipos";
+import type { Filme, Podcast } from "@/lib/tipos";
+
+/** Deriva o nome da pessoa que dirige um filme a partir dos créditos. */
+export function obterDiretor(midia: Filme): string {
+  const credito = midia.creditos?.find((c) => c.papel === "direcao");
+  return credito?.pessoa.nome ?? midia.diretor ?? "";
+}
 
 /**
  * Deriva o nome de quem apresenta a partir de `creditos`.

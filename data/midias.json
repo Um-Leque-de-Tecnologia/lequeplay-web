@@ -11,7 +11,24 @@
     "notaMedia": 8.4,
     "totalAvaliacoes": 132,
     "diretor": "Marina Aleixo",
-    "duracaoMin": 118
+    "duracaoMin": 118,
+    "creditos": [
+      {
+        "pessoa": { "slug": "marina-aleixo", "nome": "Marina Aleixo", "fotoUrl": null },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": { "slug": "bia-nogueira", "nome": "Bia Nogueira", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Lia"
+      },
+      {
+        "pessoa": { "slug": "raul-mendes", "nome": "Raul Mendes", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Tomás"
+      }
+    ]
   },
   {
     "id": "2",
@@ -25,7 +42,24 @@
     "notaMedia": 7.9,
     "totalAvaliacoes": 208,
     "diretor": "Caio Bertoni",
-    "duracaoMin": 104
+    "duracaoMin": 104,
+    "creditos": [
+      {
+        "pessoa": { "slug": "caio-bertoni", "nome": "Caio Bertoni", "fotoUrl": null },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": { "slug": "lara-souza", "nome": "Lara Souza", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Nina"
+      },
+      {
+        "pessoa": { "slug": "danilo-reis", "nome": "Danilo Reis", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Otávio"
+      }
+    ]
   },
   {
     "id": "3",
@@ -39,7 +73,24 @@
     "notaMedia": 0,
     "totalAvaliacoes": 0,
     "diretor": "Lúcia Ferraz",
-    "duracaoMin": 96
+    "duracaoMin": 96,
+    "creditos": [
+      {
+        "pessoa": { "slug": "lucia-ferraz", "nome": "Lúcia Ferraz", "fotoUrl": null },
+        "papel": "direcao",
+        "personagem": null
+      },
+      {
+        "pessoa": { "slug": "nara-lima", "nome": "Nara Lima", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Helena"
+      },
+      {
+        "pessoa": { "slug": "joao-vaz", "nome": "João Vaz", "fotoUrl": null },
+        "papel": "elenco",
+        "personagem": "Pedro"
+      }
+    ]
   },
   {
     "id": "4",
