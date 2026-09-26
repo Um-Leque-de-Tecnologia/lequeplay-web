@@ -42,8 +42,8 @@ export default async function PaginaDeEntrar({
       {/*
         Não existe cadastro na API: `POST /v1/auth/cadastro` responde 404
         (conferido no LP-401). Dizer isso é melhor do que um link "criar
-        conta" que leva a lugar nenhum — o caminho de quem ainda não tem conta
-        é o LP-416.
+        conta" que leva a lugar nenhum. O README explica, para quem desenvolve,
+        como entrar sem conta de verdade (LP-416).
       */}
       <p className="mt-8 border-t border-white/10 pt-6 text-sm text-zinc-500">
         Ainda não dá para criar conta por aqui. Fale com quem administra o

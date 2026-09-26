@@ -96,9 +96,9 @@ dia.
 O esquema das etiquetas está em [`docs/cache-tags.md`](docs/cache-tags.md).
 Resposta de uma pessoa nunca entra em cache compartilhado — quem trabalha com
 sessão deve ler também o documento da próxima seção.
-Dado de uma pessoa — o histórico — não é cacheado (`revalidate: 0`), e a
-versão do catálogo nunca é (`cache: "no-store"`), porque um vigia que lê valor
-guardado não vigia nada.
+Dado de uma pessoa — o histórico — nunca é cacheado: toda chamada com o token
+dela sai pelo `buscarComToken`, que é sempre `no-store` (LP-411). A versão do
+catálogo também nunca é, porque um vigia que lê valor guardado não vigia nada.
 
 ---
 
@@ -108,6 +108,38 @@ O login troca usuário e senha por dois tokens, que moram em cookies
 `httpOnly` — o JavaScript da página não os enxerga. Quem confere se a sessão
 vale é o servidor, perguntando à API a cada renderização (`lib/dal.ts`), e não
 o cookie em si: cookie qualquer pessoa escreve no console.
+
+### Não existe cadastro
+
+A API não tem rota para criar conta — `/v1/auth/cadastro`, `/registro` e
+`/register` respondem 404. As contas são criadas no Keycloak por quem
+administra o LequePlay, e é com essa pessoa que se pede um acesso. A tela de
+entrar diz isso, em vez de oferecer um "Criar conta" que não leva a lugar
+nenhum.
+
+### Entrar em desenvolvimento, sem conta de verdade
+
+O contador de chamadas publicado no card da aula 04 (`scripts/contador-api.mjs`,
+com a versão mais nova no card da aula 06) fica entre o front e a API e, com
+`AUTH=simulada`, responde ele mesmo as rotas `/v1/auth/*` — com os mesmos
+campos, os mesmos status e o mesmo `problem+json` da API publicada. O resto
+ele repassa para a API de verdade.
+
+```bash
+AUTH=simulada node scripts/contador-api.mjs   # terminal 1
+npm run dev                                   # terminal 2
+```
+
+```bash
+# .env.local
+USAR_MOCK=false
+API_URL=http://localhost:4000/v1
+```
+
+Qualquer usuário entra com a senha `senha-de-laboratorio`. O token é de
+mentira — a API publicada recusaria —, então isto serve para desenvolver as
+telas de conta, e não para falar com rotas protegidas de verdade.
+`EXPIRA=20` faz o token vencer em 20 segundos, para testar a renovação.
 
 **Antes de escrever uma Server Action, leia
 [`docs/server-actions-seguranca.md`](docs/server-actions-seguranca.md).** Action
@@ -199,7 +231,9 @@ gosto parecido.
 
 **Ter uma conta**
 
-- Não há **login** nem perfil, então nada abaixo daqui é possível ainda.
+- Dá para **entrar** e ver o próprio **perfil**, mas não há **cadastro**: as
+  contas são criadas por quem administra (veja "Conta e sessão"). O resto
+  desta lista ainda não existe.
 
 **Registrar e escrever**
 
