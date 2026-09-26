@@ -1,11 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { CapaMidia } from "@/components/capa-midia";
+import {
+  itensDoHistorico,
+  useHistoricoDaPessoa,
+} from "@/components/historico-da-pessoa";
 import type { ItemHistorico, Midia } from "@/lib/tipos";
 
 type Props = {
-  /** As linhas do player: onde a pessoa parou em cada título que começou. */
-  historico: ItemHistorico[];
-
   /** O catálogo, para casar cada linha com capa, título e duração. */
   itens: Midia[];
 };
@@ -117,7 +120,36 @@ function rotuloDoEpisodio(
   return `T${item.temporadaNumero} · E${item.episodioNumero}`;
 }
 
-export function HomeContinuarAssistindo({ historico,  itens, }: Props) {
+/**
+ * A faixa é client desde o LP-414: o histórico é de uma pessoa, e chega pelo
+ * navegador dela (`/api/historico`), para a home continuar pré-gerada.
+ */
+export function HomeContinuarAssistindo({ itens }: Props) {
+  const estado = useHistoricoDaPessoa();
+
+  /*
+   * Quem entrou, numa API que ainda não guarda progresso
+   * (`/v1/perfil/historico` responde 404): a faixa diz isso, em vez de sumir
+   * ou de mostrar o histórico do mock como se fosse dela.
+   */
+  if (estado.estado === "indisponivel") {
+    return (
+      <section aria-labelledby="continuar" className="mb-14">
+        <h2 id="continuar" className="mb-2 text-xl font-semibold">
+          Continuar assistindo
+        </h2>
+        <p className="text-sm text-zinc-500">
+          O LequePlay ainda não guarda onde você parou. Quando guardar, o que
+          você começou a ver aparece aqui.
+        </p>
+      </section>
+    );
+  }
+
+  // Sem sessão, carregando ou com erro: a faixa não aparece, e o resto da
+  // home segue — uma faixa que falha não derruba a página.
+  const historico = itensDoHistorico(estado);
+
   /*
    * Junta cada item do histórico com a mídia correspondente
    * no catálogo.

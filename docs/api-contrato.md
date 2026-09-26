@@ -495,6 +495,8 @@ seria possível ler a lista dos outros.
 | `GET` | `/perfil/avaliacoes` | `{ itens: [{ midiaId, nota, avaliadoEm }] }` |
 | `PUT` | `/midias/{midiaId}/avaliacao` | `{ "nota": 8.5 }` · devolve a `Midia` com `notaMedia` **e** `totalAvaliacoes` recalculados |
 | `DELETE` | `/midias/{midiaId}/avaliacao` | remove a avaliação · `204` |
+| `GET` | `/perfil/historico` | `{ itens: ItemHistorico[] }` — onde a pessoa parou em cada título · veja abaixo |
+| `PUT` | `/perfil/historico/{midiaSlug}` | grava a posição do player · `204` · veja abaixo |
 
 > **`quero-ver` e não `lista`.** *Lista* virou nome de entidade na camada
 > social — coleções que a pessoa monta e publica. Duas coisas diferentes não
@@ -509,6 +511,46 @@ uma segunda chamada só para saber a nova média.
 
 Regras: `nota` de `0` a `10`, com uma casa decimal. Uma avaliação por pessoa
 por mídia — reenviar substitui.
+
+### `GET /perfil/historico` — o pedido do LP-414
+
+O front já consome este endpoint — a faixa "Continuar assistindo" da home e o
+filtro "Só o que eu ainda não vi" —, e hoje ele responde **404**
+(conferido em 24/09/2026). Enquanto não existir, quem entrou vê um aviso
+honesto no lugar da faixa, e não o histórico de mentira do mock.
+
+```json
+{
+  "itens": [
+    {
+      "midiaSlug": "protocolo-aberto",
+      "temporadaNumero": 2,
+      "episodioNumero": 2,
+      "segundosAssistidos": 1260,
+      "atualizadoEm": "2026-09-20T21:14:00Z"
+    },
+    { "midiaSlug": "sinais-de-carbono", "segundosAssistidos": 3120, "atualizadoEm": "2026-09-18T23:02:00Z" }
+  ]
+}
+```
+
+- **Só do usuário do token**, como o resto desta seção. Sem token, `401`.
+- **Sem histórico é `{ "itens": [] }`, e não `404`.** O front separa os dois:
+  `404` quer dizer "a API ainda não guarda progresso", e a tela diz outra coisa.
+- `midiaSlug`, e não `midiaId`: é o que o front usa para cruzar com o
+  catálogo e para montar o link de "Retomar".
+- `temporadaNumero` e `episodioNumero` **omitidos** quando o player não soube
+  dizer o episódio — linha de filme, ou do player antigo. Os dois vêm juntos
+  ou nenhum vem.
+- `segundosAssistidos` é a posição, e não quanto falta: a duração mora na
+  mídia e no episódio.
+- `atualizadoEm` em ISO 8601 com fuso, e a lista **do mais recente para o mais
+  antigo** — a ordem da faixa.
+- **Nunca cacheável**: `Cache-Control: private, no-store`.
+
+`PUT /perfil/historico/{midiaSlug}` recebe
+`{ temporadaNumero?, episodioNumero?, segundosAssistidos }` e responde `204`:
+é o player salvando a posição. Idempotente pelo mesmo motivo dos `PUT` acima.
 
 > **Avaliação e resenha escrevem o mesmo registro.** `/midias/{id}/avaliacao`
 > é a nota rápida, sem texto; `/midias/{id}/resenha` é a nota com texto. Não
