@@ -32,7 +32,7 @@ const PERGUNTAS: Pergunta[] = [
     id: "conta",
     pergunta: "Preciso de conta para usar?",
     resposta:
-      "Não, e por enquanto nem existe: navegar e olhar não pede login. Diário, resenhas e listas chegam junto com as contas.",
+      "Para navegar, não: o catálogo é aberto. A conta é para o que é seu — hoje, o seu perfil; diário, resenhas e listas chegam depois. Não há cadastro pelo site: quem administra o LequePlay cria o acesso.",
   },
 ];
 
