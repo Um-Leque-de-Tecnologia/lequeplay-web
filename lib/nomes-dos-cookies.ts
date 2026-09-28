@@ -18,6 +18,9 @@ export const NOMES_DOS_COOKIES = {
 
   /** O token de renovação: só serve para pedir um par novo à API. */
   renovacao: "lp_renovacao",
+
+  /** Títulos que a pessoa marcou como já assistidos neste navegador. */
+  assistidas: "lp_assistidas",
 } as const;
 
 /**

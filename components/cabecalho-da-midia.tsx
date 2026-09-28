@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CapaMidia } from "@/components/capa-midia";
 import { FichaSinopse } from "@/components/ficha-sinopse";
 import { notaFormatada, temAvaliacoes } from "@/lib/avaliacao";
@@ -12,7 +13,18 @@ import type { Midia } from "@/lib/tipos";
  * cabeçalho seriam duas coisas para manter iguais à mão — e a segunda ia
  * ficar para trás no primeiro ajuste.
  */
-export function CabecalhoDaMidia({ midia }: { midia: Midia }) {
+export function CabecalhoDaMidia({
+  midia,
+  children,
+}: {
+  midia: Midia;
+  /**
+   * O que vem abaixo da sinopse e só faz sentido na ficha — hoje, o botão de
+   * marcar como assistido. Entra por aqui, e não direto no componente,
+   * porque o layout das temporadas usa o mesmo cabeçalho e não tem esse botão.
+   */
+  children?: ReactNode;
+}) {
   return (
     <div className="grid gap-8 sm:grid-cols-[240px_1fr]">
       <CapaMidia
@@ -35,6 +47,8 @@ export function CabecalhoDaMidia({ midia }: { midia: Midia }) {
         </p>
 
         {midia.sinopse && <FichaSinopse sinopse={midia.sinopse} />}
+
+        {children}
       </div>
     </div>
   );
