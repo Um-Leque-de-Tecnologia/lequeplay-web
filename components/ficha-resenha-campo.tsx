@@ -24,8 +24,23 @@ const MAXIMO_DE_CARACTERES = LIMITE_TEXTO_RESENHA.maximo;
  */
 const CARACTERES_AVISO_LEITOR = 100;
 
-export function FichaResenhaCampo() {
-  const [escritos, setEscritos] = useState(0);
+export function FichaResenhaCampo({
+  /**
+   * O texto que volta quando a publicação falha, para ninguém reescrever.
+   *
+   * `defaultValue` e não `value`: o campo continua não controlado, e isso é o
+   * que faz ele funcionar **sem JavaScript** — no POST comum a página volta
+   * do servidor com o texto já dentro. Com JS, o que a pessoa digitou nem
+   * chega a sair do DOM.
+   */
+  textoInicial,
+}: {
+  textoInicial?: string;
+}) {
+  // Começa na contagem do que já está no campo, e não em zero: numa volta sem
+  // JavaScript o texto vem preenchido, e um contador dizendo "0/5000" embaixo
+  // de um parágrafo escrito é informação errada.
+  const [escritos, setEscritos] = useState(textoInicial?.length ?? 0);
 
   const restantes = MAXIMO_DE_CARACTERES - escritos;
   const passouDoLimite = escritos > MAXIMO_DE_CARACTERES;
@@ -43,6 +58,7 @@ export function FichaResenhaCampo() {
         name="texto"
         rows={5}
         placeholder="Sem spoiler, por favor."
+        defaultValue={textoInicial}
         aria-invalid={passouDoLimite}
         aria-describedby="contador-resenha"
         onChange={(evento) => setEscritos(evento.target.value.length)}

@@ -17,6 +17,7 @@ import type {
   ItemHistorico,
   Midia,
   Pagina,
+  Resenha,
   TokensDaSessao,
   UsuarioDaSessao,
 } from "@/lib/tipos";
@@ -172,6 +173,10 @@ async function enviar<T>(
   caminho: string,
   corpo: unknown,
   cabecalhos: Record<string, string> = {},
+  // `PUT` existe por causa da resenha: o contrato usa PUT porque é "cria ou
+  // substitui a minha" — uma por pessoa por título, reenviar substitui. O
+  // padrão continua `POST` para as três chamadas de conta não mudarem.
+  metodo: "POST" | "PUT" = "POST",
 ): Promise<T> {
   if (!BASE) {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
@@ -179,7 +184,7 @@ async function enviar<T>(
 
   try {
     const resposta = await fetch(`${BASE}${caminho}`, {
-      method: "POST",
+      method: metodo,
       headers: { "content-type": "application/json", ...cabecalhos },
       body: JSON.stringify(corpo),
       cache: "no-store",
@@ -302,6 +307,50 @@ export async function buscarUsuarioDaSessao(
   tokenDeAcesso: string,
 ): Promise<UsuarioDaSessao> {
   return buscarComToken<UsuarioDaSessao>("/auth/me", tokenDeAcesso);
+}
+
+/* -------------------------------------------------------------------------
+   A camada social: por enquanto, só a resenha.
+   ------------------------------------------------------------------------- */
+
+/**
+ * Publica (ou substitui) a resenha de quem está logado.
+ *
+ * `PUT` e não `POST` porque é **uma por pessoa por título**: reenviar não cria
+ * a segunda, substitui a primeira. É o contrato quem diz, e é a única forma
+ * que sobrevive a um duplo clique sem virar duas resenhas.
+ *
+ * ## O que vai no corpo, e o que não vai
+ *
+ * Só `{ nota, texto, contemSpoiler }` — a mudança da pessoa. O título vai na
+ * **URL**, e o autor sai do token: quem escreveu não é campo do corpo, senão
+ * bastaria trocar o nome ali para assinar no lugar de outra pessoa.
+ *
+ * ## O token chega por parâmetro aqui, e só aqui
+ *
+ * Esta função roda no servidor e recebe o token já lido do cookie pela
+ * action. A regra de `docs/server-actions-seguranca.md` — "nunca receber
+ * token como parâmetro" — é sobre **actions**, que são endereços públicos;
+ * esta é uma função interna, do mesmo lado do `buscarUsuarioDaSessao`, que
+ * recebe o token pelo mesmo motivo e da mesma forma.
+ *
+ * Nunca cacheada: é escrita.
+ */
+export async function publicarResenha(
+  slug: string,
+  rascunho: { nota: number | null; texto: string; contemSpoiler: boolean },
+  tokenDeAcesso: string,
+): Promise<Resenha> {
+  return enviar<Resenha>(
+    // O contrato escreve `{midiaId}`, e a rota de detalhe do catálogo aceita
+    // "o slug ou o id". O front tem o slug em mãos — é o que está na URL da
+    // ficha — e `RascunhoResenha` já modela o título por slug. Se a API da
+    // resenha vier a exigir o id, é esta linha que muda, e só ela.
+    `/midias/${encodeURIComponent(slug)}/resenha`,
+    rascunho,
+    { Authorization: `Bearer ${tokenDeAcesso}` },
+    "PUT",
+  );
 }
 
 /* -------------------------------------------------------------------------
