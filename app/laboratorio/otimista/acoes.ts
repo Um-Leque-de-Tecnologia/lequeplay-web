@@ -23,7 +23,7 @@ export async function salvarNota(
       mensagem:
         resposta.status === 409
           ? "A avaliação mudou. Atualize a página e tente novamente."
-          : "Não foi possível salvar sua avaliação. Tente novamente.",
+          : "Não foi possível salvar sua avaliação. Por favor, tente novamente.",
     };
   }
 
