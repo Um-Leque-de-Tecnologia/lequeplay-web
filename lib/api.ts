@@ -20,6 +20,7 @@ import type {
   TokensDaSessao,
   UsuarioDaSessao,
 } from "@/lib/tipos";
+import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 
 const BASE = process.env.API_URL;
@@ -105,12 +106,17 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
     // incompreensível sobre token inesperado.
     if (!resposta.ok) {
       if (resposta.status === 401 || resposta.status === 403) {
-        // Credencial recusada é alarme, e não "erro do dia": a chave do
-        // servidor está errada, vencida ou foi revogada, e nenhuma pessoa
-        // usando o site consegue fazer nada a respeito. Quem precisa ver
-        // isto é quem opera.
+        // Este caminho não manda credencial nenhuma: tudo o que passa pelo
+        // `buscar` é rota pública (`security: []` no contrato), e não existe
+        // chave de API — o LP-210, que a traria, nunca entrou (LP-412). Então
+        // 401/403 aqui não é "chave vencida": é a API passando a exigir login
+        // numa rota que o contrato diz ser aberta. Continua sendo alarme,
+        // porque ninguém usando o site resolve isso — mas com o nome certo.
+        //
+        // O 401 do token de uma pessoa nunca chega aqui: ele é do
+        // `buscarComToken`, e lá é o caso normal de sessão vencida (LP-411).
         console.error(
-          `A API recusou a credencial (${resposta.status}) em ${caminho}`,
+          `Rota pública da API pediu credencial (${resposta.status}) em ${caminho} — confira o contrato`,
         );
       } else {
         console.error(`A API respondeu ${resposta.status} em ${caminho}`);
@@ -124,6 +130,12 @@ async function buscar<T>(caminho: string, opcoes: Opcoes): Promise<T> {
 
     return (await resposta.json()) as T;
   } catch (erro) {
+    // Os erros de controle do Next passam direto (LP-414). Um `fetch` sem
+    // cache chamado durante uma pré-geração lança "Dynamic server usage" para
+    // o Next marcar a rota como dinâmica — e este `catch` o transformava num
+    // 503 que derrubava o `next build` inteiro.
+    unstable_rethrow(erro);
+
     // Já classificado acima, com o status que a API mandou: sobe como está.
     // Sem esta linha, o `catch` transformaria um 404 em 503 e a ficha de um
     // título inexistente viraria tela de erro em vez de 404.
@@ -190,6 +202,7 @@ async function enviar<T>(
 
     return (await resposta.json()) as T;
   } catch (erro) {
+    unstable_rethrow(erro);
     if (erro instanceof ErroDaApi) throw erro;
 
     if (erro instanceof Error && erro.name === "TimeoutError") {
@@ -233,6 +246,49 @@ export async function sairDaConta(refreshToken: string): Promise<void> {
 }
 
 /**
+ * A única porta por onde o token de uma pessoa sai para a API (LP-411).
+ *
+ * **Resposta de uma pessoa não entra no cache.** Por isso esta função não tem
+ * `opcoes`: não existe `revalidar`, `tags` nem `semCache` para escolher —
+ * é sempre `cache: "no-store"`. Quem precisar mandar um token passa por aqui,
+ * e fica sem como errar.
+ *
+ * O motivo de a regra ser de código, e não de revisão: a documentação do
+ * `fetch` da versão instalada diz que o cache guarda "any request, including
+ * `POST` and requests that send `authorization` or `cookie` headers". Com o
+ * `/me` guardado por `revalidate: 3600`, cada pessoa continuou vendo o
+ * próprio perfil (o cache separa pelo cabeçalho) — mas um token **vencido**
+ * continuou abrindo o `/perfil`, com o `/me` chamado zero vezes: a resposta
+ * guardada dizia que o token valia. Opção de cache em chamada com token é bug
+ * até prova em contrário.
+ *
+ * O `buscar` lá de cima, que cacheia, não tem parâmetro de cabeçalho — e é
+ * de propósito que continue sem.
+ */
+async function buscarComToken<T>(caminho: string, tokenDeAcesso: string): Promise<T> {
+  if (!BASE) {
+    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
+  }
+
+  const resposta = await fetch(`${BASE}${caminho}`, {
+    headers: { Authorization: `Bearer ${tokenDeAcesso}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
+  });
+
+  if (!resposta.ok) {
+    // 401 aqui é o caso normal de token vencido ou inválido, e não alarme:
+    // quem chama decide (o `/perfil` manda ao login). O status sobe intacto.
+    throw new ErroDaApi(
+      `A API respondeu ${resposta.status} em ${caminho}`,
+      resposta.status,
+    );
+  }
+
+  return (await resposta.json()) as T;
+}
+
+/**
  * Quem é o dono deste token, perguntado à API.
  *
  * Ter o cookie não prova nada: qualquer pessoa escreve um no navegador. Quem
@@ -240,29 +296,12 @@ export async function sairDaConta(refreshToken: string): Promise<void> {
  * inclusive para token vencido e para token malformado, que são o mesmo caso
  * do ponto de vista de quem chama.
  *
- * Nunca cacheado: resposta de uma pessoa não entra em cache compartilhado.
+ * Nunca cacheado: passa pelo `buscarComToken`, que não sabe cachear.
  */
 export async function buscarUsuarioDaSessao(
   tokenDeAcesso: string,
 ): Promise<UsuarioDaSessao> {
-  if (!BASE) {
-    throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
-  }
-
-  const resposta = await fetch(`${BASE}/auth/me`, {
-    headers: { Authorization: `Bearer ${tokenDeAcesso}` },
-    cache: "no-store",
-    signal: AbortSignal.timeout(TEMPO_LIMITE_API_MS),
-  });
-
-  if (!resposta.ok) {
-    throw new ErroDaApi(
-      `A API respondeu ${resposta.status} em /auth/me`,
-      resposta.status,
-    );
-  }
-
-  return (await resposta.json()) as UsuarioDaSessao;
+  return buscarComToken<UsuarioDaSessao>("/auth/me", tokenDeAcesso);
 }
 
 /* -------------------------------------------------------------------------
@@ -430,30 +469,35 @@ export async function buscarVersaoDoCatalogo(): Promise<number> {
 }
 
 /**
- * O histórico do player: onde a pessoa parou em cada título que começou.
+ * O histórico do player **de uma pessoa**: onde ela parou em cada título que
+ * começou (LP-414).
  *
  * Vem sem duração e sem título — só o `midiaSlug` e a posição. Quem quiser
  * mostrar capa, nome ou porcentagem cruza com `listarMidias`.
+ *
+ * Pede o token porque o histórico é de alguém: sem token não há de quem
+ * perguntar. Sai pelo `buscarComToken`, que nunca cacheia (LP-411).
+ *
+ * Devolve `null` quando a API responde 404: **`GET /v1/perfil/historico` não
+ * existe na API publicada** (conferido em 24/09/2026). `null` e `[]` são
+ * coisas diferentes — "a API ainda não guarda progresso" e "esta pessoa não
+ * começou nada" —, e a tela diz frases diferentes para cada uma.
  */
-export async function listarHistorico(): Promise<ItemHistorico[]> {
+export async function listarHistorico(
+  tokenDeAcesso: string,
+): Promise<ItemHistorico[] | null> {
+  // O mock responde como se a pessoa logada fosse a dona de
+  // `data/historico.json`. Sem sessão, esta função nem é chamada.
   if (USAR_MOCK) return historicoDoMock();
 
-  // `revalidar: 0` porque isto é dado de uma pessoa só: cachear serviria o
-  // progresso de alguém para outra pessoa.
   try {
-    const { itens } = await buscar<{ itens: ItemHistorico[] }>(
+    const { itens } = await buscarComToken<{ itens: ItemHistorico[] }>(
       "/perfil/historico",
-      // Lista vazia, e não ausência: não há o que invalidar aqui, e dizer
-      // isso explicitamente é diferente de esquecer a etiqueta.
-      { tags: [], revalidar: 0 },
+      tokenDeAcesso,
     );
-
     return itens;
   } catch (erro) {
-    if (erro instanceof ErroDaApi && erro.status === 404) {
-      return [];
-    }
-
+    if (erro instanceof ErroDaApi && erro.status === 404) return null;
     throw erro;
   }
 }

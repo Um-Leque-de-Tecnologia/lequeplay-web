@@ -37,7 +37,9 @@ export function FichaPodcast({
   });
 
   const ultimoEpisodio = episodiosOrdenados[0];
-  const totalEpisodios = podcast.totalEpisodios;
+  // O contrato ainda não publica `totalEpisodios` de podcast (LP-212): sem
+  // ele, o total é o que chegou na lista.
+  const totalEpisodios = podcast.totalEpisodios ?? episodios.length;
 
   // Duas razões para oferecer "Ver todos": ou a lista que chegou é maior que o
   // limite, ou ela já veio incompleta da API — `episodios` é opcional no

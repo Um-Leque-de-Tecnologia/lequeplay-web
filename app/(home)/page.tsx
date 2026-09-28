@@ -4,7 +4,8 @@ import { HomeAcervo } from "@/components/home-acervo";
 import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
 import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
 import { HomeEmAlta } from "@/components/home-em-alta";
-import { listarHistorico, listarMidias } from "@/lib/api";
+import { ProvedorDoHistorico } from "@/components/historico-da-pessoa";
+import { listarMidias } from "@/lib/api";
 
 // Server Component: estes `await` rodam no servidor, e o navegador recebe o
 // HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
@@ -21,7 +22,7 @@ export default async function Home() {
   const destaques = itens.slice(0, 4);
 
   return (
-    <>
+    <ProvedorDoHistorico>
       <section className="mb-14">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           O que você quer ver hoje?
@@ -38,7 +39,7 @@ export default async function Home() {
         </Link>
       </section>
 
-      <HomeContinuarAssistindo historico={historico} itens={itens} />
+      <HomeContinuarAssistindo itens={itens} />
 
       {/*
         A faixa busca sozinha, e por isso não recebe props: ela é um
@@ -49,7 +50,7 @@ export default async function Home() {
 
       <HomeCarrosselDestaques destaques={destaques} />
 
-      <HomeAcervo itens={itens} total={total} historico={historico} />
-    </>
+      <HomeAcervo itens={itens} total={total} />
+    </ProvedorDoHistorico>
   );
 }

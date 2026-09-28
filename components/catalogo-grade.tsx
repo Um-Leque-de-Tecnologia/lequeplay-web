@@ -53,7 +53,9 @@ export function CatalogoGrade({ itens, vazio }: Props) {
     switch (ordem) {
       case "recentes":
         // Mais novos primeiro. Se empatar no ano, mantém a ordem original.
-        return itens.toSorted((a, b) => b.ano - a.ano);
+        // Sem ano (o contrato permite), o título vai para o fim: subtrair
+        // `undefined` daria NaN, e o `sort` com NaN embaralha a lista inteira.
+        return itens.toSorted((a, b) => (b.ano ?? -Infinity) - (a.ano ?? -Infinity) || 0);
       case "nota":
         // Maiores notas primeiro, e quem ninguém avaliou por último: nesses
         // títulos `notaMedia` vem `0` e empataria com uma nota zero de

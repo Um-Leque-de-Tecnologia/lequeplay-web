@@ -51,6 +51,16 @@ export async function entrar(
       return { erro: "Usuário ou senha inválidos.", usuario };
     }
 
+    // O contrato publicado prevê `429` no login (MuitasTentativas). Sem este
+    // caso, quem errou a senha várias vezes lia "não conseguimos falar com o
+    // servidor" — e tentava de novo, que é justamente o que não deve fazer.
+    if (erro instanceof ErroDaApi && erro.status === 429) {
+      return {
+        erro: "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.",
+        usuario,
+      };
+    }
+
     // Tempo esgotado, API fora do ar, 500: outra mensagem, porque a pessoa
     // não errou nada e tentar de novo em dez segundos pode resolver. O
     // `detail` da API (em inglês, com mensagem interna do Keycloak) nunca

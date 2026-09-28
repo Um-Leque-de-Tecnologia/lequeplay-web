@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buscarMidia } from "@/lib/api";
-import { formatarDuracao } from "@/lib/formatadores";
+import { formatarDuracao, rotuloDaTemporada } from "@/lib/formatadores";
 import type { Midia, Temporada } from "@/lib/tipos";
 
 /**
@@ -39,10 +38,38 @@ function acharTemporada(
   const numero = Number(numeroDaUrl);
   if (!Number.isInteger(numero)) return null;
 
-  const temporada = midia.temporadas.find((t) => t.numero === numero);
+  // `?? []`: só o detalhe traz `temporadas` (LP-212). Série sem a lista é o
+  // mesmo caso de temporada que não existe.
+  const temporada = (midia.temporadas ?? []).find((t) => t.numero === numero);
   if (!temporada) return null;
 
   return { serie: midia, temporada };
+}
+
+/**
+ * As temporadas de cada série que o layout pré-gerou (LP-303).
+ *
+ * Roda uma vez por `slug` que o `generateStaticParams` do layout devolveu, e
+ * recebe esse slug pronto em `params` — objeto comum, e não Promise, como na
+ * página.
+ *
+ * Os dois cuidados do card:
+ * - a chave se chama `numero`, igual à pasta `[numero]`. Com outro nome o
+ *   build não reclama: simplesmente não gera nada;
+ * - o valor é **texto**. O segmento da URL é sempre string, e `numero` na API
+ *   é número.
+ */
+export async function generateStaticParams({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const midia = await buscarMidia(params.slug);
+  if (midia?.tipo !== "serie") return [];
+
+  return (midia.temporadas ?? []).map((temporada) => ({
+    numero: String(temporada.numero),
+  }));
 }
 
 export async function generateMetadata({
@@ -54,7 +81,7 @@ export async function generateMetadata({
   if (!achado) return { title: "Temporada não encontrada" };
 
   return {
-    title: `${achado.serie.titulo} · Temporada ${achado.temporada.numero}`,
+    title: `${achado.serie.titulo} · ${rotuloDaTemporada(achado.temporada)}`,
     description: achado.serie.sinopse,
   };
 }
@@ -69,40 +96,40 @@ export default async function PaginaDaTemporada({
   // de verdade, como no LP-204.
   if (!achado) notFound();
 
-  const { serie, temporada } = achado;
+  const { temporada } = achado;
 
+  // A API publicada não manda `episodios` na temporada — a chave nem existe.
+  // A decisão sobre o que fazer com isso é do LP-306; este `?? []` é só o
+  // mínimo para esta página, que o build pré-gera (LP-303), não derrubar o
+  // build inteiro com `USAR_MOCK=false`: sem ele, a primeira temporada da API
+  // quebra o `next build` com "Cannot read properties of undefined".
+  const episodios = temporada.episodios ?? [];
+
+  // A trilha, o cabeçalho da série e as abas moram no layout (LP-302): a
+  // página é só o que muda de uma temporada para outra.
   return (
-    <article>
-      <nav aria-label="Trilha" className="mb-6 text-sm">
-        <Link href={`/midias/${serie.slug}`} className="text-zinc-400 hover:text-zinc-100">
-          ← {serie.titulo}
-        </Link>
-      </nav>
-
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Temporada {temporada.numero}
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500">
-          {serie.titulo}
-          {temporada.ano ? ` · ${temporada.ano}` : ""} ·{" "}
-          {temporada.totalEpisodios}{" "}
-          {temporada.totalEpisodios === 1 ? "episódio" : "episódios"}
-        </p>
-      </header>
+    <section aria-labelledby="titulo-da-temporada" className="mt-8">
+      <h2 id="titulo-da-temporada" className="text-xl font-semibold">
+        {rotuloDaTemporada(temporada)}
+      </h2>
+      <p className="mt-1 text-sm text-zinc-500">
+        {temporada.ano ? `${temporada.ano} · ` : ""}
+        {temporada.totalEpisodios}{" "}
+        {temporada.totalEpisodios === 1 ? "episódio" : "episódios"}
+      </p>
 
       {/*
         A API publicada não manda os episódios (é o LP-306): quando eles não
         vierem, a página mostra o que existe — número, ano e total — em vez de
         uma lista vazia sem explicação.
       */}
-      {temporada.episodios.length === 0 ? (
-        <p className="mt-8 text-sm text-zinc-500">
+      {episodios.length === 0 ? (
+        <p className="mt-6 text-sm text-zinc-500">
           Os episódios desta temporada ainda não foram anunciados.
         </p>
       ) : (
-        <ol className="mt-8 divide-y divide-white/10 border-y border-white/10">
-          {temporada.episodios.map((episodio) => (
+        <ol className="mt-6 divide-y divide-white/10 border-y border-white/10">
+          {episodios.map((episodio) => (
             <li
               key={episodio.numero}
               className="flex flex-wrap items-baseline gap-x-3 py-3 text-sm"
@@ -118,35 +145,6 @@ export default async function PaginaDaTemporada({
           ))}
         </ol>
       )}
-
-      {serie.temporadas.length > 1 && (
-        <nav aria-label="Outras temporadas" className="mt-10">
-          <h2 className="mb-3 text-sm font-medium text-zinc-400">
-            Outras temporadas
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {serie.temporadas.map((outra) => {
-              const atual = outra.numero === temporada.numero;
-
-              return (
-                <li key={outra.numero}>
-                  <Link
-                    href={`/midias/${serie.slug}/temporada/${outra.numero}`}
-                    aria-current={atual ? "page" : undefined}
-                    className={`inline-block rounded-full border px-3 py-1.5 text-sm transition ${
-                      atual
-                        ? "border-violet-500 bg-violet-600/20 font-medium text-violet-200"
-                        : "border-white/15 text-zinc-300 hover:border-violet-500 hover:text-zinc-100"
-                    }`}
-                  >
-                    Temporada {outra.numero}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-      )}
-    </article>
+    </section>
   );
 }

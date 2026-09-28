@@ -141,6 +141,7 @@
     "temporadas": [
       {
         "numero": 1,
+        "nome": "Temporada 1",
         "ano": 2023,
         "totalEpisodios": 4,
         "episodios": [
@@ -168,6 +169,7 @@
       },
       {
         "numero": 2,
+        "nome": "Temporada 2",
         "ano": 2024,
         "totalEpisodios": 3,
         "episodios": [
@@ -287,6 +289,11 @@
             "duracaoMin": 41
           }
         ]
+      },
+      {
+        "numero": 2,
+        "totalEpisodios": 0,
+        "episodios": []
       }
     ],
     "status": "Returning Series"
@@ -310,11 +317,9 @@
       {
         "pessoa": {
           "slug": "rafa-okumura",
-          "nome": "Rafa Okumura",
-          "fotoUrl": null
+          "nome": "Rafa Okumura"
         },
-        "papel": "apresentacao",
-        "personagem": null
+        "papel": "apresentacao"
       }
     ],
     "episodios": [
@@ -374,11 +379,9 @@
       {
         "pessoa": {
           "slug": "dandara-reis",
-          "nome": "Dandara Reis",
-          "fotoUrl": null
+          "nome": "Dandara Reis"
         },
-        "papel": "apresentacao",
-        "personagem": null
+        "papel": "apresentacao"
       }
     ],
     "episodios": [
