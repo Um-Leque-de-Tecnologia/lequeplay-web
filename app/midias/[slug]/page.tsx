@@ -4,14 +4,11 @@ import { notFound } from "next/navigation";
 import { CabecalhoDaMidia } from "@/components/cabecalho-da-midia";
 import { FichaAbas } from "@/components/ficha-abas";
 import { FichaCompartilhar } from "@/components/ficha-compartilhar";
+import { FichaMarcarAssistida } from "@/components/ficha-marcar-assistida";
 import { FichaPodcast } from "@/components/ficha-podcast";
 import { FichaResenha } from "@/components/ficha-resenha";
 import { FichaTemporadas } from "@/components/ficha-temporadas";
 import { buscarMidia } from "@/lib/api";
-import {
-  desmarcarComoAssistida,
-  marcarComoAssistida,
-} from "@/app/midias/[slug]/acoes";
 import { listarAssistidas } from "@/lib/assistidas";
 import { corte } from "@/lib/utils";
 
@@ -121,27 +118,11 @@ export default async function PaginaDaMidia({
       </nav>
 
       <CabecalhoDaMidia midia={midia}>
-        {jaFoiAssistida ? (
-          <form action={desmarcarComoAssistida} className="mt-6">
-            <input type="hidden" name="slug" value={midia.slug} />
-            <button
-              type="submit"
-              className="rounded-md border border-white/15 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:border-violet-500 hover:text-white"
-            >
-              Desmarcar como já assistido
-            </button>
-          </form>
-        ) : (
-          <form action={marcarComoAssistida} className="mt-6">
-            <input type="hidden" name="slug" value={midia.slug} />
-            <button
-              type="submit"
-              className="rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500"
-            >
-              Já assisti
-            </button>
-          </form>
-        )}
+        {/*
+          O servidor lê o cookie e manda o estado real; o botão desenha o
+          otimista por cima dele enquanto a action roda (LP-506).
+        */}
+        <FichaMarcarAssistida slug={midia.slug} assistida={jaFoiAssistida} />
       </CabecalhoDaMidia>
 
       {midia.tipo === "podcast" ? (

@@ -22,9 +22,36 @@ import { LIMITE_TEXTO_RESENHA } from "@/lib/tipos";
    Marcar como assistida (LP-503)
    ------------------------------------------------------------------------- */
 
-async function slugDoFormulario(formData: FormData): Promise<string> {
-  const slug = formData.get("slug");
+/**
+ * Atraso de mentira, para medir a UI otimista (LP-506).
+ *
+ * Na máquina de quem desenvolve, a action responde em poucos milissegundos:
+ * o intervalo entre o clique e a resposta é curto demais para enxergar se a
+ * tela esperou ou não. Com `ATRASO_ARTIFICIAL_MS=1500` no `.env.local`, a
+ * diferença entre "mudou no clique" e "mudou na resposta" fica visível a olho
+ * nu — e mensurável.
+ *
+ * **Nunca em produção**, e não por confiar em quem configura o ambiente: o
+ * `NODE_ENV` é conferido aqui dentro. Um atraso esquecido num `.env` de
+ * servidor viraria segundo e meio de espera em todo clique de todo mundo.
+ */
+async function atrasoArtificial(): Promise<void> {
+  if (process.env.NODE_ENV === "production") return;
 
+  const ms = Number(process.env.ATRASO_ARTIFICIAL_MS ?? 0);
+
+  if (Number.isFinite(ms) && ms > 0) {
+    await new Promise((resolver) => setTimeout(resolver, ms));
+  }
+}
+
+/**
+ * Confere o slug: chega do navegador, então é texto de estranho.
+ *
+ * Formato **e** existência. Só o formato deixaria o cookie guardar slugs de
+ * títulos que não existem, um de cada vez, até o limite de tamanho do cookie.
+ */
+async function slugConferido(slug: unknown): Promise<string> {
   if (!slugValido(slug)) {
     throw new Error("Slug de mídia inválido");
   }
@@ -36,24 +63,78 @@ async function slugDoFormulario(formData: FormData): Promise<string> {
   return slug;
 }
 
-export async function marcarComoAssistida(formData: FormData): Promise<void> {
-  const slug = await slugDoFormulario(formData);
-  const assistidas = await listarAssistidas();
+/**
+ * Deixa o título no estado pedido — e não "inverte o que estiver lá".
+ *
+ * É isto que impede dois cliques rápidos de voltarem no tempo do lado do
+ * servidor. Com um "alterna", cada chamada inverteria o que o cookie tem
+ * **quando ela chega**: se as duas se cruzarem, o resultado depende da ordem
+ * de chegada, e não da ordem dos cliques. Com "fique assistida = false", a
+ * operação é idempotente: repetir dá no mesmo, e o último pedido é o que vale.
+ */
+async function gravarEstado(slug: string, assistida: boolean): Promise<void> {
+  await atrasoArtificial();
 
-  if (!assistidas.includes(slug)) {
+  const assistidas = await listarAssistidas();
+  const jaEsta = assistidas.includes(slug);
+
+  if (assistida && !jaEsta) {
     await gravarAssistidas([...assistidas, slug]);
+  } else if (!assistida && jaEsta) {
+    await gravarAssistidas(assistidas.filter((item) => item !== slug));
+  }
+}
+
+/**
+ * O caminho **com JavaScript**: chamada direta, de dentro de uma transição,
+ * pelo botão otimista da ficha (`components/ficha-marcar-assistida.tsx`).
+ *
+ * ## Por que não tem `redirect`
+ *
+ * O `redirect` de Server Action empilha uma entrada no histórico (é `push`
+ * por padrão). Aqui, cada clique viraria uma página a mais no "Voltar", e
+ * voltar ficaria alternando o botão em vez de sair da ficha. E ele não é
+ * preciso: gravar cookie numa Server Action já faz o Next devolver a página
+ * renderizada de novo na mesma resposta — é o que fecha a transição com a
+ * prop nova, e é quando o valor otimista dá lugar ao do servidor.
+ *
+ * ## Os parâmetros são conferidos, apesar do tipo
+ *
+ * `string` e `boolean` são o que o **nosso** botão manda. Quem postar direto
+ * no endereço da action manda o que quiser — o tipo do TypeScript não existe
+ * em tempo de execução. Por isso o `typeof` abaixo, que o compilador acha
+ * redundante e não é.
+ */
+export async function definirAssistida(
+  slug: string,
+  assistida: boolean,
+): Promise<void> {
+  if (typeof assistida !== "boolean") {
+    throw new Error("Estado de marcação inválido");
   }
 
+  await gravarEstado(await slugConferido(slug), assistida);
+}
+
+/**
+ * O caminho **sem JavaScript**: o `<form>` da ficha posta aqui direto.
+ *
+ * Esse sim termina em `redirect`: sem JS, a resposta do POST é uma página
+ * inteira, e sem o redirecionamento um F5 depois do clique perguntaria se a
+ * pessoa quer reenviar o formulário. É o padrão POST → redirect → GET.
+ */
+export async function marcarComoAssistida(formData: FormData): Promise<void> {
+  const slug = await slugConferido(formData.get("slug"));
+  await gravarEstado(slug, true);
   redirect(`/midias/${slug}`);
 }
 
+/** Como `marcarComoAssistida`, para o outro lado. */
 export async function desmarcarComoAssistida(
   formData: FormData,
 ): Promise<void> {
-  const slug = await slugDoFormulario(formData);
-  const assistidas = await listarAssistidas();
-
-  await gravarAssistidas(assistidas.filter((item) => item !== slug));
+  const slug = await slugConferido(formData.get("slug"));
+  await gravarEstado(slug, false);
   redirect(`/midias/${slug}`);
 }
 
