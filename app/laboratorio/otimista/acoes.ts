@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 
-export async function salvarNota(slug: string, nota: number) {
+type ResultadoSalvamento =
+  | { ok: true }
+  | { ok: false; mensagem: string };
+
+export async function salvarNota(
+  slug: string,
+  nota: number,
+): Promise<ResultadoSalvamento> {
   const resposta = await fetch(`${process.env.API_URL}/midias/${slug}/avaliacao`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -10,8 +17,16 @@ export async function salvarNota(slug: string, nota: number) {
     cache: "no-store",
   });
 
-  // Lançar aqui é o que faz a estrela voltar sozinha no passo 10.
-  if (!resposta.ok) throw new Error(`a API respondeu ${resposta.status}`);
+  if (!resposta.ok) {
+    return {
+      ok: false,
+      mensagem:
+        resposta.status === 409
+          ? "A avaliação mudou. Atualize a página e tente novamente."
+          : "Não foi possível salvar sua avaliação. Tente novamente.",
+    };
+  }
 
   revalidatePath("/laboratorio/otimista");
+  return { ok: true };
 }
