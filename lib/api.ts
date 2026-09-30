@@ -335,7 +335,21 @@ export type FiltrosCatalogo = {
    */
   genero?: string;
   q?: string;
+  /**
+   * A página, a partir de 1 (LP-604). Vai para a API como `?pagina=`, o nome
+   * que o contrato publica — conferido no `openapi.yaml` e no `parseFilter`
+   * de `internal/catalog/handler.go` da API. `limite`/`offset` também são
+   * aceitos lá, mas só por compatibilidade.
+   */
+  pagina?: number;
 };
+
+/**
+ * Quantos itens a API põe numa página quando `porPagina` não vem
+ * (`default: 20` no `openapi.yaml`). Só o mock usa: com a API de verdade, o
+ * tamanho que vale é o `porPagina` que volta na resposta.
+ */
+const POR_PAGINA_PADRAO_DA_API = 20;
 
 /**
  * O catálogo, com filtros.
@@ -357,7 +371,7 @@ export const listarMidias = cache(async function listarMidias(
     const todas = await doMock();
     const q = filtros.q?.trim().toLowerCase();
 
-    const itens = todas.filter(
+    const encontradas = todas.filter(
       (m) =>
         (!filtros.tipo || m.tipo === filtros.tipo) &&
         // Um gênero pedido, vários no título: agora é "está na lista?",
@@ -366,12 +380,41 @@ export const listarMidias = cache(async function listarMidias(
         (!q || m.titulo.toLowerCase().includes(q)),
     );
 
-    return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
+    // Pagina como a API: o mesmo tamanho padrão, e uma página além da última
+    // volta vazia com o `total` inteiro. Com os 9 títulos do arquivo, tudo
+    // cabe na primeira, e `?pagina=2` já é uma página depois da última — o
+    // mesmo caso que a API de verdade produz com `?pagina=9`.
+    const pagina = filtros.pagina ?? 1;
+    const porPagina = POR_PAGINA_PADRAO_DA_API;
+    const itens = encontradas.slice((pagina - 1) * porPagina, pagina * porPagina);
+
+    return { itens, pagina, porPagina, total: encontradas.length };
   }
 
-  const params = new URLSearchParams(
-    Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
-  );
+  // Parâmetro por parâmetro, e não o objeto inteiro de uma vez: `pagina` é
+  // número, e um `as [string, string][]` por cima esconderia isso do
+  // compilador.
+  const params = new URLSearchParams();
+  if (filtros.tipo) {
+    params.set("tipo", filtros.tipo);
+  }
+  if (filtros.genero) {
+    params.set("genero", filtros.genero);
+  }
+  if (filtros.q) {
+    params.set("q", filtros.q);
+  }
+  // A primeira página não vai na query: `pagina=1` é o padrão da API, e
+  // mandá-lo faria da mesma resposta dois endereços — e duas entradas no
+  // cache. Assim o catálogo sem filtro e a home (`listarMidias()`) continuam
+  // pedindo a mesma URL.
+  //
+  // E sem `porPagina`: o padrão da API (20) é o tamanho que o catálogo usa,
+  // e a conta de páginas lê o `porPagina` que volta na resposta. Um número
+  // escrito aqui seria um segundo lugar para discordar da API.
+  if (filtros.pagina && filtros.pagina > 1) {
+    params.set("pagina", String(filtros.pagina));
+  }
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {
     tags: [CACHE_TAGS.MIDIAS],
