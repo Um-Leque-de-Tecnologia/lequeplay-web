@@ -26,7 +26,7 @@ import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 
 const BASE = process.env.API_URL;
-const USAR_MOCK = process.env.USAR_MOCK !== "false";
+export const USAR_MOCK = process.env.USAR_MOCK !== "false";
 
 /**
  * Quanto tempo esperar a API antes de desistir.

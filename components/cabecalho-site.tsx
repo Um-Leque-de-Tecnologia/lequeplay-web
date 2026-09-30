@@ -29,6 +29,12 @@ export function CabecalhoSite() {
           >
             Catálogo
           </Link>
+          <Link
+            href="/escolher"
+            className="text-zinc-400 transition hover:text-zinc-100"
+          >
+            Me ajuda a escolher
+          </Link>
         </nav>
 
         {/* `ml-auto` empurra os controles para a direita sem div extra. */}

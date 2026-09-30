@@ -9,6 +9,7 @@ import { CabecalhoMenuMobileCasca } from "@/components/cabecalho-menu-mobile-cas
 const ITENS = [
   { href: "/", rotulo: "Início" },
   { href: "/midias", rotulo: "Catálogo" },
+  { href: "/escolher", rotulo: "Me ajuda a escolher" },
 ];
 
 /**
