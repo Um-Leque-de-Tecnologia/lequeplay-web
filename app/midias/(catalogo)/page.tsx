@@ -9,7 +9,7 @@ import {
   listarMidias,
   type FiltrosCatalogo,
 } from "@/lib/api";
-import { lerFiltrosDoCatalogo } from "@/lib/filtros-do-catalogo";
+import { lerFiltros } from "@/lib/filtros";
 import type { Midia } from "@/lib/tipos";
 
 export const metadata: Metadata = { title: "Catálogo" };
@@ -83,13 +83,13 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
   // Daqui para baixo, só valor conferido (LP-606). Valor que a API não
   // aceita (`?tipo=Filme`) ou parâmetro repetido com valores diferentes
   // (`?q=a&q=b`) chega como ausente: a página responde como se ele não
-  // estivesse na URL. A regra e o porquê estão em `lib/filtros-do-catalogo.ts`.
-  const { tipo, q } = lerFiltrosDoCatalogo(await searchParams);
+  // estivesse na URL. A regra e o porquê estão em `lib/filtros.ts`.
+  const filtros = lerFiltros(await searchParams);
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
   const [{ itens, resultadoCompleto, ordemDaApi }, generos] = await Promise.all([
-    lerCatalogo({ tipo, q }),
+    lerCatalogo(filtros),
     listarGeneros(),
   ]);
 
@@ -99,15 +99,21 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         Catálogo
       </h1>
 
-      <CatalogoBusca consulta={q ?? ""} />
+      <CatalogoBusca consulta={filtros.q ?? ""} />
 
-      <CatalogoChipsGenero generos={generos} />
+      <CatalogoChipsGenero generos={generos} filtros={filtros} />
 
       <CatalogoGrade
         itens={itens}
         resultadoCompleto={resultadoCompleto}
         ordemDaApi={ordemDaApi}
-        vazio={<CatalogoVazio q={q} tipo={tipo} />}
+        vazio={
+          <CatalogoVazio
+            q={filtros.q}
+            tipo={filtros.tipo}
+            genero={filtros.genero}
+          />
+        }
       />
     </>
   );

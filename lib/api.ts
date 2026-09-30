@@ -335,6 +335,7 @@ export type FiltrosCatalogo = {
    */
   genero?: string;
   q?: string;
+  pagina?: number;
 };
 
 /**
@@ -366,11 +367,18 @@ export const listarMidias = cache(async function listarMidias(
         (!q || m.titulo.toLowerCase().includes(q)),
     );
 
-    return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
+    return {
+      itens,
+      pagina: filtros.pagina ?? 1,
+      porPagina: itens.length,
+      total: itens.length,
+    };
   }
 
   const params = new URLSearchParams(
-    Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
+    Object.entries(filtros)
+      .filter(([, v]) => v !== undefined && v !== "")
+      .map(([k, v]) => [k, String(v)]),
   );
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {

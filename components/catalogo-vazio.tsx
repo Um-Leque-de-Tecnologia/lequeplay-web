@@ -17,7 +17,7 @@ const NENHUM: Record<Midia["tipo"], string> = {
  * nada. Busca sem resultado não é erro: é um resultado de tamanho zero, e a
  * tela precisa dizer isso e oferecer a saída.
  *
- * Recebe os filtros já conferidos pela página (`lerFiltrosDoCatalogo`,
+ * Recebe os filtros já conferidos pela página (`lerFiltros`,
  * LP-606): um `?tipo=` inventado não chega aqui, e a frase nunca repete um
  * valor que alguém digitou à mão.
  *
@@ -28,16 +28,18 @@ const NENHUM: Record<Midia["tipo"], string> = {
 export function CatalogoVazio({
   q,
   tipo,
+  genero,
 }: {
   q?: string;
   tipo?: Midia["tipo"];
+  genero?: string;
 }) {
   const busca = q?.trim();
   const frase = tipo ? NENHUM[tipo] : "Nenhum título encontrado";
 
   // Filtro é o que está valendo. Um `?tipo=` inventado não esvazia mais a
   // grade — a página o ignora —, então não é ele que pede a saída.
-  const temFiltro = Boolean(busca) || Boolean(tipo);
+  const temFiltro = Boolean(busca) || Boolean(tipo) || Boolean(genero);
 
   return (
     <div className="mt-10 rounded-lg border border-dashed border-white/15 p-10 text-center">
