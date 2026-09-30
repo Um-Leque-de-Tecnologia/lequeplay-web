@@ -335,7 +335,21 @@ export type FiltrosCatalogo = {
    */
   genero?: string;
   q?: string;
+  /**
+   * A página, a partir de 1 (LP-604). Vai para a API como `?pagina=`, o nome
+   * que o contrato publica — conferido no `openapi.yaml` e no `parseFilter`
+   * de `internal/catalog/handler.go` da API. `limite`/`offset` também são
+   * aceitos lá, mas só por compatibilidade.
+   */
+  pagina?: number;
 };
+
+/**
+ * Quantos itens a API põe numa página quando `porPagina` não vem
+ * (`default: 20` no `openapi.yaml`). Só o mock usa: com a API de verdade, o
+ * tamanho que vale é o `porPagina` que volta na resposta.
+ */
+const POR_PAGINA_PADRAO_DA_API = 20;
 
 /**
  * O catálogo, com filtros.
@@ -357,7 +371,7 @@ export const listarMidias = cache(async function listarMidias(
     const todas = await doMock();
     const q = filtros.q?.trim().toLowerCase();
 
-    const itens = todas.filter(
+    const encontradas = todas.filter(
       (m) =>
         (!filtros.tipo || m.tipo === filtros.tipo) &&
         // Um gênero pedido, vários no título: agora é "está na lista?",
@@ -366,12 +380,41 @@ export const listarMidias = cache(async function listarMidias(
         (!q || m.titulo.toLowerCase().includes(q)),
     );
 
-    return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
+    // Pagina como a API: o mesmo tamanho padrão, e uma página além da última
+    // volta vazia com o `total` inteiro. Com os 9 títulos do arquivo, tudo
+    // cabe na primeira, e `?pagina=2` já é uma página depois da última — o
+    // mesmo caso que a API de verdade produz com `?pagina=9`.
+    const pagina = filtros.pagina ?? 1;
+    const porPagina = POR_PAGINA_PADRAO_DA_API;
+    const itens = encontradas.slice((pagina - 1) * porPagina, pagina * porPagina);
+
+    return { itens, pagina, porPagina, total: encontradas.length };
   }
 
-  const params = new URLSearchParams(
-    Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
-  );
+  // Parâmetro por parâmetro, e não o objeto inteiro de uma vez: `pagina` é
+  // número, e um `as [string, string][]` por cima esconderia isso do
+  // compilador.
+  const params = new URLSearchParams();
+  if (filtros.tipo) {
+    params.set("tipo", filtros.tipo);
+  }
+  if (filtros.genero) {
+    params.set("genero", filtros.genero);
+  }
+  if (filtros.q) {
+    params.set("q", filtros.q);
+  }
+  // A primeira página não vai na query: `pagina=1` é o padrão da API, e
+  // mandá-lo faria da mesma resposta dois endereços — e duas entradas no
+  // cache. Assim o catálogo sem filtro e a home (`listarMidias()`) continuam
+  // pedindo a mesma URL.
+  //
+  // E sem `porPagina`: o padrão da API (20) é o tamanho que o catálogo usa,
+  // e a conta de páginas lê o `porPagina` que volta na resposta. Um número
+  // escrito aqui seria um segundo lugar para discordar da API.
+  if (filtros.pagina && filtros.pagina > 1) {
+    params.set("pagina", String(filtros.pagina));
+  }
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {
     tags: [CACHE_TAGS.MIDIAS],
@@ -402,8 +445,17 @@ export const listarMidias = cache(async function listarMidias(
  * Sem radical, sem sinônimo, sem significado: por isso `modo: "fts"` e
  * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
  * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
+ *
+ * `tipo`, `genero` e `limite` fazem o que fazem na API: tipo e gênero filtram
+ * antes de ranquear, e o limite corta a lista já ordenada — o `rank` conta a
+ * partir do que sobrou.
  */
-async function buscarNoMock(q: string): Promise<ResultadoBusca> {
+async function buscarNoMock(
+  q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
+  genero?: string,
+): Promise<ResultadoBusca> {
   const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
 
   if (palavras.length === 0) {
@@ -414,6 +466,15 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
 
   const itens = todas
     .flatMap((midia) => {
+      if (tipo && midia.tipo !== tipo) {
+        return [];
+      }
+
+      // "Está na lista?", como no filtro da listagem logo acima.
+      if (genero && !midia.generos.some((g) => g === genero)) {
+        return [];
+      }
+
       const titulo = midia.titulo.toLowerCase();
       const sinopse = midia.sinopse?.toLowerCase() ?? "";
 
@@ -430,34 +491,63 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
       return [{ midia, score }];
     })
     .toSorted((a, b) => b.score - a.score)
+    .slice(0, limite)
     .map(({ midia, score }, i) => ({ ...midia, score, rank: i + 1 }));
 
   return { query: q, modo: "fts", usouFallback: true, itens };
 }
 
 /**
- * A busca de títulos no catálogo (`GET /v1/busca`).
+ * A busca de títulos no catálogo (`GET /v1/busca`): pelas palavras **e** pelo
+ * significado. É o que acha "algo leve pra ver com a família", que o `?q=` da
+ * listagem não acha — lá o título ou a sinopse precisam conter a frase.
  *
  * Diferente da listagem, esta rota passa pelo motor de busca da API (textual,
  * vetorial ou híbrido) e devolve a resposta no envelope `ResultadoBusca`, com
  * ranqueamento e indicação de fallback léxico quando a IA não respondeu.
  *
+ * **`limite` é obrigatório.** A busca não pagina e não devolve `total`: o que
+ * não coube no limite não existe para quem chamou, porque não há "próxima
+ * página" de resultado ranqueado. Então quantos pedir é decisão de quem usa —
+ * o catálogo quer uma grade, uma recomendação quer poucos candidatos —, e não
+ * o padrão de 20 que a API aplica em silêncio quando o parâmetro não vem. Vai
+ * de 1 a 100; acima disso a API corta em 100.
+ *
+ * `tipo` e `genero` filtram como na listagem (`?tipo=`, `?genero=`), antes de
+ * ranquear.
+ *
  * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
  * tipo e declara o que fez.
  *
- * `q` e `modo` separados, e não um objeto: o `cache()` compara argumento por
+ * Argumentos soltos, e não um objeto: o `cache()` compara argumento por
  * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
  * não (veja o comentário do `listarMidias`).
+ *
+ * `genero` vem por último, depois do `modo`, e não ao lado do `tipo`: quem já
+ * chama com `modo` na quarta posição continua certo. Com o gênero enfiado ali,
+ * um `"fts"` passaria a ser lido como gênero — e o compilador não reclamaria,
+ * porque os dois são texto.
  */
 export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
   q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
   modo?: ModoBusca,
+  genero?: string,
 ): Promise<ResultadoBusca> {
   if (USAR_MOCK) {
-    return buscarNoMock(q);
+    return buscarNoMock(q, limite, tipo, genero);
   }
 
-  const params = new URLSearchParams({ q });
+  const params = new URLSearchParams({ q, limite: String(limite) });
+  if (tipo) {
+    params.set("tipo", tipo);
+  }
+  // `URLSearchParams` também aqui, e pelo mesmo motivo do chip: o `&` de
+  // "Action & Adventure" vira `%26`, e a API recebe o nome inteiro.
+  if (genero) {
+    params.set("genero", genero);
+  }
   if (modo) {
     params.set("modo", modo);
   }

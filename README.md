@@ -230,7 +230,7 @@ gosto parecido.
 
 - **Temporada e episódio** não têm página. A série lista as temporadas e para.
 - **Pessoas** (direção, elenco, apresentação) não têm página.
-- Não dá para navegar por **gênero, década ou ranking**.
+- Não dá para navegar por **década ou ranking**.
 - O catálogo **não tem paginação**.
 
 **Ter uma conta**
@@ -253,8 +253,6 @@ gosto parecido.
 
 **O resto**
 
-- A **busca** só encontra título exato. Quem procura "algo leve para assistir
-  cansada" não acha nada.
 - Não há **testes**.
 
 O contrato em [`docs/api-contrato.md`](docs/api-contrato.md) descreve todos

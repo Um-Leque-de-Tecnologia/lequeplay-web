@@ -26,7 +26,7 @@ const PERGUNTAS: Pergunta[] = [
     id: "faltando",
     pergunta: "Um título que eu procuro não está aqui. E agora?",
     resposta:
-      "O acervo ainda é pequeno e cresce a cada semana. A busca hoje encontra por título; achar pelo que você está a fim de ver é o que estamos construindo.",
+      "O acervo ainda é pequeno e cresce a cada semana. A busca entende tanto o nome quanto o que você descreve (“algo leve pra ver com a família”), mas só encontra o que já está aqui.",
   },
   {
     id: "conta",

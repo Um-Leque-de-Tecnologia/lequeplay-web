@@ -173,6 +173,17 @@ envelope é a causa nº 1 de front quebrado.
 > `pagina`/`porPagina` vence. Na **resposta** existe um envelope só, o de
 > cima: quem consome não precisa saber que o SQL lá dentro pensa em offset.
 
+> **Conferido no LP-604**, no `openapi.yaml` e em `internal/catalog/`
+> (`parseFilter` no `handler.go`, `Page` no `model.go`) da API: a query lê
+> os dois pares, e a resposta traz só `pagina`, `porPagina` e `total`. O
+> envelope `{ itens, total, limite, offset }` é o de antes do
+> [lequeplay-api#2](https://github.com/Um-Leque-de-Tecnologia/lequeplay-api/pull/2)
+> — texto de card anterior a ele ainda pode citá-lo. O catálogo manda
+> `?pagina=` só da segunda página em diante, e não manda `porPagina`: o
+> padrão de 20 é o tamanho que ele usa. E a página que a tela mostra é a que
+> volta na resposta, e não a pedida — parâmetro com nome errado não dá erro,
+> a API devolve a primeira página, e a tela precisa dizer isso.
+
 ---
 
 ## Modelo de dados
@@ -347,7 +358,13 @@ título exato. Mora na API porque é lá que estão o índice textual e os
 | `q` | `string` | **obrigatório** — o texto procurado |
 | `modo` | `auto\|hybrid\|vector\|fts` | opcional, padrão `auto` |
 | `tipo`, `genero`, `ano` | | os mesmos filtros de `GET /midias` |
-| `pagina`, `porPagina` | `number` | paginação |
+| `limite` | `number` | quantos resultados, de 1 a 100; padrão 20 |
+
+> **Esta tabela prometia `pagina` e `porPagina`** (corrigida no LP-607,
+> conferida no `openapi.yaml` e em `internal/catalog/search.go` da API). A
+> busca não pagina: `pagina` é ignorado em silêncio, e `porPagina` só
+> funciona por acaso, como sinônimo de `limite`. O parâmetro publicado é
+> `limite`.
 
 Os modos:
 
@@ -356,7 +373,11 @@ Os modos:
 | `fts` | busca textual (*full-text search*) sobre título e sinopse | a pessoa sabe o nome e digitou quase certo |
 | `vector` | similaridade de *embedding* sobre a sinopse | a pessoa descreve o que quer, sem saber o nome |
 | `hybrid` | roda as duas e funde os resultados numa lista só | o caso do meio, que é a maioria |
-| `auto` | a API escolhe pela cara da consulta — texto curto tende a `fts`, frase tende a `hybrid` | **o padrão**; use este se não tiver motivo para não usar |
+| `auto` | hoje, o mesmo que `hybrid` | **o padrão**; use este se não tiver motivo para não usar |
+
+> **`auto` não escolhe pela cara da consulta**, como esta tabela dizia: na
+> API publicada, `auto` e `hybrid` fazem a mesma coisa (fusão RRF das duas
+> buscas), qualquer que seja o tamanho da consulta.
 
 **A resposta da busca não é o envelope de paginação.** Ela é própria:
 
@@ -401,6 +422,13 @@ Sem resultado: `200` com `itens: []`. Consulta vazia: `400` com
 O front usa para montar o filtro — não deixe essa lista chumbada no
 front-end. Os itens são **nomes**, e não objetos: é exatamente o valor que
 volta na query, em `?genero=Drama`.
+
+> **Nome não é pedaço de URL.** Três gêneros da API têm `&` no nome
+> (*Action & Adventure*, *Sci-Fi & Fantasy*, *War & Politics*), e outros têm
+> acento e espaço. Colado direto no endereço, `?genero=Action & Adventure`
+> vira `genero=Action ` mais um parâmetro solto. Monte a query com
+> `URLSearchParams`, que escreve `genero=Action+%26+Adventure` — é o que os
+> chips do catálogo e o `lib/api.ts` fazem (LP-601).
 
 > **Este endpoint mudou de formato em setembro de 2026.** Até então a API
 > devolvia um array puro de `{ id, nome }` — sem envelope e com um id que
