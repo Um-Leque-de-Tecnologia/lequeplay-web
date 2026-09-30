@@ -253,8 +253,6 @@ gosto parecido.
 
 **O resto**
 
-- A **busca** só encontra título exato. Quem procura "algo leve para assistir
-  cansada" não acha nada.
 - Não há **testes**.
 
 O contrato em [`docs/api-contrato.md`](docs/api-contrato.md) descreve todos

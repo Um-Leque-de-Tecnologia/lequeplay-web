@@ -335,6 +335,7 @@ export type FiltrosCatalogo = {
    */
   genero?: string;
   q?: string;
+  pagina?: number;
 };
 
 /**
@@ -366,11 +367,18 @@ export const listarMidias = cache(async function listarMidias(
         (!q || m.titulo.toLowerCase().includes(q)),
     );
 
-    return { itens, pagina: 1, porPagina: itens.length, total: itens.length };
+    return {
+      itens,
+      pagina: filtros.pagina ?? 1,
+      porPagina: itens.length,
+      total: itens.length,
+    };
   }
 
   const params = new URLSearchParams(
-    Object.entries(filtros).filter(([, v]) => Boolean(v)) as [string, string][],
+    Object.entries(filtros)
+      .filter(([, v]) => v !== undefined && v !== "")
+      .map(([k, v]) => [k, String(v)]),
   );
 
   return buscar<Pagina<Midia>>(`/midias?${params}`, {
@@ -402,8 +410,16 @@ export const listarMidias = cache(async function listarMidias(
  * Sem radical, sem sinônimo, sem significado: por isso `modo: "fts"` e
  * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
  * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
+ *
+ * `tipo` e `limite` fazem o que fazem na API: o tipo filtra antes de
+ * ranquear, e o limite corta a lista já ordenada — o `rank` conta a partir do
+ * que sobrou.
  */
-async function buscarNoMock(q: string): Promise<ResultadoBusca> {
+async function buscarNoMock(
+  q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
+): Promise<ResultadoBusca> {
   const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
 
   if (palavras.length === 0) {
@@ -414,6 +430,10 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
 
   const itens = todas
     .flatMap((midia) => {
+      if (tipo && midia.tipo !== tipo) {
+        return [];
+      }
+
       const titulo = midia.titulo.toLowerCase();
       const sinopse = midia.sinopse?.toLowerCase() ?? "";
 
@@ -430,34 +450,51 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
       return [{ midia, score }];
     })
     .toSorted((a, b) => b.score - a.score)
+    .slice(0, limite)
     .map(({ midia, score }, i) => ({ ...midia, score, rank: i + 1 }));
 
   return { query: q, modo: "fts", usouFallback: true, itens };
 }
 
 /**
- * A busca de títulos no catálogo (`GET /v1/busca`).
+ * A busca de títulos no catálogo (`GET /v1/busca`): pelas palavras **e** pelo
+ * significado. É o que acha "algo leve pra ver com a família", que o `?q=` da
+ * listagem não acha — lá o título ou a sinopse precisam conter a frase.
  *
  * Diferente da listagem, esta rota passa pelo motor de busca da API (textual,
  * vetorial ou híbrido) e devolve a resposta no envelope `ResultadoBusca`, com
  * ranqueamento e indicação de fallback léxico quando a IA não respondeu.
  *
+ * **`limite` é obrigatório.** A busca não pagina e não devolve `total`: o que
+ * não coube no limite não existe para quem chamou, porque não há "próxima
+ * página" de resultado ranqueado. Então quantos pedir é decisão de quem usa —
+ * o catálogo quer uma grade, uma recomendação quer poucos candidatos —, e não
+ * o padrão de 20 que a API aplica em silêncio quando o parâmetro não vem. Vai
+ * de 1 a 100; acima disso a API corta em 100.
+ *
+ * `tipo` filtra como na listagem (`?tipo=`), antes de ranquear.
+ *
  * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
  * tipo e declara o que fez.
  *
- * `q` e `modo` separados, e não um objeto: o `cache()` compara argumento por
+ * Argumentos soltos, e não um objeto: o `cache()` compara argumento por
  * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
  * não (veja o comentário do `listarMidias`).
  */
 export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
   q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
   modo?: ModoBusca,
 ): Promise<ResultadoBusca> {
   if (USAR_MOCK) {
-    return buscarNoMock(q);
+    return buscarNoMock(q, limite, tipo);
   }
 
-  const params = new URLSearchParams({ q });
+  const params = new URLSearchParams({ q, limite: String(limite) });
+  if (tipo) {
+    params.set("tipo", tipo);
+  }
   if (modo) {
     params.set("modo", modo);
   }
