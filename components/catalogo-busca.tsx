@@ -39,7 +39,9 @@ export function CatalogoBusca({ consulta }: Props) {
         name="q"
         type="search"
         defaultValue={consulta}
-        placeholder="Buscar por título"
+        // A busca acha pelo significado (`GET /v1/busca`, LP-607): o campo
+        // convida a descrever, e não só a lembrar o nome.
+        placeholder="Um título, ou o que você está a fim de ver"
         className="min-w-64 flex-1 rounded-md border border-white/15 bg-zinc-900 px-3 py-2 text-base placeholder:text-zinc-600"
       />
       <button
