@@ -24,6 +24,29 @@ import { buscarUsuarioLogado } from "@/lib/dal";
  * chama um endereço inexistente entregaria um botão que falha no clique — e
  * um botão que falha é pior do que um botão desligado com uma frase honesta.
  *
+ * ## No dia em que o endpoint subir (LP-513)
+ *
+ * A decisão de hoje: o botão fica desligado, com a frase dizendo o que falta.
+ * O sinal para mudar é `PUT /v1/midias/{id}/resenha` aparecer no
+ * `openapi.yaml` publicado e responder diferente de 404 — e não o
+ * `docs/api-contrato.md`, que lista a rota como 🕓 desde antes de a API
+ * existir. Até lá, nada de adiantar a action: o #182 foi fechado sem merge
+ * por chamar esse `PUT`. Quando subir:
+ *
+ * 1. **A chamada nasce no `lib/api.ts`,** passando pela única porta por onde
+ *    o token de uma pessoa sai (LP-411) — e não num `fetch` dentro da action.
+ * 2. **A action de publicar** confere a sessão por dentro e valida o texto
+ *    antes de chamar a API (`docs/server-actions-seguranca.md`). O contrato
+ *    do time pede o id da mídia, e não o slug: conferir no `openapi.yaml` o
+ *    que vale.
+ * 3. **Este bloco vira formulário:** o botão passa a `type="submit"`, sem
+ *    `disabled`, e a frase de "ainda não existe" sai junto. A recusa da API
+ *    para texto fora do limite vira mensagem no campo; sessão vencida manda
+ *    para `/entrar?de=` desta ficha.
+ * 4. **Quem publicou vê a própria resenha na resposta:** se a lista de
+ *    resenhas for lida com cache, ela ganha etiqueta em `lib/cache-tags.ts`,
+ *    e a action chama `updateTag` nela (`docs/atualizacao-de-cache.md`).
+ *
  * ## O que a conta muda, então
  *
  * Só quem vê o quê:

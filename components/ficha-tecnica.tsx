@@ -1,4 +1,5 @@
 import { formatarDuracao } from "@/lib/formatadores";
+import { obterDiretor } from "@/lib/creditos";
 import type { Midia } from "@/lib/tipos";
 
 /**
@@ -20,6 +21,8 @@ const STATUS_DA_SERIE: Record<string, string> = {
 
 /** A ficha muda conforme o tipo — e o narrowing dá o campo certo em cada caso. */
 export function FichaTecnica({ midia }: { midia: Midia }) {
+  const direcao = midia.tipo === "filme" ? obterDiretor(midia) : undefined;
+
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
       <dt className="text-zinc-500">Ano</dt>
@@ -54,11 +57,14 @@ export function FichaTecnica({ midia }: { midia: Midia }) {
         </>
       )}
 
-      {midia.tipo === "filme" && (
+      {/*
+        Sem crédito de direção, a linha some inteira — pelo mesmo motivo da
+        duração ali em cima (LP-205).
+      */}
+      {direcao !== undefined && (
         <>
           <dt className="text-zinc-500">Direção</dt>
-          {/* Vem do crédito com `papel: "direcao"` — a API não manda o nome solto. */}
-          <dd>{midia.diretor}</dd>
+          <dd>{direcao}</dd>
         </>
       )}
 

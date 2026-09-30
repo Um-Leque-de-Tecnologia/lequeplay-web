@@ -307,8 +307,15 @@ Devolve `Pagina<Midia>`. Sem resultado, `itens: []` e `total: 0` — **não é
 404**.
 
 A ordenação é por popularidade decrescente, com o título como desempate. Não
-há parâmetro de ordenação: quem quiser outra ordem ordena no front, como o
-catálogo faz hoje.
+há parâmetro de ordenação, e **`?ordem=` é ignorado em silêncio** (conferido
+em 23/09/2026).
+
+> **Ordenar no front não substitui isso.** Ordenar uma página ordena só a
+> página: "A-Z" na página 1 põe em ordem alfabética os mais populares. Por
+> isso o catálogo só oferece outras ordens quando o resultado inteiro cabe
+> numa página. O pedido de `?ordem=populares|recentes|nota|az` 🕓, com
+> padrão, desempates e o `400` para valor desconhecido, está em
+> [`ordenacao-catalogo.md`](ordenacao-catalogo.md).
 
 > **O filtro é `?genero=`, no singular — e continua.** O *campo* da resposta
 > virou `generos`, lista; o *parâmetro* não mudou junto, de propósito.

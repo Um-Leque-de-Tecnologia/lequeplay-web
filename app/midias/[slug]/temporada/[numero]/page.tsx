@@ -98,11 +98,9 @@ export default async function PaginaDaTemporada({
 
   const { temporada } = achado;
 
-  // A API publicada não manda `episodios` na temporada — a chave nem existe.
-  // A decisão sobre o que fazer com isso é do LP-306; este `?? []` é só o
-  // mínimo para esta página, que o build pré-gera (LP-303), não derrubar o
-  // build inteiro com `USAR_MOCK=false`: sem ele, a primeira temporada da API
-  // quebra o `next build` com "Cannot read properties of undefined".
+  // A API publicada não manda `episodios` na temporada — a chave nem existe, e
+  // o tipo diz isso (LP-306). Sem o `?? []`, a primeira temporada da API
+  // quebra o `next build` desta página, que o build pré-gera (LP-303).
   const episodios = temporada.episodios ?? [];
 
   // A trilha, o cabeçalho da série e as abas moram no layout (LP-302): a
@@ -125,7 +123,9 @@ export default async function PaginaDaTemporada({
       */}
       {episodios.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">
-          Os episódios desta temporada ainda não foram anunciados.
+          {temporada.totalEpisodios === 0
+            ? "Os episódios desta temporada ainda não foram anunciados."
+            : "A lista de episódios ainda não está disponível."}
         </p>
       ) : (
         <ol className="mt-6 divide-y divide-white/10 border-y border-white/10">

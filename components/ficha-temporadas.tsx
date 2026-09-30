@@ -87,6 +87,10 @@ export function FichaTemporadas({
     return null;
   }
 
+  // A API publicada não manda `episodios` (LP-306): sem a lista, a seção cai
+  // no estado vazio em vez de quebrar a ficha com `.length` de `undefined`.
+  const episodios = temporada.episodios ?? [];
+
   /*
    * O episódio que veio pelo "Retomar" só é ESTE episódio se a temporada
    * também for a dele. Comparando só o número, `?temporada=2&episodio=2`
@@ -159,14 +163,20 @@ export function FichaTemporadas({
         </Link>
       </div>
 
-      {temporada.episodios.length === 0 ? (
+      {episodios.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          Os episódios desta temporada ainda não foram
-          anunciados.
+          {/*
+            "Não anunciados" só é verdade com `totalEpisodios: 0`. Com a API,
+            toda temporada chega sem a lista, e dizer "não anunciados" de uma
+            temporada de 8 episódios é afirmar o que a própria API desmente.
+          */}
+          {temporada.totalEpisodios === 0
+            ? "Os episódios desta temporada ainda não foram anunciados."
+            : `${temporada.totalEpisodios} ${temporada.totalEpisodios === 1 ? "episódio" : "episódios"} — a lista ainda não está disponível.`}
         </p>
       ) : (
         <ol className="divide-y divide-white/10 border-y border-white/10">
-          {temporada.episodios.map((episodio) => {
+          {episodios.map((episodio) => {
             const selecionado = ehOEpisodioDoRetomar(
               episodio.numero,
             );

@@ -158,4 +158,6 @@ da aula 05, "o dado nem é de cache: `refresh()`".
 página de novo ao servidor, e o servidor devolve **a mesma coisa guardada**:
 a tela pisca e continua velha. Aí o conserto é invalidar a etiqueta no
 servidor — e a própria Server Action que muda o dado já traz a tela nova na
-resposta, sem `refresh` nenhum (aula 05).
+resposta, sem `refresh` nenhum (aula 05), desde que use `updateTag` ou
+`revalidatePath`. Com `revalidateTag` e perfil `"max"`, não traz: veja
+[`docs/atualizacao-de-cache.md`](atualizacao-de-cache.md).

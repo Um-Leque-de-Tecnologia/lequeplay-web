@@ -47,7 +47,7 @@ function duracaoEmSegundos(
       (t) => t.numero === item.temporadaNumero,
     );
 
-    const episodio = temporada?.episodios.find(
+    const episodio = temporada?.episodios?.find(
       (e) => e.numero === item.episodioNumero,
     );
 

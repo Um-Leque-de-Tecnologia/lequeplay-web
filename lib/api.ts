@@ -16,7 +16,9 @@ import type {
   Genero,
   ItemHistorico,
   Midia,
+  ModoBusca,
   Pagina,
+  ResultadoBusca,
   TokensDaSessao,
   UsuarioDaSessao,
 } from "@/lib/tipos";
@@ -384,6 +386,88 @@ export const listarMidias = cache(async function listarMidias(
     // E a promessa do campo é "não busco de novo antes de N segundos" — e não
     // "o que você vê tem no máximo N segundos". Sem visita, o dado guardado
     // envelhece à vontade.
+    revalidar: 3600,
+  });
+});
+
+/**
+ * A busca do mock, com o que um arquivo JSON consegue fazer: achar palavras.
+ *
+ * Todas as palavras da consulta precisam aparecer no título ou na sinopse, em
+ * qualquer ordem — como a busca por palavras da API, que liga as palavras com
+ * E. O `score` conta o que o mock mediu (palavra no título vale 2, na sinopse
+ * vale 1), e a lista sai ordenada por ele. Fora desta resposta o número não
+ * quer dizer nada: o contrato diz o mesmo do score da API.
+ *
+ * Sem radical, sem sinônimo, sem significado: por isso `modo: "fts"` e
+ * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
+ * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
+ */
+async function buscarNoMock(q: string): Promise<ResultadoBusca> {
+  const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+  if (palavras.length === 0) {
+    return { query: q, modo: "fts", usouFallback: true, itens: [] };
+  }
+
+  const todas = await doMock();
+
+  const itens = todas
+    .flatMap((midia) => {
+      const titulo = midia.titulo.toLowerCase();
+      const sinopse = midia.sinopse?.toLowerCase() ?? "";
+
+      if (!palavras.every((p) => titulo.includes(p) || sinopse.includes(p))) {
+        return [];
+      }
+
+      const score = palavras.reduce(
+        (soma, p) =>
+          soma + (titulo.includes(p) ? 2 : 0) + (sinopse.includes(p) ? 1 : 0),
+        0,
+      );
+
+      return [{ midia, score }];
+    })
+    .toSorted((a, b) => b.score - a.score)
+    .map(({ midia, score }, i) => ({ ...midia, score, rank: i + 1 }));
+
+  return { query: q, modo: "fts", usouFallback: true, itens };
+}
+
+/**
+ * A busca de títulos no catálogo (`GET /v1/busca`).
+ *
+ * Diferente da listagem, esta rota passa pelo motor de busca da API (textual,
+ * vetorial ou híbrido) e devolve a resposta no envelope `ResultadoBusca`, com
+ * ranqueamento e indicação de fallback léxico quando a IA não respondeu.
+ *
+ * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
+ * tipo e declara o que fez.
+ *
+ * `q` e `modo` separados, e não um objeto: o `cache()` compara argumento por
+ * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
+ * não (veja o comentário do `listarMidias`).
+ */
+export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
+  q: string,
+  modo?: ModoBusca,
+): Promise<ResultadoBusca> {
+  if (USAR_MOCK) {
+    return buscarNoMock(q);
+  }
+
+  const params = new URLSearchParams({ q });
+  if (modo) {
+    params.set("modo", modo);
+  }
+
+  return buscar<ResultadoBusca>(`/busca?${params}`, {
+    tags: [CACHE_TAGS.MIDIAS],
+    // Uma hora, como a listagem, e pelo mesmo motivo: o resultado de uma
+    // busca só muda quando o catálogo muda, e o catálogo muda por ingestão.
+    // O vigia do LP-310 derruba a etiqueta `midias` quando a versão sobe, e
+    // as buscas guardadas caem junto.
     revalidar: 3600,
   });
 });
