@@ -1,6 +1,7 @@
 import "server-only";
 
-import { USAR_MOCK } from "@/lib/api";
+import { USAR_MOCK, buscarNoCatalogo } from "@/lib/api";
+import { lerLinhasSSE } from "@/lib/recomendacao-comum";
 import type { ItemResultadoBusca } from "@/lib/tipos";
 
 /**
@@ -10,15 +11,17 @@ import type { ItemResultadoBusca } from "@/lib/tipos";
  * Mora no front porque o contrato manda (`docs/api-contrato.md`, "Qualquer
  * chamada a LLM"): a API não fala com modelo nenhum. E mora **no servidor**
  * do front — `server-only` acima —, porque a chave do Gemini não pode chegar
- * ao navegador.
+ * ao navegador. O que o navegador também usa está em
+ * `lib/recomendacao-comum.ts`.
  */
 
 /** Quantos candidatos da busca vão para o modelo. */
 const MAXIMO_DE_CANDIDATOS = 12;
 
 /**
- * Teto do pedido digitado. A action é endereço público, e cada chamada gasta
- * cota do Gemini: sem limite, qualquer um manda um livro por POST.
+ * Teto do pedido digitado. A action e o `/api/recomendar` são endereços
+ * públicos, e cada chamada gasta cota do Gemini: sem limite, qualquer um
+ * manda um livro por POST.
  */
 export const MAXIMO_DO_PEDIDO = 300;
 
@@ -48,16 +51,77 @@ export function motivoDaRecomendacaoDesligada(): MotivoDesligada | null {
   return null;
 }
 
-/** Um pedaço da resposta: texto corrido, ou um título citado. */
-export type TrechoDaResposta =
-  | { tipo: "texto"; texto: string }
-  | { tipo: "titulo"; slug: string; titulo: string }
-  | { tipo: "fora-do-catalogo" };
-
 export function escolherCandidatos(
   itens: ItemResultadoBusca[],
 ): ItemResultadoBusca[] {
   return itens.slice(0, MAXIMO_DE_CANDIDATOS);
+}
+
+/**
+ * Por que o pedido parou antes do modelo. Quem chama decide o que isso vira
+ * (a action devolve estado; a rota, status HTTP).
+ */
+export type RecusaDoPedido = "desligada" | "pedido-invalido" | "catalogo-fora" | "sem-candidatos";
+
+export type PedidoPreparado =
+  | { ok: false; recusa: RecusaDoPedido; mensagem: string; pedido: string }
+  | { ok: true; pedido: string; candidatos: ItemResultadoBusca[] };
+
+/**
+ * Tudo o que vem antes da chamada paga, igual para a action e para o
+ * `/api/recomendar`: os dois são endereço público, e uma conferência que só
+ * um deles fizesse seria a porta aberta do outro.
+ *
+ * - o "desligado" é conferido aqui, e não só pela página não mostrar o
+ *   botão: quem postar direto também é recusado;
+ * - o pedido tem teto de tamanho, porque é texto de estranho que vira prompt
+ *   pago;
+ * - sem candidato, o modelo não tem de onde escolher — e a chamada paga não
+ *   acontece.
+ */
+export async function prepararRecomendacao(bruto: unknown): Promise<PedidoPreparado> {
+  const pedido = typeof bruto === "string" ? bruto.trim() : "";
+
+  if (motivoDaRecomendacaoDesligada()) {
+    return { ok: false, recusa: "desligada", mensagem: "A recomendação está desligada.", pedido };
+  }
+
+  if (!pedido) {
+    return { ok: false, recusa: "pedido-invalido", mensagem: "Escreva o que você quer ver.", pedido };
+  }
+
+  if (pedido.length > MAXIMO_DO_PEDIDO) {
+    return {
+      ok: false,
+      recusa: "pedido-invalido",
+      mensagem: `O pedido passou de ${MAXIMO_DO_PEDIDO} caracteres. Encurte um pouco.`,
+      pedido,
+    };
+  }
+
+  let candidatos;
+  try {
+    candidatos = escolherCandidatos((await buscarNoCatalogo(pedido)).itens);
+  } catch (erro) {
+    console.error("[recomendar] busca falhou:", erro);
+    return {
+      ok: false,
+      recusa: "catalogo-fora",
+      mensagem: "Não conseguimos consultar o catálogo agora. Tente de novo.",
+      pedido,
+    };
+  }
+
+  if (candidatos.length === 0) {
+    return {
+      ok: false,
+      recusa: "sem-candidatos",
+      mensagem: "Nada no catálogo parece com esse pedido. Tente descrever de outro jeito.",
+      pedido,
+    };
+  }
+
+  return { ok: true, pedido, candidatos };
 }
 
 const INSTRUCOES = `Você recomenda títulos do catálogo do LequePlay (filmes, séries e podcasts).
@@ -92,19 +156,38 @@ type RespostaGemini = {
     content?: { parts?: { text?: string }[] };
     finishReason?: string;
   }[];
+  error?: { code?: number };
 };
 
-export async function pedirRecomendacao(
+function textoDaResposta(corpo: RespostaGemini): string {
+  return corpo.candidates?.[0]?.content?.parts?.map((parte) => parte.text ?? "").join("") ?? "";
+}
+
+/**
+ * A chamada ao Gemini, igual para a resposta inteira (`generateContent`) e
+ * para a em pedaços (`streamGenerateContent?alt=sse`). Devolve a resposta só
+ * se ela veio 2xx; o corpo fica para quem chamou.
+ *
+ * `sinal` é de quem pediu: se a pessoa fechar a aba no meio, a chamada paga
+ * para de gerar em vez de terminar para ninguém.
+ */
+async function chamarGemini(
+  metodo: "generateContent" | "streamGenerateContent?alt=sse",
   pedido: string,
   candidatos: ItemResultadoBusca[],
-): Promise<string> {
+  sinal?: AbortSignal,
+): Promise<Response> {
   const chave = process.env.GEMINI_API_KEY;
   if (!chave) throw new ErroDaRecomendacao("GEMINI_API_KEY ausente");
+
+  // O tempo limite cobre a resposta inteira, inclusive a leitura do corpo em
+  // pedaços: um stream que para no meio também desiste.
+  const limite = AbortSignal.timeout(TEMPO_LIMITE_MODELO_MS);
 
   let resposta: Response;
   try {
     resposta = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODELO)}:generateContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODELO)}:${metodo}`,
       {
         method: "POST",
         // A chave no cabeçalho, e não em `?key=`: URL vai parar em log.
@@ -117,7 +200,7 @@ export async function pedirRecomendacao(
           generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
         }),
         cache: "no-store",
-        signal: AbortSignal.timeout(TEMPO_LIMITE_MODELO_MS),
+        signal: sinal ? AbortSignal.any([sinal, limite]) : limite,
       },
     );
   } catch (erro) {
@@ -131,11 +214,16 @@ export async function pedirRecomendacao(
     throw new ErroDaRecomendacao(`Gemini respondeu ${resposta.status}`);
   }
 
+  return resposta;
+}
+
+export async function pedirRecomendacao(
+  pedido: string,
+  candidatos: ItemResultadoBusca[],
+): Promise<string> {
+  const resposta = await chamarGemini("generateContent", pedido, candidatos);
   const corpo = (await resposta.json()) as RespostaGemini;
-  const texto = corpo.candidates?.[0]?.content?.parts
-    ?.map((parte) => parte.text ?? "")
-    .join("")
-    .trim();
+  const texto = textoDaResposta(corpo).trim();
 
   if (!texto) {
     throw new ErroDaRecomendacao(
@@ -147,36 +235,105 @@ export async function pedirRecomendacao(
 }
 
 /**
- * Troca cada `[[slug]]` pelo título — **só** se o slug estava na lista.
- *
- * O prompt pede para o modelo escolher só da lista, mas pedir não é
- * garantir: modelo inventa. Quem garante é esta conferência. Slug fora da
- * lista não vira link (seria link para 404, ou para um título que a busca
- * não trouxe) e aparece marcado como fora do catálogo.
+ * Maior `[[slug` que se espera sem fechar. Passou disso, não é marcador que
+ * ainda vai fechar — é o modelo escrevendo colchete — e o texto segue.
  */
-export function interpretarResposta(
-  texto: string,
+const MAXIMO_DO_MARCADOR = 120;
+
+/**
+ * Até onde o texto pode sair sem partir um `[[slug]]` ao meio.
+ *
+ * O modelo manda pedaços cortados onde calhar, e "[[o-poco" num evento e
+ * "]]" no seguinte é o normal. Se o pedaço saísse assim, a tela mostraria
+ * "[[o-poco" cru até o resto chegar. Então o marcador aberto espera o
+ * fechamento, e só o texto antes dele sai.
+ */
+function ondeCortar(texto: string): number {
+  const abertura = texto.lastIndexOf("[[");
+  if (
+    abertura !== -1 &&
+    !texto.includes("]]", abertura) &&
+    texto.length - abertura <= MAXIMO_DO_MARCADOR
+  ) {
+    return abertura;
+  }
+  // Um "[" solto no fim pode ser a primeira metade do "[[".
+  if (texto.endsWith("[")) return texto.length - 1;
+  return texto.length;
+}
+
+/**
+ * A recomendação em pedaços, na ordem em que o modelo escreve (LP-704).
+ *
+ * Cada pedaço é texto com `[[slug]]` inteiros — nunca um marcador partido
+ * (veja `ondeCortar`). A conferência dos slugs contra a lista continua sendo
+ * do `interpretarResposta`, que a tela roda sobre o texto que já chegou.
+ *
+ * Falhas viram `ErroDaRecomendacao`, antes ou no meio: quem consome já pode
+ * ter mostrado parte do texto, e decide o que fazer com ele.
+ */
+export async function* pedirRecomendacaoEmPedacos(
+  pedido: string,
   candidatos: ItemResultadoBusca[],
-): TrechoDaResposta[] {
-  const porSlug = new Map(candidatos.map((m) => [m.slug, m.titulo]));
-  const trechos: TrechoDaResposta[] = [];
-  let desde = 0;
+  sinal?: AbortSignal,
+): AsyncGenerator<string> {
+  const resposta = await chamarGemini(
+    "streamGenerateContent?alt=sse",
+    pedido,
+    candidatos,
+    sinal,
+  );
+  if (!resposta.body) throw new ErroDaRecomendacao("Gemini respondeu sem corpo");
 
-  for (const achado of texto.matchAll(/\[\[\s*([^\]\s]+)\s*\]\]/g)) {
-    if (achado.index > desde) {
-      trechos.push({ tipo: "texto", texto: texto.slice(desde, achado.index) });
+  let pendente = "";
+  let jaSaiuTexto = false;
+  let finishReason: string | undefined;
+
+  try {
+    for await (const dado of lerLinhasSSE(resposta.body)) {
+      let evento: RespostaGemini;
+      try {
+        evento = JSON.parse(dado) as RespostaGemini;
+      } catch {
+        throw new ErroDaRecomendacao("Gemini mandou um evento que não é JSON");
+      }
+
+      // O status já foi 200; erro depois disso chega como evento.
+      if (evento.error) {
+        throw new ErroDaRecomendacao(`Gemini parou com erro ${evento.error.code ?? "?"}`);
+      }
+
+      finishReason = evento.candidates?.[0]?.finishReason ?? finishReason;
+      pendente += textoDaResposta(evento);
+
+      const corte = ondeCortar(pendente);
+      let pronto = pendente.slice(0, corte);
+      pendente = pendente.slice(corte);
+
+      // Mesmo `trim` da resposta inteira, só que no começo: o fim ainda não
+      // chegou.
+      if (!jaSaiuTexto) pronto = pronto.trimStart();
+      if (pronto) {
+        jaSaiuTexto = true;
+        yield pronto;
+      }
     }
-
-    const slug = achado[1];
-    const titulo = porSlug.get(slug);
-    trechos.push(titulo ? { tipo: "titulo", slug, titulo } : { tipo: "fora-do-catalogo" });
-
-    desde = achado.index + achado[0].length;
+  } catch (erro) {
+    if (erro instanceof ErroDaRecomendacao) throw erro;
+    // Queda de rede ou tempo limite no meio da leitura.
+    throw new ErroDaRecomendacao(
+      `Gemini parou no meio: ${erro instanceof Error ? erro.name : "erro"}`,
+    );
   }
 
-  if (desde < texto.length) {
-    trechos.push({ tipo: "texto", texto: texto.slice(desde) });
+  // O que sobrou é um "[[" que nunca fechou: sai como texto.
+  if (!jaSaiuTexto) pendente = pendente.trimStart();
+  if (pendente) {
+    jaSaiuTexto = true;
+    yield pendente;
   }
 
-  return trechos;
+  if (!jaSaiuTexto) {
+    throw new ErroDaRecomendacao(`Gemini sem texto (finishReason: ${finishReason ?? "?"})`);
+  }
 }
