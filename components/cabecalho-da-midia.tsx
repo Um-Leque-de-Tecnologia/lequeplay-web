@@ -12,17 +12,16 @@ import type { Midia } from "@/lib/tipos";
  * (`app/midias/[slug]/temporada/layout.tsx`, LP-302). Duas cópias do mesmo
  * cabeçalho seriam duas coisas para manter iguais à mão — e a segunda ia
  * ficar para trás no primeiro ajuste.
+ *
+ * `children` é o que só a ficha põe no cabeçalho: o botão "já assisti"
+ * (LP-503), que lê cookie. O layout das temporadas não passa nada, e por isso
+ * continua pré-gerado no build.
  */
 export function CabecalhoDaMidia({
   midia,
   children,
 }: {
   midia: Midia;
-  /**
-   * O que vem abaixo da sinopse e só faz sentido na ficha — hoje, o botão de
-   * marcar como assistido. Entra por aqui, e não direto no componente,
-   * porque o layout das temporadas usa o mesmo cabeçalho e não tem esse botão.
-   */
   children?: ReactNode;
 }) {
   return (

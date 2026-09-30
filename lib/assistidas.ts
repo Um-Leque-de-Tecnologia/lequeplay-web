@@ -1,14 +1,17 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { NOMES_DOS_COOKIES } from "@/lib/nomes-dos-cookies";
+import {
+  NOMES_DOS_COOKIES,
+  OPCOES_DO_COOKIE_DE_SESSAO,
+} from "@/lib/nomes-dos-cookies";
 
 const COOKIE_ASSISTIDAS = NOMES_DOS_COOKIES.assistidas;
+
+// As opções de sempre (`httpOnly`, `secure` só em produção, `sameSite: "lax"`)
+// vêm de um lugar só, como no `lib/sessao.ts`. Só a validade é deste cookie.
 const OPCOES_DO_COOKIE = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
+  ...OPCOES_DO_COOKIE_DE_SESSAO,
   maxAge: 60 * 60 * 24 * 365,
 };
 

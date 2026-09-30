@@ -48,9 +48,9 @@ import {
  * ## Funciona sem JavaScript
  *
  * O `<form>` com a action do LP-503 continua aqui. Sem JS, o botão é um
- * submit comum: o navegador posta, o servidor grava e redireciona. Com JS, o
- * clique chama `preventDefault` e roda a transição — o formulário nunca chega
- * a ser enviado.
+ * submit comum: o navegador posta, o servidor grava o cookie e devolve a
+ * ficha redesenhada, na mesma URL. Com JS, o clique chama `preventDefault` e
+ * roda a transição — o formulário nunca chega a ser enviado.
  */
 export function FichaMarcarAssistida({
   slug,

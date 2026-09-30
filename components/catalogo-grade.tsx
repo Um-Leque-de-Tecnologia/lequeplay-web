@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { CardMidia } from "@/components/card-midia";
 import {
   CatalogoOrdenacao,
+  ORDENS,
   lerOrdem,
   type OrdemCatalogo,
 } from "@/components/catalogo-ordenacao";
@@ -19,22 +20,39 @@ type Props = {
    * recebe por prop, não.
    */
   vazio: ReactNode;
+  /**
+   * Se `itens` é o resultado **inteiro**, e não uma página dele.
+   *
+   * Ordenar aqui só é exato quando é: "A-Z" em cima de uma página põe em
+   * ordem alfabética os mais populares, e não os primeiros do alfabeto. A
+   * API ainda não ordena por nada além de popularidade
+   * (docs/ordenacao-catalogo.md), então, sem o resultado inteiro, a única
+   * ordem que a tela pode prometer é a que a API mandou.
+   */
+  resultadoCompleto: boolean;
 };
 
-export function CatalogoGrade({ itens, vazio }: Props) {
+export function CatalogoGrade({ itens, vazio, resultadoCompleto }: Props) {
   // A ordem mora na URL, e não em `useState`: `?ordem=az` volta igual quando
-  // a pessoa recarrega e vai junto no link compartilhado. A rota é dinâmica,
-  // então o servidor já entrega a grade na ordem pedida.
+  // a pessoa recarrega e vai junto no link compartilhado.
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const ordem = lerOrdem(searchParams.get("ordem"));
+  const ordemPedida = lerOrdem(searchParams.get("ordem"));
+
+  // Um link com `?ordem=az` pode chegar numa busca que não cabe numa página.
+  // A tela não finge atender: mostra a ordem da API e diz por quê.
+  const ordem = resultadoCompleto ? ordemPedida : "populares";
+  const ordemRecusada =
+    ordemPedida !== ordem
+      ? ORDENS.find((item) => item.valor === ordemPedida)?.rotulo
+      : undefined;
 
   function mudarOrdem(novaOrdem: OrdemCatalogo) {
     // Parte da query atual para não perder `tipo` e `q` no caminho.
     const params = new URLSearchParams(searchParams.toString());
 
-    // Relevância é o padrão: sem `?ordem=`, a URL fica limpa.
-    if (novaOrdem === "relevancia") {
+    // Populares é o padrão: sem `?ordem=`, a URL fica limpa.
+    if (novaOrdem === "populares") {
       params.delete("ordem");
     } else {
       params.set("ordem", novaOrdem);
@@ -71,8 +89,8 @@ export function CatalogoGrade({ itens, vazio }: Props) {
         return itens.toSorted((a, b) =>
           a.titulo.localeCompare(b.titulo, "pt-BR"),
         );
-      case "relevancia":
-        // Mantém a ordem original vinda da API/mock sem mutar o array.
+      case "populares":
+        // A ordem em que a API mandou, que é popularidade decrescente.
         return itens;
     }
   }, [itens, ordem]);
@@ -85,8 +103,22 @@ export function CatalogoGrade({ itens, vazio }: Props) {
         <p className="text-sm text-zinc-500" aria-live="polite">
           {itens.length} título(s)
         </p>
-        <CatalogoOrdenacao ordem={ordem} aoMudarOrdem={mudarOrdem} />
+        {resultadoCompleto ? (
+          <CatalogoOrdenacao ordem={ordem} aoMudarOrdem={mudarOrdem} />
+        ) : (
+          // Sem menu, e não um menu de uma opção só: escolher entre nada
+          // é ruído. A frase diz a ordem que está valendo.
+          <p className="text-sm text-zinc-400">Mais populares primeiro</p>
+        )}
       </div>
+
+      {ordemRecusada && (
+        <p className="mt-2 text-sm text-zinc-500">
+          A ordem “{ordemRecusada}” só está disponível quando todos os
+          resultados cabem em uma página. Filtre por tipo ou busque um título
+          para usá-la.
+        </p>
+      )}
 
       {itensOrdenados.length === 0 ? (
         vazio

@@ -54,6 +54,7 @@ lib/
   api.ts                ⭐ TODO acesso à API passa por aqui
 docs/
   api-contrato.md       ⭐ o contrato com o backend — leia antes de codar
+  medicao-chamadas-api.md ⭐ como auditar e medir chamadas à API e cache por visita
   server-actions-seguranca.md  o que o Next garante e o que é seu
 data/midias.json        catálogo de mentira, usado quando USAR_MOCK=true
 public/capas/           imagens

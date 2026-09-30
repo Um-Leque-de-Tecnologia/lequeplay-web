@@ -6,7 +6,9 @@ quando um título muda na origem, dá para derrubar só o que depende dele em
 vez de esperar o tempo de revalidação ou limpar o cache inteiro.
 
 Quem invalida é a rota `POST /api/revalidar` (LP-309), que recebe a etiqueta
-e chama `revalidateTag`.
+e chama `revalidateTag`. Qual função usar numa Server Action — `updateTag`,
+`revalidateTag`, `revalidatePath` ou `refresh()` — está em
+[`docs/atualizacao-de-cache.md`](atualizacao-de-cache.md).
 
 ## O esquema
 
@@ -15,6 +17,7 @@ e chama `revalidateTag`.
 | `listarMidias` | `GET /midias` | `midias` | a listagem do catálogo |
 | `buscarMidia` | `GET /midias/{slug}` | `midias`, `midia:<slug>` | o catálogo **e** aquela ficha |
 | `listarGeneros` | `GET /generos` | `generos` | a lista de gêneros |
+| `buscarNoCatalogo` | `GET /busca` | `midias` | as buscas guardadas, junto com o catálogo |
 | `listarHistorico` | `GET /perfil/historico` | nenhuma | nada: esta busca não é cacheada |
 
 As constantes estão em [`lib/cache-tags.ts`](../lib/cache-tags.ts). Não

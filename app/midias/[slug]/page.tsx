@@ -117,6 +117,12 @@ export default async function PaginaDaMidia({
         </Link>
       </nav>
 
+      {/*
+        O "já assisti" entra como filho do cabeçalho, e não dentro dele: o
+        mesmo cabeçalho é usado pelo layout das temporadas, que é pré-gerado
+        no build (LP-303) e deixaria de ser se lesse cookie. Quem lê o cookie
+        é esta página, que já é dinâmica.
+      */}
       <CabecalhoDaMidia midia={midia}>
         {/*
           O servidor lê o cookie e manda o estado real; o botão desenha o

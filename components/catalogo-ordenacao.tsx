@@ -11,17 +11,19 @@ import { useRef } from "react";
  * quando a pessoa escolhe outra. Quem lê e escreve a URL é o `CatalogoGrade`.
  */
 
-export type OrdemCatalogo = "relevancia" | "recentes" | "nota" | "az";
+export type OrdemCatalogo = "populares" | "recentes" | "nota" | "az";
 
 type Props = {
   ordem: OrdemCatalogo;
   aoMudarOrdem: (novaOrdem: OrdemCatalogo) => void;
 };
 
-// A ordem do array é a ordem do menu. "Relevância" primeiro porque é o
-// padrão de quem chega sem pedir nada.
-const ORDENS: { valor: OrdemCatalogo; rotulo: string }[] = [
-  { valor: "relevancia", rotulo: "Relevância" },
+// A ordem do array é a ordem do menu. "Mais populares" primeiro porque é o
+// padrão de quem chega sem pedir nada — e é a única que a API garante.
+// Já se chamou "Relevância", que prometia um critério que ninguém calcula:
+// a API ordena por `popularidade` (docs/ordenacao-catalogo.md).
+export const ORDENS: { valor: OrdemCatalogo; rotulo: string }[] = [
+  { valor: "populares", rotulo: "Mais populares" },
   { valor: "recentes", rotulo: "Mais recentes" },
   { valor: "nota", rotulo: "Melhor avaliados" },
   { valor: "az", rotulo: "A-Z" },
@@ -33,7 +35,7 @@ const ORDENS: { valor: OrdemCatalogo; rotulo: string }[] = [
  * existe — e sem `as` para convencer o compilador.
  */
 export function lerOrdem(valor: string | null): OrdemCatalogo {
-  return ORDENS.find((item) => item.valor === valor)?.valor ?? "relevancia";
+  return ORDENS.find((item) => item.valor === valor)?.valor ?? "populares";
 }
 
 export function CatalogoOrdenacao({ ordem, aoMudarOrdem }: Props) {
@@ -41,7 +43,7 @@ export function CatalogoOrdenacao({ ordem, aoMudarOrdem }: Props) {
   const summaryRef = useRef<HTMLElement>(null);
 
   const rotuloAtual =
-    ORDENS.find((item) => item.valor === ordem)?.rotulo ?? "Relevância";
+    ORDENS.find((item) => item.valor === ordem)?.rotulo ?? "Mais populares";
 
   function fecharMenu() {
     if (detailsRef.current) {

@@ -18,6 +18,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * Reserva o espaço da barra de rolagem mesmo quando o modal da ficha trava o
+ * fundo (`overflow: hidden` no body, LP-509). Sem isso, a barra some, a grade
+ * fica mais larga, os cards mudam de altura e a rolagem anda (900 → 911 numa
+ * janela de 420px) — o contrário do que o LP-510 pede.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

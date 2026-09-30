@@ -181,23 +181,9 @@ module.exports = {
 | --- | --- | --- |
 | [`app/entrar/acoes.ts`](../app/entrar/acoes.ts) | troca usuário e senha por sessão | campos vazios, destino do `?de=`, e devolve a mesma mensagem para usuário inexistente e senha errada |
 | [`app/perfil/acoes.ts`](../app/perfil/acoes.ts) | encerra a sessão | lê o token de renovação do cookie; apaga os cookies mesmo se a API falhar |
-| [`app/midias/[slug]/acoes.ts`](../app/midias/[slug]/acoes.ts) | publica a resenha de quem está logado | a sessão pela DAL (o formulário só aparecer logado **não** é barreira); o slug do campo escondido, perguntando ao catálogo se o título existe; tamanho do texto e faixa da nota; e lê o token do cookie dentro da action |
 
-As três são POST, as três são endereços públicos, e nenhuma delas recebe
+As duas são POST, as duas são endereços públicos, e nenhuma das duas recebe
 token como parâmetro.
-
-> **Por que a action da resenha confere o slug contra o catálogo.** Ele chega
-> de um campo escondido, como o `de` do login, e duas coisas dependem dele: a
-> URL para onde a escrita vai e a etiqueta de cache derrubada no fim. Sem a
-> conferência, um slug inventado viraria `updateTag("midia:qualquer-coisa")` —
-> invalidação de cache comandada de fora, por quem postar direto no endereço
-> da action.
-
-> **A action está pronta e desligada.** `RESENHA_PUBLICAVEL`, em
-> [`lib/recursos.ts`](../lib/recursos.ts), começa `false`: o endpoint
-> `PUT /v1/midias/{id}/resenha` ainda é 🕓 no contrato e responde 404 na API
-> publicada. A action recusa o envio antes de qualquer trabalho enquanto for
-> assim — inclusive para quem postar sem passar pela tela.
 
 ---
 

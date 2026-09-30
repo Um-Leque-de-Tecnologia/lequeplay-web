@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useSyncExternalStore } from "react";
 
 import { FichaTecnica } from "@/components/ficha-tecnica";
 import type { Credito, Midia } from "@/lib/tipos";
@@ -14,15 +14,49 @@ const ABAS: { id: IdAba; rotulo: string }[] = [
 ];
 
 /**
- * Qual aba a ficha abre.
+ * Qual aba está aberta: a do fragmento da URL (`/midias/slug#elenco`), e a
+ * sinopse quando não há fragmento ou ele não é de aba nenhuma.
  *
- * Sai daqui e não da URL de propósito: aba aberta é estado de leitura, não
- * endereço. No dia em que a ficha precisar de link direto para o elenco
- * (`/midias/slug#elenco`), é esta função que passa a ler o fragmento — e só
- * ela.
+ * A aba mora na URL, e não num `useState`, para o link de uma aba abrir nela
+ * e o "voltar" desfazer a troca (LP-501). É a única função que lê o
+ * fragmento, e o `useSyncExternalStore` só a chama no navegador.
  */
-function abaInicial(): IdAba {
+function abaDoFragmento(): IdAba {
+  const fragmento = window.location.hash.slice(1);
+  return ABAS.find((aba) => aba.id === fragmento)?.id ?? "sinopse";
+}
+
+/**
+ * O fragmento nunca chega ao servidor: ele renderiza a sinopse, e a
+ * hidratação usa este mesmo valor. Logo depois o React relê
+ * `abaDoFragmento` e troca de aba, se for o caso — sem erro de hidratação.
+ */
+function abaNoServidor(): IdAba {
   return "sinopse";
+}
+
+/**
+ * Quem precisa saber que a aba mudou. Voltar e avançar disparam `hashchange`
+ * sozinhos; o `pushState` da própria ficha não dispara evento nenhum, e por
+ * isso `irParaAba` avisa por aqui.
+ */
+const avisosDeAba = new Set<() => void>();
+
+function assinarAba(avisar: () => void) {
+  avisosDeAba.add(avisar);
+  window.addEventListener("hashchange", avisar);
+
+  return () => {
+    avisosDeAba.delete(avisar);
+    window.removeEventListener("hashchange", avisar);
+  };
+}
+
+function irParaAba(id: IdAba) {
+  // `pushState`, e não `location.hash =`: é o caminho que o Next acompanha,
+  // e cada troca vira uma entrada no histórico, que o "voltar" percorre.
+  window.history.pushState(null, "", `#${id}`);
+  avisosDeAba.forEach((avisar) => avisar());
 }
 
 /** O elenco sai de `creditos`; a API não manda uma lista de atores solta. */
@@ -71,7 +105,11 @@ function PainelDaAba({ id, midia }: { id: IdAba; midia: Midia }) {
 }
 
 export function FichaAbas({ midia }: { midia: Midia }) {
-  const [abaAberta, setAbaAberta] = useState<IdAba>(abaInicial);
+  const abaAberta = useSyncExternalStore(
+    assinarAba,
+    abaDoFragmento,
+    abaNoServidor,
+  );
   const referenciasAbas = useRef<
     Record<IdAba, HTMLButtonElement | null>
   >({
@@ -81,7 +119,12 @@ export function FichaAbas({ midia }: { midia: Midia }) {
   });
 
   const selecionarAba = (id: IdAba) => {
-    setAbaAberta(id);
+    // A aba que já está aberta não empilha entrada: o "voltar" seguinte
+    // pareceria não fazer nada.
+    if (id !== abaAberta) {
+      irParaAba(id);
+    }
+
     const botao = referenciasAbas.current[id];
 
     if (botao !== null) {

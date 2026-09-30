@@ -16,8 +16,9 @@ import type {
   Genero,
   ItemHistorico,
   Midia,
+  ModoBusca,
   Pagina,
-  Resenha,
+  ResultadoBusca,
   TokensDaSessao,
   UsuarioDaSessao,
 } from "@/lib/tipos";
@@ -173,10 +174,6 @@ async function enviar<T>(
   caminho: string,
   corpo: unknown,
   cabecalhos: Record<string, string> = {},
-  // `PUT` existe por causa da resenha: o contrato usa PUT porque é "cria ou
-  // substitui a minha" — uma por pessoa por título, reenviar substitui. O
-  // padrão continua `POST` para as três chamadas de conta não mudarem.
-  metodo: "POST" | "PUT" = "POST",
 ): Promise<T> {
   if (!BASE) {
     throw new ErroDaApi("API_URL não está configurada. Veja o .env.example", 500);
@@ -184,7 +181,7 @@ async function enviar<T>(
 
   try {
     const resposta = await fetch(`${BASE}${caminho}`, {
-      method: metodo,
+      method: "POST",
       headers: { "content-type": "application/json", ...cabecalhos },
       body: JSON.stringify(corpo),
       cache: "no-store",
@@ -310,50 +307,6 @@ export async function buscarUsuarioDaSessao(
 }
 
 /* -------------------------------------------------------------------------
-   A camada social: por enquanto, só a resenha.
-   ------------------------------------------------------------------------- */
-
-/**
- * Publica (ou substitui) a resenha de quem está logado.
- *
- * `PUT` e não `POST` porque é **uma por pessoa por título**: reenviar não cria
- * a segunda, substitui a primeira. É o contrato quem diz, e é a única forma
- * que sobrevive a um duplo clique sem virar duas resenhas.
- *
- * ## O que vai no corpo, e o que não vai
- *
- * Só `{ nota, texto, contemSpoiler }` — a mudança da pessoa. O título vai na
- * **URL**, e o autor sai do token: quem escreveu não é campo do corpo, senão
- * bastaria trocar o nome ali para assinar no lugar de outra pessoa.
- *
- * ## O token chega por parâmetro aqui, e só aqui
- *
- * Esta função roda no servidor e recebe o token já lido do cookie pela
- * action. A regra de `docs/server-actions-seguranca.md` — "nunca receber
- * token como parâmetro" — é sobre **actions**, que são endereços públicos;
- * esta é uma função interna, do mesmo lado do `buscarUsuarioDaSessao`, que
- * recebe o token pelo mesmo motivo e da mesma forma.
- *
- * Nunca cacheada: é escrita.
- */
-export async function publicarResenha(
-  slug: string,
-  rascunho: { nota: number | null; texto: string; contemSpoiler: boolean },
-  tokenDeAcesso: string,
-): Promise<Resenha> {
-  return enviar<Resenha>(
-    // O contrato escreve `{midiaId}`, e a rota de detalhe do catálogo aceita
-    // "o slug ou o id". O front tem o slug em mãos — é o que está na URL da
-    // ficha — e `RascunhoResenha` já modela o título por slug. Se a API da
-    // resenha vier a exigir o id, é esta linha que muda, e só ela.
-    `/midias/${encodeURIComponent(slug)}/resenha`,
-    rascunho,
-    { Authorization: `Bearer ${tokenDeAcesso}` },
-    "PUT",
-  );
-}
-
-/* -------------------------------------------------------------------------
    Enquanto o backend não sobe: os mesmos dados, servidos do arquivo local.
    ------------------------------------------------------------------------- */
 
@@ -433,6 +386,88 @@ export const listarMidias = cache(async function listarMidias(
     // E a promessa do campo é "não busco de novo antes de N segundos" — e não
     // "o que você vê tem no máximo N segundos". Sem visita, o dado guardado
     // envelhece à vontade.
+    revalidar: 3600,
+  });
+});
+
+/**
+ * A busca do mock, com o que um arquivo JSON consegue fazer: achar palavras.
+ *
+ * Todas as palavras da consulta precisam aparecer no título ou na sinopse, em
+ * qualquer ordem — como a busca por palavras da API, que liga as palavras com
+ * E. O `score` conta o que o mock mediu (palavra no título vale 2, na sinopse
+ * vale 1), e a lista sai ordenada por ele. Fora desta resposta o número não
+ * quer dizer nada: o contrato diz o mesmo do score da API.
+ *
+ * Sem radical, sem sinônimo, sem significado: por isso `modo: "fts"` e
+ * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
+ * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
+ */
+async function buscarNoMock(q: string): Promise<ResultadoBusca> {
+  const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
+
+  if (palavras.length === 0) {
+    return { query: q, modo: "fts", usouFallback: true, itens: [] };
+  }
+
+  const todas = await doMock();
+
+  const itens = todas
+    .flatMap((midia) => {
+      const titulo = midia.titulo.toLowerCase();
+      const sinopse = midia.sinopse?.toLowerCase() ?? "";
+
+      if (!palavras.every((p) => titulo.includes(p) || sinopse.includes(p))) {
+        return [];
+      }
+
+      const score = palavras.reduce(
+        (soma, p) =>
+          soma + (titulo.includes(p) ? 2 : 0) + (sinopse.includes(p) ? 1 : 0),
+        0,
+      );
+
+      return [{ midia, score }];
+    })
+    .toSorted((a, b) => b.score - a.score)
+    .map(({ midia, score }, i) => ({ ...midia, score, rank: i + 1 }));
+
+  return { query: q, modo: "fts", usouFallback: true, itens };
+}
+
+/**
+ * A busca de títulos no catálogo (`GET /v1/busca`).
+ *
+ * Diferente da listagem, esta rota passa pelo motor de busca da API (textual,
+ * vetorial ou híbrido) e devolve a resposta no envelope `ResultadoBusca`, com
+ * ranqueamento e indicação de fallback léxico quando a IA não respondeu.
+ *
+ * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
+ * tipo e declara o que fez.
+ *
+ * `q` e `modo` separados, e não um objeto: o `cache()` compara argumento por
+ * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
+ * não (veja o comentário do `listarMidias`).
+ */
+export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
+  q: string,
+  modo?: ModoBusca,
+): Promise<ResultadoBusca> {
+  if (USAR_MOCK) {
+    return buscarNoMock(q);
+  }
+
+  const params = new URLSearchParams({ q });
+  if (modo) {
+    params.set("modo", modo);
+  }
+
+  return buscar<ResultadoBusca>(`/busca?${params}`, {
+    tags: [CACHE_TAGS.MIDIAS],
+    // Uma hora, como a listagem, e pelo mesmo motivo: o resultado de uma
+    // busca só muda quando o catálogo muda, e o catálogo muda por ingestão.
+    // O vigia do LP-310 derruba a etiqueta `midias` quando a versão sobe, e
+    // as buscas guardadas caem junto.
     revalidar: 3600,
   });
 });

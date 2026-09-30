@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { FichaResenhaCampo } from "@/components/ficha-resenha-campo";
-import { FichaResenhaFormulario } from "@/components/ficha-resenha-formulario";
 import { buscarUsuarioLogado } from "@/lib/dal";
-import { RESENHA_PUBLICAVEL } from "@/lib/recursos";
 
 /**
  * O bloco da resenha, que agora sabe se há alguém logado — e continua sem
@@ -22,16 +20,9 @@ import { RESENHA_PUBLICAVEL } from "@/lib/recursos";
  * de resenha — e o `openapi.yaml` também não a menciona. O contrato do time
  * marca a camada social como 🕓 **combinado**, não realidade.
  *
- * A Server Action de publicar **existe** desde então, em
- * `app/midias/[slug]/acoes.ts`, escrita inteira com a invalidação certa — é
- * ela que impede o bug clássico de a ficha continuar mostrando o estado
- * anterior depois de publicar. O que ela não faz é rodar: enquanto
- * `RESENHA_PUBLICAVEL` (em `lib/recursos.ts`) estiver desligado, o botão
- * continua desligado com a frase honesta, porque um clique que falha é pior
- * do que um botão que assume não existir ainda.
- *
- * Ligar é uma linha no `.env` no dia em que o endpoint subir — não é
- * reescrever esta tela.
+ * Por isso **não** existe Server Action de publicar aqui. Escrever uma que
+ * chama um endereço inexistente entregaria um botão que falha no clique — e
+ * um botão que falha é pior do que um botão desligado com uma frase honesta.
  *
  * ## O que a conta muda, então
  *
@@ -83,41 +74,29 @@ export async function FichaResenha({
         Sua resenha
       </h2>
 
+      <label htmlFor="texto" className="block text-sm text-zinc-400">
+        O que você achou de {titulo}?
+      </label>
+
+      <FichaResenhaCampo />
+
       {/*
-        A action de publicar existe e está pronta (`app/midias/[slug]/acoes.ts`),
-        com a invalidação que faz a ficha mostrar a resenha sem ninguém apertar
-        F5. O que ainda não existe é o endereço para onde mandar.
-
-        Enquanto `RESENHA_PUBLICAVEL` estiver desligado, a tela continua
-        dizendo a verdade: campo aberto, botão desligado, motivo escrito. O
-        contrário — ligar o botão porque o código do nosso lado está pronto —
-        entregaria um clique que falha, que é pior do que um botão honesto.
+        Continua desabilitado, agora com o motivo escrito na tela. A conta
+        existe, a vontade existe, o endereço para onde mandar é que não —
+        conferido: a rota responde 404 na API publicada.
       */}
-      {RESENHA_PUBLICAVEL ? (
-        <FichaResenhaFormulario slug={slug} titulo={titulo} />
-      ) : (
-        <>
-          <label htmlFor="texto" className="block text-sm text-zinc-400">
-            O que você achou de {titulo}?
-          </label>
+      <button
+        type="button"
+        disabled
+        className="mt-3 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
+      >
+        Publicar resenha
+      </button>
 
-          <FichaResenhaCampo />
-
-          <button
-            type="button"
-            disabled
-            className="mt-3 rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
-          >
-            Publicar resenha
-          </button>
-
-          <p className="mt-2 text-sm text-zinc-500">
-            Você está logado, mas publicar resenha ainda não existe na API — o
-            que você escrever aqui não será salvo. Estamos esperando o
-            endpoint.
-          </p>
-        </>
-      )}
+      <p className="mt-2 text-sm text-zinc-500">
+        Você está logado, mas publicar resenha ainda não existe na API — o que
+        você escrever aqui não será salvo. Estamos esperando o endpoint.
+      </p>
     </section>
   );
 }

@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { AcervoGrade } from "@/components/acervo-grade";
 import { AcervoFiltravelDaPessoa } from "@/components/historico-da-pessoa";
 import type { Midia } from "@/lib/tipos";
 
@@ -22,8 +24,17 @@ export function HomeAcervo({ itens, total }: Props) {
         </p>
       </div>
 
-      {/* O histórico é da pessoa e chega pelo navegador (LP-414). */}
-      <AcervoFiltravelDaPessoa itens={itens} />
+      {/*
+        O histórico é da pessoa e chega pelo navegador (LP-414). O filtro lê a
+        URL com `useSearchParams`, e a home é pré-gerada: no build não existe
+        query. Sem esta fronteira, o Next desiste do HTML até a `Suspense` mais
+        próxima — a do `loading.tsx`, que cobre a home inteira (LP-502). Com
+        ela, só o acervo espera o navegador, e o HTML leva a grade sem filtro,
+        que é o que vê quem chega sem `?nao-vistos`.
+      */}
+      <Suspense fallback={<AcervoGrade itens={itens} />}>
+        <AcervoFiltravelDaPessoa itens={itens} />
+      </Suspense>
     </section>
   );
 }

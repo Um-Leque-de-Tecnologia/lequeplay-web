@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CatalogoBusca } from "@/components/catalogo-busca";
 import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
 import { CatalogoGrade } from "@/components/catalogo-grade";
 import { CatalogoVazio } from "@/components/catalogo-vazio";
@@ -13,7 +14,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
-  const [{ itens }, generos] = await Promise.all([
+  const [{ itens, pagina, total }, generos] = await Promise.all([
     listarMidias({
       tipo: typeof tipo === "string" ? (tipo as Midia["tipo"]) : undefined,
       q: typeof q === "string" ? q : undefined,
@@ -32,30 +33,15 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         exato, no cliente da API. Fazer ela entender intenção é o ticket da
         sprint 6.
       */}
-      <form role="search" className="mt-6 flex flex-wrap gap-2">
-        <label htmlFor="q" className="sr-only">
-          Buscar no catálogo
-        </label>
-        <input
-          id="q"
-          name="q"
-          type="search"
-          defaultValue={typeof q === "string" ? q : ""}
-          placeholder="Buscar por título"
-          className="min-w-64 flex-1 rounded-md border border-white/15 bg-zinc-900 px-3 py-2 text-base placeholder:text-zinc-600"
-        />
-        <button
-          type="submit"
-          className="rounded-md bg-violet-600 px-4 py-2 font-medium text-white transition hover:bg-violet-500"
-        >
-          Buscar
-        </button>
-      </form>
+      <CatalogoBusca consulta={typeof q === "string" ? q : ""} />
 
       <CatalogoChipsGenero generos={generos} />
 
       <CatalogoGrade
         itens={itens}
+        // `total` é o tamanho do resultado inteiro, não da página: é a
+        // única forma de a grade saber se tem tudo para poder ordenar.
+        resultadoCompleto={pagina === 1 && itens.length >= total}
         vazio={
           <CatalogoVazio
             q={typeof q === "string" ? q : undefined}
