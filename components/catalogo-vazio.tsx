@@ -44,8 +44,8 @@ export function CatalogoVazio({
   const tipoLido = lerTipo(tipo);
   const frase = tipoLido ? NENHUM[tipoLido] : "Nenhum título encontrado";
 
-  // Filtro é o que está na URL: busca, tipo ou gênero. Qualquer um deles
-  // pode esvaziar a grade, e também precisa de saída.
+  // Filtro é o que está na URL, válido ou não: um `?tipo=` inventado também
+  // esvazia a grade, e também precisa de saída.
   const temFiltro = Boolean(busca) || Boolean(tipo) || Boolean(genero);
 
   return (

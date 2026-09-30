@@ -10,7 +10,6 @@ export const metadata: Metadata = { title: "Catálogo" };
 
 // `searchParams` é uma Promise no Next 16 — precisa de await.
 export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
-  // O endereço é entrada: `as string` não converte lista nem valor inventado.
   const filtros = lerFiltros(await searchParams);
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
