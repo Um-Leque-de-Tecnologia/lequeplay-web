@@ -9,6 +9,7 @@ import {
   listarMidias,
   type FiltrosCatalogo,
 } from "@/lib/api";
+import { lerFiltrosDoCatalogo } from "@/lib/filtros-do-catalogo";
 import type { Midia } from "@/lib/tipos";
 
 export const metadata: Metadata = { title: "Catálogo" };
@@ -79,15 +80,16 @@ async function lerCatalogo(filtros: FiltrosCatalogo): Promise<ConteudoDaGrade> {
 
 // `searchParams` é uma Promise no Next 16 — precisa de await.
 export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
-  const { tipo, q } = await searchParams;
+  // Daqui para baixo, só valor conferido (LP-606). Valor que a API não
+  // aceita (`?tipo=Filme`) ou parâmetro repetido com valores diferentes
+  // (`?q=a&q=b`) chega como ausente: a página responde como se ele não
+  // estivesse na URL. A regra e o porquê estão em `lib/filtros-do-catalogo.ts`.
+  const { tipo, q } = lerFiltrosDoCatalogo(await searchParams);
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
   const [{ itens, resultadoCompleto, ordemDaApi }, generos] = await Promise.all([
-    lerCatalogo({
-      tipo: typeof tipo === "string" ? (tipo as Midia["tipo"]) : undefined,
-      q: typeof q === "string" ? q : undefined,
-    }),
+    lerCatalogo({ tipo, q }),
     listarGeneros(),
   ]);
 
@@ -97,7 +99,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         Catálogo
       </h1>
 
-      <CatalogoBusca consulta={typeof q === "string" ? q : ""} />
+      <CatalogoBusca consulta={q ?? ""} />
 
       <CatalogoChipsGenero generos={generos} />
 
@@ -105,12 +107,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         itens={itens}
         resultadoCompleto={resultadoCompleto}
         ordemDaApi={ordemDaApi}
-        vazio={
-          <CatalogoVazio
-            q={typeof q === "string" ? q : undefined}
-            tipo={typeof tipo === "string" ? tipo : undefined}
-          />
-        }
+        vazio={<CatalogoVazio q={q} tipo={tipo} />}
       />
     </>
   );
