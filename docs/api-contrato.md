@@ -173,6 +173,17 @@ envelope é a causa nº 1 de front quebrado.
 > `pagina`/`porPagina` vence. Na **resposta** existe um envelope só, o de
 > cima: quem consome não precisa saber que o SQL lá dentro pensa em offset.
 
+> **Conferido no LP-604**, no `openapi.yaml` e em `internal/catalog/`
+> (`parseFilter` no `handler.go`, `Page` no `model.go`) da API: a query lê
+> os dois pares, e a resposta traz só `pagina`, `porPagina` e `total`. O
+> envelope `{ itens, total, limite, offset }` é o de antes do
+> [lequeplay-api#2](https://github.com/Um-Leque-de-Tecnologia/lequeplay-api/pull/2)
+> — texto de card anterior a ele ainda pode citá-lo. O catálogo manda
+> `?pagina=` só da segunda página em diante, e não manda `porPagina`: o
+> padrão de 20 é o tamanho que ele usa. E a página que a tela mostra é a que
+> volta na resposta, e não a pedida — parâmetro com nome errado não dá erro,
+> a API devolve a primeira página, e a tela precisa dizer isso.
+
 ---
 
 ## Modelo de dados

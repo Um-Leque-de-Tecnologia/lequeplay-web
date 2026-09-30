@@ -145,7 +145,11 @@ lista (`lerOrdem` descarta o resto antes).
 
 ## Fora deste card
 
-O contador da grade (`{itens.length} título(s)`) conta a **página**, e não o
-resultado. Com paginação, o catálogo inteiro aparece como "20 título(s)". O
-número certo é o `total` do envelope. Fica registrado aqui para o LP-604, que
-é quem mexe na paginação.
+O contador da grade (`{itens.length} título(s)`) contava a **página**, e não
+o resultado: o catálogo inteiro aparecia como "20 título(s)". Resolvido no
+LP-604: a linha diz o `total` do envelope e a página ("60 títulos · página 1
+de 3"), e a página vai na URL (`?pagina=`).
+
+A regra desta decisão não mudou com a paginação. Da página 2 em diante,
+`resultadoCompleto` é sempre falso, e vale a frase "Mais populares primeiro".
+O menu aparece quando o resultado inteiro cabe na página 1.
