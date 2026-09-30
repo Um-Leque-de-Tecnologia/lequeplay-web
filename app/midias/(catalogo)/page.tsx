@@ -46,6 +46,11 @@ type ConteudoDaGrade = {
  * listagem é uma **página**, com `pagina` e `total`; a busca é uma **lista
  * ranqueada**, sem total e sem página seguinte. Por isso a busca não ganha
  * paginação — não existe a página 2 de um ranking.
+ *
+ * Os filtros valem nos dois caminhos (LP-601): o `openapi.yaml` da API
+ * declara `tipo` e `genero` também em `/v1/busca`, e lá eles filtram antes de
+ * ranquear. Com uma consulta na URL, o chip de gênero recorta a busca, em vez
+ * de trocar a busca pela listagem ou de ser ignorado em silêncio.
  */
 async function lerCatalogo(filtros: FiltrosCatalogo): Promise<ConteudoDaGrade> {
   // `?q=` vazio fica na listagem: a API responde 400 ("Consulta ausente") a
@@ -55,6 +60,9 @@ async function lerCatalogo(filtros: FiltrosCatalogo): Promise<ConteudoDaGrade> {
       filtros.q,
       LIMITE_DA_BUSCA,
       filtros.tipo,
+      // Sem `modo`: o padrão da API (`auto`) é o que o catálogo quer.
+      undefined,
+      filtros.genero,
     );
 
     return {
@@ -84,12 +92,12 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
   // aceita (`?tipo=Filme`) ou parâmetro repetido com valores diferentes
   // (`?q=a&q=b`) chega como ausente: a página responde como se ele não
   // estivesse na URL. A regra e o porquê estão em `lib/filtros-do-catalogo.ts`.
-  const { tipo, q } = lerFiltrosDoCatalogo(await searchParams);
+  const { tipo, genero, q } = lerFiltrosDoCatalogo(await searchParams);
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
   const [{ itens, resultadoCompleto, ordemDaApi }, generos] = await Promise.all([
-    lerCatalogo({ tipo, q }),
+    lerCatalogo({ tipo, genero, q }),
     listarGeneros(),
   ]);
 
@@ -107,7 +115,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         itens={itens}
         resultadoCompleto={resultadoCompleto}
         ordemDaApi={ordemDaApi}
-        vazio={<CatalogoVazio q={q} tipo={tipo} />}
+        vazio={<CatalogoVazio q={q} tipo={tipo} genero={genero} />}
       />
     </>
   );

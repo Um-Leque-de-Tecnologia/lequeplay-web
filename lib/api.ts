@@ -403,14 +403,15 @@ export const listarMidias = cache(async function listarMidias(
  * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
  * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
  *
- * `tipo` e `limite` fazem o que fazem na API: o tipo filtra antes de
- * ranquear, e o limite corta a lista já ordenada — o `rank` conta a partir do
- * que sobrou.
+ * `tipo`, `genero` e `limite` fazem o que fazem na API: tipo e gênero filtram
+ * antes de ranquear, e o limite corta a lista já ordenada — o `rank` conta a
+ * partir do que sobrou.
  */
 async function buscarNoMock(
   q: string,
   limite: number,
   tipo?: Midia["tipo"],
+  genero?: string,
 ): Promise<ResultadoBusca> {
   const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
 
@@ -423,6 +424,11 @@ async function buscarNoMock(
   const itens = todas
     .flatMap((midia) => {
       if (tipo && midia.tipo !== tipo) {
+        return [];
+      }
+
+      // "Está na lista?", como no filtro da listagem logo acima.
+      if (genero && !midia.generos.some((g) => g === genero)) {
         return [];
       }
 
@@ -464,7 +470,8 @@ async function buscarNoMock(
  * o padrão de 20 que a API aplica em silêncio quando o parâmetro não vem. Vai
  * de 1 a 100; acima disso a API corta em 100.
  *
- * `tipo` filtra como na listagem (`?tipo=`), antes de ranquear.
+ * `tipo` e `genero` filtram como na listagem (`?tipo=`, `?genero=`), antes de
+ * ranquear.
  *
  * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
  * tipo e declara o que fez.
@@ -472,20 +479,31 @@ async function buscarNoMock(
  * Argumentos soltos, e não um objeto: o `cache()` compara argumento por
  * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
  * não (veja o comentário do `listarMidias`).
+ *
+ * `genero` vem por último, depois do `modo`, e não ao lado do `tipo`: quem já
+ * chama com `modo` na quarta posição continua certo. Com o gênero enfiado ali,
+ * um `"fts"` passaria a ser lido como gênero — e o compilador não reclamaria,
+ * porque os dois são texto.
  */
 export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
   q: string,
   limite: number,
   tipo?: Midia["tipo"],
   modo?: ModoBusca,
+  genero?: string,
 ): Promise<ResultadoBusca> {
   if (USAR_MOCK) {
-    return buscarNoMock(q, limite, tipo);
+    return buscarNoMock(q, limite, tipo, genero);
   }
 
   const params = new URLSearchParams({ q, limite: String(limite) });
   if (tipo) {
     params.set("tipo", tipo);
+  }
+  // `URLSearchParams` também aqui, e pelo mesmo motivo do chip: o `&` de
+  // "Action & Adventure" vira `%26`, e a API recebe o nome inteiro.
+  if (genero) {
+    params.set("genero", genero);
   }
   if (modo) {
     params.set("modo", modo);

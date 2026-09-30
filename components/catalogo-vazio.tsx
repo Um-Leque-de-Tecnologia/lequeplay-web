@@ -28,16 +28,25 @@ const NENHUM: Record<Midia["tipo"], string> = {
 export function CatalogoVazio({
   q,
   tipo,
+  genero,
 }: {
   q?: string;
   tipo?: Midia["tipo"];
+  /**
+   * Só conta para oferecer a saída; a frase não o repete. O gênero chega
+   * como texto livre da URL (`?genero=` escrito à mão também chega), e a
+   * regra desta tela é não ecoar o que alguém digitou.
+   */
+  genero?: string;
 }) {
   const busca = q?.trim();
   const frase = tipo ? NENHUM[tipo] : "Nenhum título encontrado";
 
   // Filtro é o que está valendo. Um `?tipo=` inventado não esvazia mais a
-  // grade — a página o ignora —, então não é ele que pede a saída.
-  const temFiltro = Boolean(busca) || Boolean(tipo);
+  // grade — a página o ignora —, então não é ele que pede a saída. Já o
+  // gênero filtra de verdade desde o LP-601, e esvazia: `?tipo=podcast` com
+  // um gênero só de filme, ou um nome que não existe no acervo.
+  const temFiltro = Boolean(busca) || Boolean(tipo) || Boolean(genero);
 
   return (
     <div className="mt-10 rounded-lg border border-dashed border-white/15 p-10 text-center">
