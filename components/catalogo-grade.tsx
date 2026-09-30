@@ -9,7 +9,15 @@ import {
   lerOrdem,
   type OrdemCatalogo,
 } from "@/components/catalogo-ordenacao";
+import { valorUnico } from "@/lib/filtros-do-catalogo";
 import type { Midia } from "@/lib/tipos";
+
+/**
+ * O critério da ordem em que os itens chegaram da API: popularidade na
+ * listagem (`GET /v1/midias`), relevância na busca (`GET /v1/busca`, pelo
+ * `rank`).
+ */
+export type OrdemDaApi = "popularidade" | "relevancia";
 
 type Props = {
   itens: Midia[];
@@ -30,14 +38,27 @@ type Props = {
    * ordem que a tela pode prometer é a que a API mandou.
    */
   resultadoCompleto: boolean;
+  /**
+   * Em que ordem os itens chegaram — é a ordem que a tela mostra quando não
+   * pode oferecer outra. Muda só a frase: "Mais populares primeiro" em cima
+   * de uma busca descreveria uma ordem que ninguém aplicou.
+   */
+  ordemDaApi: OrdemDaApi;
 };
 
-export function CatalogoGrade({ itens, vazio, resultadoCompleto }: Props) {
+export function CatalogoGrade({
+  itens,
+  vazio,
+  resultadoCompleto,
+  ordemDaApi,
+}: Props) {
   // A ordem mora na URL, e não em `useState`: `?ordem=az` volta igual quando
   // a pessoa recarrega e vai junto no link compartilhado.
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const ordemPedida = lerOrdem(searchParams.get("ordem"));
+  // `getAll`, e não `get`: o `get` pega o primeiro de um parâmetro repetido,
+  // e a regra do catálogo é que valores diferentes não valem nenhum (LP-606).
+  const ordemPedida = lerOrdem(valorUnico(searchParams.getAll("ordem")));
 
   // Um link com `?ordem=az` pode chegar numa busca que não cabe numa página.
   // A tela não finge atender: mostra a ordem da API e diz por quê.
@@ -90,7 +111,8 @@ export function CatalogoGrade({ itens, vazio, resultadoCompleto }: Props) {
           a.titulo.localeCompare(b.titulo, "pt-BR"),
         );
       case "populares":
-        // A ordem em que a API mandou, que é popularidade decrescente.
+        // A ordem em que a API mandou: popularidade decrescente na
+        // listagem, relevância na busca (`ordemDaApi`).
         return itens;
     }
   }, [itens, ordem]);
@@ -108,15 +130,21 @@ export function CatalogoGrade({ itens, vazio, resultadoCompleto }: Props) {
         ) : (
           // Sem menu, e não um menu de uma opção só: escolher entre nada
           // é ruído. A frase diz a ordem que está valendo.
-          <p className="text-sm text-zinc-400">Mais populares primeiro</p>
+          <p className="text-sm text-zinc-400">
+            {ordemDaApi === "relevancia"
+              ? "Mais relevantes primeiro"
+              : "Mais populares primeiro"}
+          </p>
         )}
       </div>
 
       {ordemRecusada && (
         <p className="mt-2 text-sm text-zinc-500">
-          A ordem “{ordemRecusada}” só está disponível quando todos os
-          resultados cabem em uma página. Filtre por tipo ou busque um título
-          para usá-la.
+          {/* Buscar não destrava mais a ordem (LP-607): a busca devolve os
+              primeiros de um ranking, e não o resultado inteiro. */}
+          {ordemDaApi === "relevancia"
+            ? `Na busca, a ordem “${ordemRecusada}” não se aplica: os títulos vêm do mais ao menos relevante.`
+            : `A ordem “${ordemRecusada}” só está disponível quando todos os resultados cabem em uma página. Filtre por tipo para usá-la.`}
         </p>
       )}
 

@@ -13,32 +13,40 @@ const NENHUM: Record<Midia["tipo"], string> = {
 };
 
 /**
- * O `?tipo=` chega da URL como texto livre. O que não é um dos três tipos
- * vira "título", em vez de a tela repetir um valor que alguém digitou à mão.
- */
-function lerTipo(valor: string | undefined): Midia["tipo"] | undefined {
-  return valor === "filme" || valor === "serie" || valor === "podcast"
-    ? valor
-    : undefined;
-}
-
-/**
  * O que a grade mostra quando a combinação de busca e filtros não devolve
  * nada. Busca sem resultado não é erro: é um resultado de tamanho zero, e a
  * tela precisa dizer isso e oferecer a saída.
+ *
+ * Recebe os filtros já conferidos pela página (`lerFiltrosDoCatalogo`,
+ * LP-606): um `?tipo=` inventado não chega aqui, e a frase nunca repete um
+ * valor que alguém digitou à mão.
  *
  * Continua Server Component mesmo aparecendo dentro da `CatalogoGrade`, que
  * é client: quem monta este componente é a página, e ele chega pronto à
  * grade pela prop `vazio`. Assim ele não entra no JavaScript do navegador.
  */
-export function CatalogoVazio({ q, tipo }: { q?: string; tipo?: string }) {
+export function CatalogoVazio({
+  q,
+  tipo,
+  genero,
+}: {
+  q?: string;
+  tipo?: Midia["tipo"];
+  /**
+   * Só conta para oferecer a saída; a frase não o repete. O gênero chega
+   * como texto livre da URL (`?genero=` escrito à mão também chega), e a
+   * regra desta tela é não ecoar o que alguém digitou.
+   */
+  genero?: string;
+}) {
   const busca = q?.trim();
-  const tipoLido = lerTipo(tipo);
-  const frase = tipoLido ? NENHUM[tipoLido] : "Nenhum título encontrado";
+  const frase = tipo ? NENHUM[tipo] : "Nenhum título encontrado";
 
-  // Filtro é o que está na URL, válido ou não: um `?tipo=` inventado também
-  // esvazia a grade, e também precisa de saída.
-  const temFiltro = Boolean(busca) || Boolean(tipo);
+  // Filtro é o que está valendo. Um `?tipo=` inventado não esvazia mais a
+  // grade — a página o ignora —, então não é ele que pede a saída. Já o
+  // gênero filtra de verdade desde o LP-601, e esvazia: `?tipo=podcast` com
+  // um gênero só de filme, ou um nome que não existe no acervo.
+  const temFiltro = Boolean(busca) || Boolean(tipo) || Boolean(genero);
 
   return (
     <div className="mt-10 rounded-lg border border-dashed border-white/15 p-10 text-center">

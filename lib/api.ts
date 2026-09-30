@@ -402,8 +402,17 @@ export const listarMidias = cache(async function listarMidias(
  * Sem radical, sem sinônimo, sem significado: por isso `modo: "fts"` e
  * `usouFallback: true` (LP-608). É a mesma combinação que a API devolve quando
  * a IA cai, e é o que faz a tela avisar que a busca está simplificada.
+ *
+ * `tipo`, `genero` e `limite` fazem o que fazem na API: tipo e gênero filtram
+ * antes de ranquear, e o limite corta a lista já ordenada — o `rank` conta a
+ * partir do que sobrou.
  */
-async function buscarNoMock(q: string): Promise<ResultadoBusca> {
+async function buscarNoMock(
+  q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
+  genero?: string,
+): Promise<ResultadoBusca> {
   const palavras = q.toLowerCase().split(/\s+/).filter(Boolean);
 
   if (palavras.length === 0) {
@@ -414,6 +423,15 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
 
   const itens = todas
     .flatMap((midia) => {
+      if (tipo && midia.tipo !== tipo) {
+        return [];
+      }
+
+      // "Está na lista?", como no filtro da listagem logo acima.
+      if (genero && !midia.generos.some((g) => g === genero)) {
+        return [];
+      }
+
       const titulo = midia.titulo.toLowerCase();
       const sinopse = midia.sinopse?.toLowerCase() ?? "";
 
@@ -430,34 +448,63 @@ async function buscarNoMock(q: string): Promise<ResultadoBusca> {
       return [{ midia, score }];
     })
     .toSorted((a, b) => b.score - a.score)
+    .slice(0, limite)
     .map(({ midia, score }, i) => ({ ...midia, score, rank: i + 1 }));
 
   return { query: q, modo: "fts", usouFallback: true, itens };
 }
 
 /**
- * A busca de títulos no catálogo (`GET /v1/busca`).
+ * A busca de títulos no catálogo (`GET /v1/busca`): pelas palavras **e** pelo
+ * significado. É o que acha "algo leve pra ver com a família", que o `?q=` da
+ * listagem não acha — lá o título ou a sinopse precisam conter a frase.
  *
  * Diferente da listagem, esta rota passa pelo motor de busca da API (textual,
  * vetorial ou híbrido) e devolve a resposta no envelope `ResultadoBusca`, com
  * ranqueamento e indicação de fallback léxico quando a IA não respondeu.
  *
+ * **`limite` é obrigatório.** A busca não pagina e não devolve `total`: o que
+ * não coube no limite não existe para quem chamou, porque não há "próxima
+ * página" de resultado ranqueado. Então quantos pedir é decisão de quem usa —
+ * o catálogo quer uma grade, uma recomendação quer poucos candidatos —, e não
+ * o padrão de 20 que a API aplica em silêncio quando o parâmetro não vem. Vai
+ * de 1 a 100; acima disso a API corta em 100.
+ *
+ * `tipo` e `genero` filtram como na listagem (`?tipo=`, `?genero=`), antes de
+ * ranquear.
+ *
  * Com `USAR_MOCK=true`, quem responde é o `buscarNoMock`, que devolve o mesmo
  * tipo e declara o que fez.
  *
- * `q` e `modo` separados, e não um objeto: o `cache()` compara argumento por
+ * Argumentos soltos, e não um objeto: o `cache()` compara argumento por
  * identidade, e dois textos iguais são a mesma chamada — dois objetos iguais,
  * não (veja o comentário do `listarMidias`).
+ *
+ * `genero` vem por último, depois do `modo`, e não ao lado do `tipo`: quem já
+ * chama com `modo` na quarta posição continua certo. Com o gênero enfiado ali,
+ * um `"fts"` passaria a ser lido como gênero — e o compilador não reclamaria,
+ * porque os dois são texto.
  */
 export const buscarNoCatalogo = cache(async function buscarNoCatalogo(
   q: string,
+  limite: number,
+  tipo?: Midia["tipo"],
   modo?: ModoBusca,
+  genero?: string,
 ): Promise<ResultadoBusca> {
   if (USAR_MOCK) {
-    return buscarNoMock(q);
+    return buscarNoMock(q, limite, tipo, genero);
   }
 
-  const params = new URLSearchParams({ q });
+  const params = new URLSearchParams({ q, limite: String(limite) });
+  if (tipo) {
+    params.set("tipo", tipo);
+  }
+  // `URLSearchParams` também aqui, e pelo mesmo motivo do chip: o `&` de
+  // "Action & Adventure" vira `%26`, e a API recebe o nome inteiro.
+  if (genero) {
+    params.set("genero", genero);
+  }
   if (modo) {
     params.set("modo", modo);
   }
