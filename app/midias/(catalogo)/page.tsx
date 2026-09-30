@@ -109,7 +109,7 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
 
       <CatalogoBusca consulta={q ?? ""} />
 
-      <CatalogoChipsGenero generos={generos} />
+      <CatalogoChipsGenero generos={generos} generoAtual={genero} />
 
       <CatalogoGrade
         itens={itens}
