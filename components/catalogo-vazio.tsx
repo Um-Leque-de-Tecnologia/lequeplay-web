@@ -31,14 +31,22 @@ function lerTipo(valor: string | undefined): Midia["tipo"] | undefined {
  * é client: quem monta este componente é a página, e ele chega pronto à
  * grade pela prop `vazio`. Assim ele não entra no JavaScript do navegador.
  */
-export function CatalogoVazio({ q, tipo }: { q?: string; tipo?: string }) {
+export function CatalogoVazio({
+  q,
+  tipo,
+  genero,
+}: {
+  q?: string;
+  tipo?: string;
+  genero?: string;
+}) {
   const busca = q?.trim();
   const tipoLido = lerTipo(tipo);
   const frase = tipoLido ? NENHUM[tipoLido] : "Nenhum título encontrado";
 
   // Filtro é o que está na URL, válido ou não: um `?tipo=` inventado também
   // esvazia a grade, e também precisa de saída.
-  const temFiltro = Boolean(busca) || Boolean(tipo);
+  const temFiltro = Boolean(busca) || Boolean(tipo) || Boolean(genero);
 
   return (
     <div className="mt-10 rounded-lg border border-dashed border-white/15 p-10 text-center">

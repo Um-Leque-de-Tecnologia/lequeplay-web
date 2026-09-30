@@ -4,20 +4,21 @@ import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
 import { CatalogoGrade } from "@/components/catalogo-grade";
 import { CatalogoVazio } from "@/components/catalogo-vazio";
 import { listarGeneros, listarMidias } from "@/lib/api";
-import type { Midia } from "@/lib/tipos";
+import { lerFiltros } from "@/lib/filtros-catalogo";
 
 export const metadata: Metadata = { title: "Catálogo" };
 
 // `searchParams` é uma Promise no Next 16 — precisa de await.
 export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
-  const { tipo, q } = await searchParams;
+  const filtros = lerFiltros(await searchParams);
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
   const [{ itens, pagina, total }, generos] = await Promise.all([
     listarMidias({
-      tipo: typeof tipo === "string" ? (tipo as Midia["tipo"]) : undefined,
-      q: typeof q === "string" ? q : undefined,
+      tipo: filtros.tipo,
+      genero: filtros.genero,
+      q: filtros.q,
     }),
     listarGeneros(),
   ]);
@@ -33,9 +34,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         exato, no cliente da API. Fazer ela entender intenção é o ticket da
         sprint 6.
       */}
-      <CatalogoBusca consulta={typeof q === "string" ? q : ""} />
+      <CatalogoBusca consulta={filtros.q ?? ""} />
 
-      <CatalogoChipsGenero generos={generos} />
+      <CatalogoChipsGenero generos={generos} filtros={filtros} />
 
       <CatalogoGrade
         itens={itens}
@@ -44,8 +45,9 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         resultadoCompleto={pagina === 1 && itens.length >= total}
         vazio={
           <CatalogoVazio
-            q={typeof q === "string" ? q : undefined}
-            tipo={typeof tipo === "string" ? tipo : undefined}
+            q={filtros.q}
+            tipo={filtros.tipo}
+            genero={filtros.genero}
           />
         }
       />
