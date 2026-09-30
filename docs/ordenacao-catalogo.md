@@ -50,14 +50,20 @@ resultado inteiro, e só nesse caso:
 resultadoCompleto = pagina === 1 && itens.length >= total
 ```
 
-- **Resultado inteiro** (uma busca ou um filtro que cabe numa página): o
-  menu aparece com as quatro ordens, e elas são exatas.
+- **Resultado inteiro** (um filtro que cabe numa página): o menu aparece com
+  as quatro ordens, e elas são exatas.
 - **Resultado paginado:** o menu some. No lugar dele, a tela diz a ordem que
   está valendo, "Mais populares primeiro", porque é a única que a API
   garante.
+- **Busca** (desde o LP-607, que trocou o `?q=` da listagem por
+  `GET /v1/busca`): o menu some também. A busca devolve os primeiros de um
+  ranking, sem `total` e sem página seguinte — é o caso da página de novo:
+  "A-Z" em cima dela põe em ordem alfabética os mais relevantes. A frase diz
+  "Mais relevantes primeiro", porque ali a ordem da API é a relevância, e não
+  a popularidade.
 - **Link com `?ordem=az` num resultado paginado:** a tela não finge atender.
   Mostra a ordem da API e diz por que o A-Z não está disponível ali, e como
-  chegar nele (filtrar ou buscar).
+  chegar nele (filtrar). Na busca, diz que a ordem não se aplica.
 
 "Relevância" passou a se chamar **"Mais populares"**, com o valor interno
 `populares`. Como o padrão nunca vai para a URL (sem `?ordem=`, a URL fica
@@ -81,7 +87,8 @@ mão cai no padrão, como qualquer valor desconhecido.
 
 - [`app/midias/(catalogo)/page.tsx`](../app/midias/(catalogo)/page.tsx)
   calcula `resultadoCompleto` a partir do envelope `Pagina<Midia>`. O `total` é
-  o que diz se a página tem tudo.
+  o que diz se a página tem tudo. Na busca ele é sempre `false`, e a página
+  avisa a grade que a ordem da API é a relevância (`ordemDaApi`).
 - [`components/catalogo-grade.tsx`](../components/catalogo-grade.tsx) decide
   entre o menu e a frase, e ignora `?ordem=` quando não pode cumprir.
 - [`components/catalogo-ordenacao.tsx`](../components/catalogo-ordenacao.tsx)
