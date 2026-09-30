@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { CatalogoBusca } from "@/components/catalogo-busca";
 import { CatalogoChipsGenero } from "@/components/catalogo-chips-genero";
-import { CatalogoGrade, type OrdemDaApi } from "@/components/catalogo-grade";
+import {
+  CatalogoGrade,
+  type OrdemDaApi,
+  type PosicaoNaListagem,
+} from "@/components/catalogo-grade";
+import {
+  CatalogoPaginacao,
+  CatalogoPaginaInexistente,
+} from "@/components/catalogo-paginacao";
 import { CatalogoVazio } from "@/components/catalogo-vazio";
 import {
   buscarNoCatalogo,
@@ -36,6 +44,8 @@ type ConteudoDaGrade = {
   itens: Midia[];
   resultadoCompleto: boolean;
   ordemDaApi: OrdemDaApi;
+  /** Só na listagem: a busca é um ranking, e ranking não tem página. */
+  posicao?: PosicaoNaListagem;
 };
 
 /**
@@ -75,7 +85,12 @@ async function lerCatalogo(filtros: FiltrosCatalogo): Promise<ConteudoDaGrade> {
     };
   }
 
-  const { itens, pagina, total } = await listarMidias(filtros);
+  // A página que vale é a que a API **diz** ter devolvido, e não a que foi
+  // pedida. Parâmetro de paginação com nome errado não dá erro: a API o
+  // ignora e manda a primeira página. Lendo `pagina` da resposta, um pedido
+  // ignorado aparece na tela como "página 1", que é o que a grade mostra — e
+  // não como a página 3 com os itens da 1.
+  const { itens, pagina, porPagina, total } = await listarMidias(filtros);
 
   return {
     itens,
@@ -83,6 +98,12 @@ async function lerCatalogo(filtros: FiltrosCatalogo): Promise<ConteudoDaGrade> {
     // única forma de a grade saber se tem tudo para poder ordenar.
     resultadoCompleto: pagina === 1 && itens.length >= total,
     ordemDaApi: "popularidade",
+    posicao: {
+      total,
+      pagina,
+      // Sem resultado ainda é "página 1 de 1", e não "de 0".
+      totalDePaginas: Math.max(1, Math.ceil(total / porPagina)),
+    },
   };
 }
 
@@ -92,14 +113,27 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
   // aceita (`?tipo=Filme`) ou parâmetro repetido com valores diferentes
   // (`?q=a&q=b`) chega como ausente: a página responde como se ele não
   // estivesse na URL. A regra e o porquê estão em `lib/filtros-do-catalogo.ts`.
-  const { tipo, genero, q } = lerFiltrosDoCatalogo(await searchParams);
+  const { tipo, genero, q, pagina } = lerFiltrosDoCatalogo(
+    await searchParams,
+  );
 
   // `Promise.all` porque uma busca não depende da outra: em série, a página
   // esperaria a soma dos dois tempos em vez do maior deles.
-  const [{ itens, resultadoCompleto, ordemDaApi }, generos] = await Promise.all([
-    lerCatalogo({ tipo, genero, q }),
-    listarGeneros(),
-  ]);
+  const [{ itens, resultadoCompleto, ordemDaApi, posicao }, generos] =
+    await Promise.all([
+      lerCatalogo({ tipo, genero, q, pagina }),
+      listarGeneros(),
+    ]);
+
+  // Uma página depois da última (`?pagina=9` num catálogo de 3): a API
+  // responde 200, com `itens: []` e o `total` inteiro. Não é "nenhum título
+  // encontrado" — os títulos existem, só não nesta página —, e a tela diz
+  // isso, com o caminho para a última que existe. Com `total` 0, a página
+  // não importa: nada casou com o filtro, e o vazio de sempre é a resposta.
+  const alemDaUltima =
+    posicao !== undefined &&
+    posicao.total > 0 &&
+    posicao.pagina > posicao.totalDePaginas;
 
   return (
     <>
@@ -115,8 +149,28 @@ export default async function Catalogo({ searchParams }: PageProps<"/midias">) {
         itens={itens}
         resultadoCompleto={resultadoCompleto}
         ordemDaApi={ordemDaApi}
-        vazio={<CatalogoVazio q={q} tipo={tipo} genero={genero} />}
+        posicao={posicao}
+        vazio={
+          alemDaUltima ? (
+            <CatalogoPaginaInexistente
+              pagina={posicao.pagina}
+              total={posicao.total}
+              totalDePaginas={posicao.totalDePaginas}
+            />
+          ) : (
+            <CatalogoVazio q={q} tipo={tipo} genero={genero} />
+          )
+        }
       />
+
+      {/* Sem links quando tudo cabe numa página: "página 1 de 1", na linha
+          da contagem, já diz que não há próxima. */}
+      {posicao && !alemDaUltima && posicao.totalDePaginas > 1 && (
+        <CatalogoPaginacao
+          pagina={posicao.pagina}
+          totalDePaginas={posicao.totalDePaginas}
+        />
+      )}
     </>
   );
 }

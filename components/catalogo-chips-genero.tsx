@@ -62,10 +62,8 @@ function enderecoComGenero(
   }
 
   // Filtro novo, resultado novo: a página 3 de "todos" não é a página 3 de
-  // "Drama", e pode nem existir. O `?pagina=` ainda não é usado pela grade —
-  // os links de página e a regra inteira são do LP-604 —, mas um chip que
-  // levasse a página adiante deixaria para ele um endereço que já nasce
-  // errado.
+  // "Drama", e pode nem existir. O filtro novo começa na primeira página
+  // (LP-604), e a primeira página não tem `?pagina=`.
   params.delete("pagina");
 
   const query = params.toString();

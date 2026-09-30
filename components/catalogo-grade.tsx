@@ -19,6 +19,48 @@ import type { Midia } from "@/lib/tipos";
  */
 export type OrdemDaApi = "popularidade" | "relevancia";
 
+/**
+ * Onde a pessoa está no resultado da listagem, como a API respondeu
+ * (LP-604).
+ */
+export type PosicaoNaListagem = {
+  /** Títulos no resultado inteiro — o `total` da API, e não a página. */
+  total: number;
+  pagina: number;
+  totalDePaginas: number;
+};
+
+/** "1 título", "60 títulos" — e "0 títulos", como se fala. */
+function titulos(quantidade: number): string {
+  return `${quantidade} ${quantidade === 1 ? "título" : "títulos"}`;
+}
+
+/**
+ * A linha da contagem.
+ *
+ * Na listagem, conta o `total` que a API devolve: `itens.length` é o tamanho
+ * da página, e contá-lo fazia o catálogo de 60 aparecer como "20 título(s)".
+ * Na busca não existe total — ela devolve os primeiros de um ranking —, e a
+ * conta é a do que chegou.
+ */
+function descreverContagem(
+  itens: Midia[],
+  posicao: PosicaoNaListagem | undefined,
+): string {
+  if (!posicao) {
+    return titulos(itens.length);
+  }
+
+  // Grade vazia, seja porque nada casou (`total` 0), seja porque a página
+  // passou da última: "página 9 de 3" não descreve nada, e quem explica o
+  // que aconteceu é o bloco no lugar da grade.
+  if (itens.length === 0) {
+    return titulos(posicao.total);
+  }
+
+  return `${titulos(posicao.total)} · página ${posicao.pagina} de ${posicao.totalDePaginas}`;
+}
+
 type Props = {
   itens: Midia[];
   /**
@@ -44,6 +86,8 @@ type Props = {
    * de uma busca descreveria uma ordem que ninguém aplicou.
    */
   ordemDaApi: OrdemDaApi;
+  /** O total e a página, quando os itens vêm da listagem. A busca não manda. */
+  posicao?: PosicaoNaListagem;
 };
 
 export function CatalogoGrade({
@@ -51,6 +95,7 @@ export function CatalogoGrade({
   vazio,
   resultadoCompleto,
   ordemDaApi,
+  posicao,
 }: Props) {
   // A ordem mora na URL, e não em `useState`: `?ordem=az` volta igual quando
   // a pessoa recarrega e vai junto no link compartilhado.
@@ -123,7 +168,7 @@ export function CatalogoGrade({
           conjunto de resultados. */}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-zinc-500" aria-live="polite">
-          {itens.length} título(s)
+          {descreverContagem(itens, posicao)}
         </p>
         {resultadoCompleto ? (
           <CatalogoOrdenacao ordem={ordem} aoMudarOrdem={mudarOrdem} />

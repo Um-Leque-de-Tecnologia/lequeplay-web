@@ -55,7 +55,9 @@ export type FiltrosConferidos = {
   q?: string;
   /**
    * Sempre presente: sem um `?pagina=` que valha, é a primeira, como na API
-   * (`default: 1`). Uma página além da última é outro assunto (LP-604).
+   * (`default: 1`). Uma página além da última passa daqui: quantas páginas
+   * existem só a resposta da API sabe, e quem explica o engano é a página do
+   * catálogo (LP-604).
    */
   pagina: number;
 };
