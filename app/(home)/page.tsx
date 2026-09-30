@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { connection } from "next/server";
 import { HomeAcervo } from "@/components/home-acervo";
 import { HomeCarrosselDestaques } from "@/components/home-carrossel-destaques";
 import { HomeContinuarAssistindo } from "@/components/home-continuar-assistindo";
@@ -11,13 +10,11 @@ import { listarMidias } from "@/lib/api";
 // HTML já pronto. Nenhuma credencial da API chega ao cliente — as seções
 // abaixo recebem os dados por props, e nenhuma delas busca nada por conta.
 export default async function Home() {
-
-  // As duas buscas não dependem uma da outra: em série, a home esperaria a
-  // soma das duas; em paralelo, espera a mais lenta.
-  const [{ itens, total }, historico] = await Promise.all([
-    listarMidias(),
-    listarHistorico(),
-  ]);
+  // Só o catálogo, que é igual para todo mundo. O histórico é de uma pessoa
+  // e não entra aqui (LP-414): lido no servidor, ele tornaria a home dinâmica
+  // — e, sem sessão, era o do mock para qualquer visitante. Ele chega pelo
+  // navegador, e se falhar, só a faixa dele some.
+  const { itens, total } = await listarMidias();
 
   const destaques = itens.slice(0, 4);
 

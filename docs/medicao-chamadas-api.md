@@ -1,35 +1,36 @@
 # Como Medir Chamadas à API por Visita
 
-Este é o procedimento oficial para medir chamadas reais do front-end para a API. O número válido para o PR é medido com `build` + `start`, nunca com `dev`.
+Este documento descreve o procedimento oficial e repetível para auditar a quantidade de chamadas HTTP reais que o front-end dispara à API por visita.
+
+O número oficial do projeto é medido exclusivamente com **`build` + `start`**, nunca com `dev`.
 
 ---
 
-## Critérios
+## Critérios Obrigatórios
 
-Conforme definido para o projeto:
-1. **Medição feita em `build + start`:** números de `dev` não entram no PR.
-2. **Nenhum `console.log` temporário:** se uma instrumentação local for usada, ela deve ser removida antes do commit.
-3. **PR:** registrar a unidade, a rota, a visita (fria ou quente), a configuração usada e a fonte da contagem.
+1. **Medição feita em `build + start`:** números medidos em `dev` não entram no PR. Em desenvolvimento, o React roda em `StrictMode` (duplicando montagens) e o Fast Refresh (HMR) revalida rotas, inflando a contagem.
+2. **Nenhum `console.log` temporário no commit:** qualquer instrumentação de teste deve ser removida antes de commitar.
+3. **Contagem pelo contador (`scripts/contador-api.mjs`):** a fonte repetível da contagem é o contador da aula 04, que intercepta o tráfego HTTP entre o Next e a API.
 
 ---
 
 ## 1. O Conceito Fundamental: Chamadas por Visita vs. Chamadas por Renderização
 
-> **Número sem unidade não é número: chamadas por visita e chamadas por renderização são coisas diferentes, e a diferença é a camada.**
+> **"Número sem unidade não é número: chamadas por visita e chamadas por renderização são coisas diferentes, e a diferença é a camada."**
 
-Quando alguém diz: *"essa página faz 4 chamadas à API"*, essa frase é ambígua se não definirmos a **camada**:
+Quando alguém diz: *"essa página faz 4 chamadas à API"*, a frase é ambígua sem especificar a **camada**:
 
 * **Chamadas por Renderização (Camada de Componentes / React):**
-  * Representa quantas vezes funções de busca (`fetch`, `obterMidias`, etc.) são invocadas no código dos componentes durante a renderização da árvore de Server Components.
-  * Se o cabeçalho, a grade principal e o rodapé chamarem `obterMidias()`, ocorrerão **3 chamadas na camada de renderização**.
+  * Representa quantas vezes funções de busca (`fetch`, `listarMidias`, etc.) são invocadas no código durante a renderização da árvore de Server Components.
+  * Se o cabeçalho, a grade principal e o rodapé chamarem `listarMidias()`, ocorrem **3 chamadas na camada de renderização**.
 
 * **Chamadas por Visita (Camada de Rede / HTTP):**
-  * Representa quantas requisições HTTP reais saem fisicamente do servidor Next.js em direção ao backend externo para atender à navegação/visita do usuário.
+  * Representa quantas requisições HTTP reais saem fisicamente do servidor Next.js em direção à API externa para atender à navegação/visita da pessoa.
 
 * **A diferença é a camada intermediária:**
-  * O **React Request Memoization** desduplica chamadas com mesma URL e opções dentro do mesmo ciclo de renderização. As 3 invocações na camada de componentes colapsam para **apenas 1 requisição de rede**.
+  * O **React Request Memoization** desduplica chamadas com a mesma URL e opções no mesmo ciclo de renderização. As 3 invocações na camada de componentes colapsam para **apenas 1 requisição de rede**.
   * O **Data Cache do Next.js** (quando aplicável cache de longa duração) intercepta antes da rede: se o dado já estiver em cache, saem **0 requisições de rede** para o backend.
-  * Portanto, medir na camada errada gera números fictícios. O número deste documento é da camada de rede, observado no servidor da API.
+  * Portanto, medir na camada errada (ou em `dev`) gera números fictícios. O número válido é o da camada de rede, observado no contador entre o front e a API.
 
 ---
 
@@ -50,11 +51,10 @@ const nextConfig: NextConfig = {
 };
 ```
 
-### Referência na documentação do Next 16
-* **Opção:** `logging.fetches.fullUrl`.
-* **Documentação:** [Logging > Fetching](https://nextjs.org/docs/app/api-reference/config/next-config-js/logging), seção `### Fetching`, linhas 12–15 da página consultada em 2026-09-22.
-* **Trecho da documentação (linhas 12–15):** “You can configure the logging level and whether the full URL is logged to the console when running Next.js in development mode.”
-* **Exemplo da documentação:**
+### Onde está na documentação interna da versão instalada
+* **Arquivo:** [`node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/logging.md`](../node_modules/next/dist/docs/01-app/03-api-reference/05-config/01-next-config-js/logging.md)
+* **Seção:** `### Fetching` (linhas 12 a 15)
+* **Exemplo de código:** **Linhas 18 a 24**:
   ```js
   module.exports = {
     logging: {
@@ -65,92 +65,82 @@ const nextConfig: NextConfig = {
   }
   ```
 * **Status exibidos pelo Next.js:**
-  * `HIT`: O dado veio direto do Data Cache do Next.js (nenhuma chamada de rede feita).
-  * `MISS`: O dado não estava no cache e foi buscado na API externa (chamada de rede efetuada e gravada no cache).
-  * `SKIP`: A requisição ignorou o cache deliberadamente (ex: `cache: 'no-store'` ou `revalidate: 0`).
+  * `HIT`: o dado veio direto do Data Cache do Next.js (nenhuma chamada de rede feita).
+  * `MISS`: o dado não estava no cache e foi buscado na API externa (chamada de rede efetuada e gravada no cache).
+  * `SKIP`: a requisição ignorou o cache deliberadamente (ex: `cache: 'no-store'` ou `revalidate: 0`).
 
-> **Limite importante:** `logging.fetches` é logging de desenvolvimento. Ele não é a fonte da contagem oficial do PR e não deve ser usado para afirmar um número de produção.
+> **Limite importante:** a opção `logging.fetches` é projetada pelo Next.js exclusivamente para o modo de desenvolvimento. Em `build + start`, o Next.js desativa esses logs para preservar a performance. Por isso, a contagem de produção é feita pelo contador intermediário.
 
 ### Onde cada log aparece
 
 | Execução | Onde aparece | O que significa |
 | :--- | :--- | :--- |
-| `npm run dev` | terminal que executou o comando | O Next imprime os fetches e `HIT`/`MISS`/`SKIP` por causa de `logging.fetches.fullUrl`. |
-| `npm run start` | terminal que executou o comando | O Next imprime apenas a inicialização; não imprime cada fetch da aplicação. |
-| API externa | terminal ou painel de logs do backend | É aqui que se contam as requisições HTTP reais feitas pelo Next em produção. |
-
-Se `npm run start` retornar `EADDRINUSE` na porta 3000, ele **não iniciou um
-novo servidor**. Acesse a janela que já executa o processo da porta 3000 ou
-encerre-o e inicie o servidor em uma porta livre. No Git Bash:
-
-```bash
-PORT=3001 npm run start
-```
-
-No PowerShell:
-
-```powershell
-$env:PORT = 3001; npm run start
-```
-
-Depois, acesse exatamente `http://localhost:3001/midias` e observe o terminal
-que exibiu `Ready` para confirmar que está olhando o processo correto.
+| `npm run dev` | Terminal do Next | O Next imprime os fetches e `HIT`/`MISS`/`SKIP` por causa de `logging.fetches.fullUrl`. |
+| `npm run start` | Terminal do Next | O Next imprime apenas a inicialização do servidor; não emite cada fetch da aplicação. |
+| Contador (`contador-api.mjs`) | Terminal do contador | É aqui que se contam as requisições HTTP reais feitas pelo Next em `build + start`. |
 
 ---
 
 ## 3. Procedimento Repetível de Medição (Build + Start)
 
-Qualquer membro do time pode reproduzir o teste seguindo este roteiro:
+Qualquer membro do time reproduz o teste seguindo este roteiro:
 
-### Passo 1: Garantir que o backend está rodando
+### Passo 1: Iniciar o contador de API (Terminal 1)
+O contador publicado no card da aula 04 (`scripts/contador-api.mjs`) fica entre o front e a API, escutando em `http://localhost:4000/v1` e registrando com precisão cada requisição HTTP recebida:
 
-> **Atenção ao erro de build (`503 Não foi possível alcançar a API`):**
-> Se você definir `USAR_MOCK=false`, o Next.js tentará se conectar à API real durante o `npm run build` (ao pré-renderizar rotas como a Home `/`). Se o backend **não** estiver rodando em `http://localhost:8080`, o build falhará com erro de conexão.
-> 
-> Portanto:
-> * **Para rodar a medição real com a API:** Suba primeiro o servidor da API (`lequeplay-api`) na porta 8080 e configure no `.env.local`:
->   ```env
->   API_URL=http://localhost:8080
->   USAR_MOCK=false
->   ```
-> * **Se o backend não estiver rodando no momento:** Deixe `USAR_MOCK=true` no `.env.local`. O projeto usará o mock local e o `build` passará com sucesso.
-
-### Passo 2: Executar build e start
 ```bash
+# Terminal 1
+node scripts/contador-api.mjs
+# ou, se precisar de autenticação simulada para testes locais:
+AUTH=simulada node scripts/contador-api.mjs
+```
+
+### Passo 2: Configurar o `.env.local`
+Aponte o front para o contador:
+
+```env
+USAR_MOCK=false
+API_URL=http://localhost:4000/v1
+```
+
+### Passo 3: Executar build e start (Terminal 2)
+Em outro terminal:
+
+```bash
+# Terminal 2
 npm run build
 npm run start
 ```
 
-Se a porta `3000` estiver ocupada, use outra sem alterar o build:
-```bash
-PORT=3001 npm run start
-```
+Se a porta `3000` estiver ocupada, suba em outra sem refazer o build:
+* Linux / Mac / Git Bash: `PORT=3001 npm run start`
+* Windows (PowerShell): `$env:PORT = 3001; npm run start`
 
-### Passo 3: Fazer uma visita controlada
-Antes de bater na rota, limpe a tela do terminal onde o servidor está rodando:
-* Windows (PowerShell): `cls` ou `Ctrl + L`
-* Linux / Mac: `clear` ou `Ctrl + L`
+### Passo 4: Fazer uma visita controlada
+1. No **Terminal 1 (contador)**, observe o contador zerado ou anote o total antes da navegação.
+2. Em janela anônima do navegador, acesse a rota (ex: `http://localhost:3000/midias`).
+3. Conte no **contador** as requisições HTTP registradas durante a primeira visita (cache frio).
+4. Recarregue a mesma rota (`F5`) para registrar a visita quente (cache quente).
+5. Desconsidere requisições do navegador para o Next (como `/_next/*`) e chamadas geradas durante o build.
 
-1. Limpe o log de acesso do backend.
-2. Em uma janela anônima, acesse a rota, por exemplo `http://localhost:3000/midias`.
-3. Conte no log do **backend** apenas as requisições originadas pelo Next durante essa visita.
-4. Para a segunda medição, recarregue a mesma rota e registre-a como visita quente.
-5. Não conte requisições do navegador para o Next, como `/_next/*`, nem chamadas feitas durante o build.
-
-### Passo 4: Verificar o working tree
-Se você adicionou logging temporário, remova-o e confira que **nenhum `console.log` de teste sobrou**:
+### Passo 5: Conferir o working tree
+Certifique-se de que nenhum `console.log` ou arquivo indesejado permaneceu:
 ```bash
 git diff --check
-git grep -n '\[MEDICAO-API\]\|console\.log' -- ':!node_modules'
 ```
-
-O segundo comando pode encontrar logs de produção já existentes; remova somente os logs temporários introduzidos para esta medição.
 
 ---
 
-## 4. Registro do resultado no PR
+## 4. Tabela de Referência Oficial do Projeto
 
-| Rota | Unidade | 1ª visita (cache frio) | 2ª visita (cache quente) | Fonte |
-| :--- | :--- | :--- | :--- | :--- |
-| `/midias` | chamadas HTTP Next -> API por visita | **2 chamadas** (`/midias`, `/generos`) | **0 chamadas** (cache quente) | log de acesso do backend; `revalidate: 3600` |
+A tabela consolidada com as chamadas de produção medidas e auditadas no projeto está centralizada em:
 
+👉 **[`docs/cache-tags.md`](cache-tags.md#medido-lp-307) (seção *Medido (LP-307)*)**
+
+Na arquitetura atual da `main` (após os avanços do LP-303 e LP-307):
+* **`/midias` (1ª visita):** **1 chamada** (o catálogo já é parcialmente aquecido pelo build).
+* **`/midias` (2ª visita):** **0 chamadas** (servido integralmente pelo Data Cache).
+* **Ficha de filme (1ª visita):** **1 chamada**.
+* **Ficha de filme (2ª visita):** **0 chamadas**.
+
+> **Nota sobre números históricos:** a medição pontual realizada nesta branch em 22/09 (antes da pré-geração das temporadas no LP-303 e com o histórico ainda lido no servidor) apontava 2 chamadas na 1ª visita a `/midias`. Como o repositório mantém uma única fonte da verdade, medições pontuais e contextuais de tickets devem constar na descrição do Pull Request correspondente.
