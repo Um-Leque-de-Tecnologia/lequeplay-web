@@ -412,6 +412,13 @@ O front usa para montar o filtro — não deixe essa lista chumbada no
 front-end. Os itens são **nomes**, e não objetos: é exatamente o valor que
 volta na query, em `?genero=Drama`.
 
+> **Nome não é pedaço de URL.** Três gêneros da API têm `&` no nome
+> (*Action & Adventure*, *Sci-Fi & Fantasy*, *War & Politics*), e outros têm
+> acento e espaço. Colado direto no endereço, `?genero=Action & Adventure`
+> vira `genero=Action ` mais um parâmetro solto. Monte a query com
+> `URLSearchParams`, que escreve `genero=Action+%26+Adventure` — é o que os
+> chips do catálogo e o `lib/api.ts` fazem (LP-601).
+
 > **Este endpoint mudou de formato em setembro de 2026.** Até então a API
 > devolvia um array puro de `{ id, nome }` — sem envelope e com um id que
 > nenhuma tela usava. Quem tiver código lendo `resposta[0].nome` precisa
