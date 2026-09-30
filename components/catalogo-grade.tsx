@@ -9,6 +9,7 @@ import {
   lerOrdem,
   type OrdemCatalogo,
 } from "@/components/catalogo-ordenacao";
+import { valorUnico } from "@/lib/filtros-do-catalogo";
 import type { Midia } from "@/lib/tipos";
 
 /**
@@ -55,7 +56,9 @@ export function CatalogoGrade({
   // a pessoa recarrega e vai junto no link compartilhado.
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const ordemPedida = lerOrdem(searchParams.get("ordem"));
+  // `getAll`, e não `get`: o `get` pega o primeiro de um parâmetro repetido,
+  // e a regra do catálogo é que valores diferentes não valem nenhum (LP-606).
+  const ordemPedida = lerOrdem(valorUnico(searchParams.getAll("ordem")));
 
   // Um link com `?ordem=az` pode chegar numa busca que não cabe numa página.
   // A tela não finge atender: mostra a ordem da API e diz por quê.

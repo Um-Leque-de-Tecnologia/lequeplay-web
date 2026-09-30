@@ -68,7 +68,9 @@ resultadoCompleto = pagina === 1 && itens.length >= total
 "Relevância" passou a se chamar **"Mais populares"**, com o valor interno
 `populares`. Como o padrão nunca vai para a URL (sem `?ordem=`, a URL fica
 limpa), nenhum link compartilhado quebra. E um `?ordem=relevancia` escrito à
-mão cai no padrão, como qualquer valor desconhecido.
+mão cai no padrão, como qualquer valor desconhecido — e `?ordem=az&ordem=nota`
+também: parâmetro repetido com valores diferentes vale como ausente, a mesma
+regra dos filtros do catálogo (LP-606, em `lib/filtros-do-catalogo.ts`).
 
 ### As alternativas descartadas
 

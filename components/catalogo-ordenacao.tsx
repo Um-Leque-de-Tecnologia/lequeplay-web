@@ -33,8 +33,11 @@ export const ORDENS: { valor: OrdemCatalogo; rotulo: string }[] = [
  * O `?ordem=` chega da URL como texto livre: link antigo, valor digitado à
  * mão. O que não está no menu vira o padrão, em vez de uma ordem que não
  * existe — e sem `as` para convencer o compilador.
+ *
+ * Recebe o valor já passado por `valorUnico` (LP-606): `?ordem=az&ordem=nota`
+ * chega como ausente, a mesma regra dos filtros do catálogo.
  */
-export function lerOrdem(valor: string | null): OrdemCatalogo {
+export function lerOrdem(valor: string | undefined): OrdemCatalogo {
   return ORDENS.find((item) => item.valor === valor)?.valor ?? "populares";
 }
 
